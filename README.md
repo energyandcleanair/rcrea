@@ -9,6 +9,7 @@
 
 install.packages('devtools')
 
+library(devtools)
 url <- "https://gitlab.com/creaaq/crea_r_package"
 devtools::install_git(url = url)
 ```
