@@ -19,7 +19,6 @@ connection <- function() {
   return(CON)
 }
 
-filters = list(country = list('IN'), test=2.1)
 pg_filters_to_str <- function(filters){
 
   if(length(filters)==0) return('')
@@ -55,5 +54,5 @@ pg_filters_to_str <- function(filters){
   filters_str <- paste("WHERE ", result)
   return(filters_str)
 }
-a <- pg_filters_to_str(filters)
+
 
