@@ -9,7 +9,7 @@ CON = NULL
 connection <- function() {
   # Connect to a specific postgres database i.e. Heroku
   if(is.null(CON)){
-    CON <<- dbConnect(RPostgres::Postgres(),dbname = 'development',
+    CON <<- DBI::dbConnect(RPostgres::Postgres(),dbname = 'development',
                       host = '35.205.243.56',
                       port = 5432, # or any other port specified by your DBA
                       user = 'postgres',
@@ -19,7 +19,7 @@ connection <- function() {
   return(CON)
 }
 
-pg_filters_to_str <- function(filters){
+filters_to_pg_str <- function(filters){
 
   if(length(filters)==0) return('')
 
@@ -35,7 +35,7 @@ pg_filters_to_str <- function(filters){
 
   flt_parse <- function(flt){
     if(typeof(flt)=="list"){
-      return(map(flt, flt_parse_one))
+      return(purrr::map(flt, flt_parse_one))
     }else{
       return(flt_parse_one(flt))
     }
