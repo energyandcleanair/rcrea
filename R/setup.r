@@ -12,7 +12,7 @@ connection <- function() {
   # Connect to a specific postgres database i.e. Heroku
   if(is.null(pkg.globals$CON)){
 
-    pkg.globals$CON <- DBI::dbConnect(RPostgres::Postgres(),dbname = 'development',
+    pkg.globals$CON <- DBI::dbConnect(RPostgres::Postgres(), dbname = 'development',
                       host = '35.205.243.56',
                       port = 5432, # or any other port specified by your DBA
                       user = 'postgres',
