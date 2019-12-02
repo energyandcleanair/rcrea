@@ -45,7 +45,8 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
 
 measurements <- function(country=NULL,
                          city=NULL,
-                         pollutant=NULL,
+                         location=NULL,
+                         poll=NULL,
                          date_from='2018-01-01',
                          average_by='day',
                          collect=TRUE) {
@@ -53,7 +54,8 @@ measurements <- function(country=NULL,
   # Variable names must be different to column names
   country_ <- country
   city_ <- city
-  pollutant_ <- pollutant
+  poll_ <- poll
+  location_ <- location
 
   # Get wide measurements table first
   con = connection()
@@ -61,9 +63,10 @@ measurements <- function(country=NULL,
   #                         (SELECT id as id_location, name, names, city, cities, country FROM locations) as locations
   #                       ON ARRAY[measurements.location] <@ (locations.names)");
   # result <- tbl(con, wide_tbl_query)
-  result <- tbl(con, "measurements")
+  result <- dplyr::tbl(con, "measurements")
 
   # Apply filters
+
   result <- switch(toString(length(country_)),
         "0" = result, # NULL
         "1" = result %>% filter(tolower(country) == tolower(country_)), # Single country name
@@ -77,12 +80,20 @@ measurements <- function(country=NULL,
          result %>% filter(tolower(city) %in% city_) # Vector of city names
   )
 
-  pollutant_ <- tolower(pollutant_)
-  result <- switch(toString(length(pollutant_)),
+  poll_ <- tolower(poll_)
+  result <- switch(toString(length(poll_)),
                    "0" = result, # NULL
-                   "1" = result %>% filter(tolower(parameter) == pollutant_), # Single city name
-                   result %>% filter(tolower(parameter) %in% pollutant_) # Vector of city names
+                   "1" = result %>% filter(tolower(parameter) == poll_), # Single city name
+                   result %>% filter(tolower(parameter) %in% poll_) # Vector of city names
   )
+
+  location_ <- tolower(location_)
+  result <- switch(toString(length(location_)),
+                   "0" = result, # NULL
+                   "1" = result %>% filter(tolower(location) == location_), # Single city name
+                   result %>% filter(tolower(location) %in% location_) # Vector of city names
+  )
+
 
   result <- switch(toString(length(date_from)),
                    "0" = result, # NULL
@@ -95,10 +106,22 @@ measurements <- function(country=NULL,
   result <- result %>% rename(poll = parameter)
 
   # Apply time aggregation
-  result <- result %>% group_by(city, location, date=DATE_TRUNC(average_by, date), poll, unit) %>% summarize(value=avg(value))
+  result <- result %>% group_by(city, location, date=DATE_TRUNC(average_by, date), poll, unit) %>%
+                      summarize(value=avg(value)) %>% ungroup()
 
   if(collect){
-    result <- result %>% collect()
+    result = tryCatch({
+      result %>% collect()
+    },error = function(e) {
+      con <- connection(reconnect = TRUE)
+      return(measurements(country,
+                          city,
+                          location,
+                          poll,
+                          date_from,
+                          average_by,
+                          collect))
+    })
   }
 
   return(result)

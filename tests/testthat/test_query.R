@@ -52,3 +52,10 @@ test_that("query return measurements", {
   expect_equal(unique(month(meas_delhi_year$date)), 1)
 
 })
+
+test_that("Measurements are correct", {
+
+  meas_sirifort <- measurements(location='Sirifort, Delhi - CPCB',average_by='year')
+
+
+})

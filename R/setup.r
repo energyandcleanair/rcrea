@@ -32,8 +32,12 @@ poll_str <- function(poll){
   ))
 }
 
-connection <- function() {
+connection <- function(reconnect=FALSE) {
   # Connect to a specific postgres database i.e. Heroku
+  if(reconnect && !is.null(pkg.globals$CON)){
+    dbDisconnect(pkg.globals$CON)
+  }
+
   if(is.null(pkg.globals$CON)){
 
     pkg.globals$CON <- DBI::dbConnect(RPostgres::Postgres(), dbname = 'production',
