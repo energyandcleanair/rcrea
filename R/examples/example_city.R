@@ -1,4 +1,6 @@
 library(creadb)
+library(ggplot2)
+
 locs_india <- creadb::locations(country='IN')
 
 
@@ -9,31 +11,34 @@ unique(locs_india$city)
 # Get data
 # meas_delhi <- creadb::measurements(city='Delhi')
 # meas_jaipur_pm25<- creadb::measurements(city=c('Delhi','Mumbai'), poll=creadb::PM25, date_from='2017-01-01')
-meas_delhi_mumbai<- creadb::measurements(city=c('Delhi','Mumbai'), date_from='2019-01-01')
+meas_cities <- creadb::measurements(city=c('Delhi','Mumbai', 'Jaipur'), date_from='2016-01-01')
 
 # Time series per location
-plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, subplot_by='location')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location_id')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location')
 
 # Time series per pollutant (average per city is taken by default)
-plot_measurements(meas_delhi_mumbai, subplot_by='poll')
+creadb::plot_measurements(meas_cities, subplot_by='poll')
+creadb::plot_measurements(meas_cities, running_days=365, subplot_by='poll')
+
 
 # Time series of PM2.5 per location (yearly running average)
-plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, running_days=365, subplot_by='location')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_days=365, subplot_by='location')
 
 # Time series of PM2.5 per city (yearly running average)
-plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, running_days=365, subplot_by='city')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_days=365, color_by='city')
 
 # Monthly average
-plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, average_by='month', subplot_by='city')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, average_by='month', subplot_by='city')
 
 # Yearly average
-plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, average_by='year', subplot_by='city')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, average_by='year', subplot_by='city')
 
 # Heatmap per location with monthly data
-plot_measurements(meas_delhi_mumbai, poll=PM25, subplot_by='location', type='heatmap', average_by='month')
+creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='heatmap', average_by='month')
 
 # Heatmap per city weekly values
-plot_measurements(meas_delhi_mumbai, poll=PM25, subplot_by='city', type='heatmap')
+creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='city', type='heatmap', average_by='month')
 
 
 

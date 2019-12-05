@@ -25,6 +25,17 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
   meas <- mutate(meas, date=lubridate::floor_date(date, average_by))
   meas <- meas %>% group_by_at(union(group_by_cols, 'date'))  %>% summarise(value = mean(value))
 
+  # Make date axis homogeneous i.e. a row for every day / month / year
+  # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
+  dates <- seq(min(meas$date), max(meas$date), by=paste(average_by))
+  group_by_uniques <- unique(meas[,group_by_cols])
+  df_placeholder <- merge(group_by_uniques, data.frame(date=dates), by=NULL)
+  df_placeholder <- transform(df_placeholder, date_str=format(date, "%Y-%m-%d"))
+
+  meas <- transform(meas, date_str=format(date, "%Y-%m-%d"))
+  meas <- subset(meas, select = -c(date))
+  meas <- merge(meas, df_placeholder, all=TRUE)
+
   # Apply running average if need be
   if(is.null(running_days)){
     meas <- arrange(meas, date)  %>% mutate(value_plot=value)
@@ -45,8 +56,8 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
          "ts" = plt + geom_line(aes_string(color = color_by), size = 1) +
                 ylim(0, NA),
          "heatmap" = plt +
-                    geom_tile(aes(x=date, y=ifelse(!is.null(subplot_by), subplot_by , location), fill=value_plot, color=NULL)) +
-                    scale_y_discrete()
+                    geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot'), color='white') +
+                    scale_y_discrete() + scale_fill_distiller(palette = "Spectral", na.value = 'white')
          )
 
 
@@ -57,6 +68,8 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
       plt <- plt + theme(legend.position = "none")
     }
   }
+
+
 
   return(plt)
 }

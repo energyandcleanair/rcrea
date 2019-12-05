@@ -6,7 +6,7 @@ library(dplyr)
 
 filter_sanity <- function(result){
   # Filters out measurements that are obviously wrong
-  result <- result %>% filter(value >= 0)
+  result <- result %>% filter(value > 0) %>% filter(!is.na(location_id))
   # result <- result %>% filter(parameter != 'o3' || value > -9999)
   return(result)
 }
@@ -19,7 +19,7 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
 
   # Get whole table
   con = connection()
-  result <- tbl(con, "locations")
+  result <- dplyr::tbl(con, "locations")
 
   # Apply filters
   result <- switch(toString(length(country_)),
@@ -45,7 +45,7 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
 
 measurements <- function(country=NULL,
                          city=NULL,
-                         location=NULL,
+                         location_id=NULL,
                          poll=NULL,
                          date_from='2018-01-01',
                          average_by='day',
@@ -55,73 +55,69 @@ measurements <- function(country=NULL,
   country_ <- country
   city_ <- city
   poll_ <- poll
-  location_ <- location
+  location_id_ <- location_id
 
   # Get wide measurements table first
   con = connection()
+  # result <- dplyr::tbl(con, "measurements_daily")
   # wide_tbl_query <- dbplyr::sql("SELECT * FROM measurements LEFT JOIN
   #                         (SELECT id as id_location, name, names, city, cities, country FROM locations) as locations
   #                       ON ARRAY[measurements.location] <@ (locations.names)");
   # result <- tbl(con, wide_tbl_query)
-  result <- dplyr::tbl(con, "measurements")
+  tryCatch({
+    result <- dplyr::tbl(con, "measurements_daily")
+  },error = function(e) {
+    con <- connection(reconnect = TRUE)
+    result <- dplyr::tbl(con, "measurements_daily")
+  })
 
   # Apply filters
-
   result <- switch(toString(length(country_)),
         "0" = result, # NULL
-        "1" = result %>% filter(tolower(country) == tolower(country_)), # Single country name
-        result %>% filter(country %in% country_) # Vector of country names
+        "1" = result %>% filter(tolower(country) == tolower(country_)), # Single value
+        result %>% filter(country %in% country_) # Vector
   )
 
   city_ = tolower(city_)
   result <- switch(toString(length(city_)),
          "0" = result, # NULL
-         "1" = result %>% filter(tolower(city) == city_), # Single city name
-         result %>% filter(tolower(city) %in% city_) # Vector of city names
+         "1" = result %>% filter(tolower(city) == city_), # Single value
+         result %>% filter(tolower(city) %in% city_) # Vector
   )
 
   poll_ <- tolower(poll_)
   result <- switch(toString(length(poll_)),
                    "0" = result, # NULL
-                   "1" = result %>% filter(tolower(parameter) == poll_), # Single city name
-                   result %>% filter(tolower(parameter) %in% poll_) # Vector of city names
+                   "1" = result %>% filter(tolower(pollutant) == poll_), # Single value
+                   result %>% filter(tolower(pollutant) %in% poll_) # Vector
   )
 
-  location_ <- tolower(location_)
-  result <- switch(toString(length(location_)),
+  result <- switch(toString(length(location_id_)),
                    "0" = result, # NULL
-                   "1" = result %>% filter(tolower(location) == location_), # Single city name
-                   result %>% filter(tolower(location) %in% location_) # Vector of city names
+                   "1" = result %>% filter(location_id == location_id_), # Single value
+                   result %>% filter(location_id %in% location_id_) # Vector
   )
 
 
   result <- switch(toString(length(date_from)),
                    "0" = result, # NULL
-                   "1" = result %>% filter(date >= date_from),
+                   "1" = result %>% filter(date >= date_from)
   )
 
 
   result <- filter_sanity(result)
 
-  result <- result %>% rename(poll = parameter)
+  result <- result %>% rename(poll = pollutant)
 
-  # Apply time aggregation
-  result <- result %>% group_by(city, location, date=DATE_TRUNC(average_by, date), poll, unit) %>%
+  # Apply time and location aggregation
+  # measurements_daily is already aggregated by day, so we only aggregate further if <> 'day'
+  if(average_by != 'day'){
+    result <- result %>% group_by(city, location, location_id, date=DATE_TRUNC(average_by, date), poll) %>%
                       summarize(value=avg(value)) %>% ungroup()
+  }
 
   if(collect){
-    result = tryCatch({
-      result %>% collect()
-    },error = function(e) {
-      con <- connection(reconnect = TRUE)
-      return(measurements(country,
-                          city,
-                          location,
-                          poll,
-                          date_from,
-                          average_by,
-                          collect))
-    })
+    result <- result %>% collect()
   }
 
   return(result)
