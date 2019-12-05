@@ -43,8 +43,8 @@ connection <- function(reconnect=FALSE) {
     pkg.globals$CON <- DBI::dbConnect(RPostgres::Postgres(), dbname = 'production',
                         host = '34.77.246.210',
                         port = 5432, # or any other port specified by your DBA
-                        user = 'postgres',
-                        password = 'sB7ynLPiOnnCAEIl')
+                        user = 'readonly',
+                        password = '2hNETPw5')
   }
 
   return(pkg.globals$CON)
