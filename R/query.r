@@ -6,7 +6,10 @@ library(dplyr)
 
 filter_sanity <- function(result){
   # Filters out measurements that are obviously wrong
-  result <- result %>% filter(value > 0) %>% filter(!is.na(location_id))
+  result <- result %>% filter(value > 0) %>%
+            filter(!is.na(location_id)) %>%
+            filter(!is.na(date)) %>%
+            filter(!is.na(pollutant))
   # result <- result %>% filter(parameter != 'o3' || value > -9999)
   return(result)
 }
@@ -17,7 +20,7 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
   country_ <- country
   city_ <- city
 
-  # Get whole table
+  # Connecting
   con = connection()
   result <- dplyr::tbl(con, "locations")
 
@@ -34,6 +37,7 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
                    result %>% filter(city %in% city_) # Vector of city names
   )
 
+  # Whether to collect the query i.e. actually run the query
   if(collect){
     result <- result %>% collect()
   }
@@ -49,7 +53,8 @@ measurements <- function(country=NULL,
                          poll=NULL,
                          date_from='2018-01-01',
                          average_by='day',
-                         collect=TRUE) {
+                         collect=TRUE,
+                         with_metadata=FALSE) {
 
   # Variable names must be different to column names
   country_ <- country
@@ -57,18 +62,22 @@ measurements <- function(country=NULL,
   poll_ <- poll
   location_id_ <- location_id
 
-  # Get wide measurements table first
+  # Connecting
   con = connection()
-  # result <- dplyr::tbl(con, "measurements_daily")
-  # wide_tbl_query <- dbplyr::sql("SELECT * FROM measurements LEFT JOIN
-  #                         (SELECT id as id_location, name, names, city, cities, country FROM locations) as locations
-  #                       ON ARRAY[measurements.location] <@ (locations.names)");
-  # result <- tbl(con, wide_tbl_query)
+
+  query_initial = ifelse(with_metadata,
+                         dbplyr::sql("SELECT * FROM measurements_daily
+                          LEFT JOIN (SELECT id as id_location, name, names, city, cities, country FROM locations) as locations
+                          ON ARRAY[measurements_daily] <@ (locations.names)"),
+                         "measurements_daily")
+
+
   tryCatch({
-    result <- dplyr::tbl(con, "measurements_daily")
+    result <- dplyr::tbl(con, query_initial)
   },error = function(e) {
+    print("Trying to reconnect")
     con <- connection(reconnect = TRUE)
-    result <- dplyr::tbl(con, "measurements_daily")
+    result <- dplyr::tbl(con, query_initial)
   })
 
   # Apply filters
@@ -107,6 +116,7 @@ measurements <- function(country=NULL,
 
   result <- filter_sanity(result)
 
+  # R package will use 'poll' instead of 'pollutant'
   result <- result %>% rename(poll = pollutant)
 
   # Apply time and location aggregation
@@ -116,26 +126,10 @@ measurements <- function(country=NULL,
                       summarize(value=avg(value)) %>% ungroup()
   }
 
+  # Whether to collect the query i.e. actually run the query
   if(collect){
     result <- result %>% collect()
   }
 
   return(result)
 }
-
-
-#
-# measurements <- function(city){
-#
-#   con = connection()
-#
-#   query_str <- sprintf("SELECT DATE_TRUNC('day', date) AS date, parameter, avg(value) AS value, unit, city from measurements
-#                       LEFT JOIN locations ON ARRAY[measurements.location] <@ locations.names
-#                       WHERE LOWER(city)=LOWER('%s')
-#                       GROUP BY DATE_TRUNC('day', date), parameter, unit, city", city)
-#
-#   df <- DBI::dbGetQuery(con, query_str)
-#   return(df)
-# }
-#
-

@@ -1,5 +1,6 @@
 library(creadb)
 library(ggplot2)
+library(dplyr)
 
 locs_india <- creadb::locations(country='IN')
 
@@ -11,7 +12,7 @@ unique(locs_india$city)
 # Get data
 # meas_delhi <- creadb::measurements(city='Delhi')
 # meas_jaipur_pm25<- creadb::measurements(city=c('Delhi','Mumbai'), poll=creadb::PM25, date_from='2017-01-01')
-meas_cities <- creadb::measurements(city=c('Delhi','Mumbai', 'Jaipur'), date_from='2016-01-01')
+meas_cities <- creadb::measurements(city=c('Delhi','Mumbai'), date_from='2018-01-01')
 
 # Time series per location
 creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location_id')
@@ -41,4 +42,11 @@ creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='h
 creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='city', type='heatmap', average_by='month')
 
 
+
+##############################
+## Example 2: yearly averages
+##############################
+meas_country <- creadb::measurements(country='IN', date_from='2015-01-01', average_by='year')
+creadb::plot_measurements(meas_country, poll=PM25, subplot_by='city', type='heatmap', average_by='year')
+creadb::plot_measurements(meas_country, poll=PM25, subplot_by='city', type='ts', average_by='year')
 
