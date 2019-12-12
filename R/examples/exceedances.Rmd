@@ -1,0 +1,18 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(creadb)
+```
+
+```{r}
+exc_india <- creadb::exceedances(country=c('IN'))
+exc_india
+```
+```{r}
+plot_exceedances(exc_india, average_by='week')
+```

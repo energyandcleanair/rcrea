@@ -1,5 +1,5 @@
 ---
-title: "Examples"
+title: "Demonstration of CREA R package (WIP)"
 output: html_notebook
 ---
 
@@ -11,10 +11,65 @@ library(devtools)
 url <- "https://gitlab.com/creaaq/crea_r_package"
 devtools::install_git(url = url)
 ```
+```{r}
+library(creadb)
+library(dplyr)
+library(ggplot2)
+library(zoo)
+```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+Getting data for Delhi and Mumbai. By default, data is averaged by day.
+```{r}
+meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai'), date_from='2015-01-01')
+meas_cities
+```
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+Plotting time series of PM 2.5 per location.
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+Using location_id...
+```{r}
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location_id')
+```
+... or location name
+```{r}
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location')
+```
 
+Plotting city-level values per pollutant
+```{r}
+creadb::plot_measurements(meas_cities, subplot_by='poll')
+```
+Using a 1-year rolling mean
+```{r}
+creadb::plot_measurements(meas_cities, running_days=365, subplot_by='poll')
+```
+
+Time series of PM2.5 per location (yearly running average)
+```{r}
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_days=365, subplot_by='location')
+```
+
+Time series of PM2.5 per city (yearly running average)
+```{r}
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_days=365, color_by='city')
+```
+
+Monthly average
+```{r}
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, average_by='month', subplot_by='city')
+```
+
+Yearly average
+```{r}
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, average_by='year', subplot_by='city')
+```
+
+Heatmap per location with monthly data
+```{r}
+creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='heatmap', average_by='month')
+```
+
+Heatmap per city weekly values
+```{r}
+creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='city', type='heatmap', average_by='month')
+```

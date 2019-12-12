@@ -6,7 +6,7 @@ library(dplyr)
 
 filter_sanity <- function(result){
   # Filters out measurements that are obviously wrong
-  result <- result %>% filter(value > 0) %>%
+  result <- result %>% filter(avg_day > 0) %>%
             filter(!is.na(location_id)) %>%
             filter(!is.na(date)) %>%
             filter(!is.na(pollutant))
@@ -123,8 +123,88 @@ measurements <- function(country=NULL,
   # measurements_daily is already aggregated by day, so we only aggregate further if <> 'day'
   if(average_by != 'day'){
     result <- result %>% group_by(city, location, location_id, date=DATE_TRUNC(average_by, date), poll) %>%
-                      summarize(value=avg(value)) %>% ungroup()
+                      summarize(value=avg(avg_day)) %>% ungroup()
+  }else{
+    result <- result %>% mutate(value=avg_day)
   }
+
+  # Whether to collect the query i.e. actually run the query
+  if(collect){
+    result <- result %>% collect()
+  }
+
+  return(result)
+}
+
+
+
+
+exceedances <- function(country=NULL,
+                         city=NULL,
+                         location_id=NULL,
+                         poll=NULL,
+                         date_from='2018-01-01',
+                         collect=TRUE) {
+
+  # Variable names must be different to column names
+  country_ <- country
+  city_ <- city
+  poll_ <- poll
+  location_id_ <- location_id
+
+  # Connecting
+  con = connection()
+
+  query_initial = "standard_exceedances"
+
+
+  tryCatch({
+    result <- dplyr::tbl(con, query_initial)
+  },error = function(e) {
+    print("Trying to reconnect")
+    con <- connection(reconnect = TRUE)
+    result <- dplyr::tbl(con, query_initial)
+  })
+
+  # Apply filters
+  result <- switch(toString(length(country_)),
+                   "0" = result, # NULL
+                   "1" = result %>% filter(tolower(country) == tolower(country_)), # Single value
+                   result %>% filter(country %in% country_) # Vector
+  )
+
+  city_ = tolower(city_)
+  result <- switch(toString(length(city_)),
+                   "0" = result, # NULL
+                   "1" = result %>% filter(tolower(city) == city_), # Single value
+                   result %>% filter(tolower(city) %in% city_) # Vector
+  )
+
+  poll_ <- tolower(poll_)
+  result <- switch(toString(length(poll_)),
+                   "0" = result, # NULL
+                   "1" = result %>% filter(tolower(pollutant) == poll_), # Single value
+                   result %>% filter(tolower(pollutant) %in% poll_) # Vector
+  )
+
+  result <- switch(toString(length(location_id_)),
+                   "0" = result, # NULL
+                   "1" = result %>% filter(location_id == location_id_), # Single value
+                   result %>% filter(location_id %in% location_id_) # Vector
+  )
+
+
+  result <- switch(toString(length(date_from)),
+                   "0" = result, # NULL
+                   "1" = result %>% filter(date >= date_from)
+  )
+
+
+  # Cast integer64 to integer. Prevents issues later on
+  result <- result %>% mutate_if(bit64::is.integer64, as.integer)
+
+  # R package will use 'poll' instead of 'pollutant'
+  result <- result %>% rename(poll = pollutant)
 
   # Whether to collect the query i.e. actually run the query
   if(collect){

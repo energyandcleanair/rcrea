@@ -53,7 +53,7 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
         theme_minimal()
 
   plt <- switch(type,
-         "ts" = plt + geom_line(aes_string(color = color_by), size = 1) +
+         "ts" = plt + geom_line(aes_string(color = color_by), size = 0.8) +
                 ylim(0, NA),
          "heatmap" = plt +
                     geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot'), color='white') +
@@ -70,6 +70,58 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
   }
 
 
+
+  return(plt)
+}
+
+
+plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city', separate_polls=TRUE){
+
+
+  # Select pollutants
+  if(!is.null(poll)){
+    excs = excs[excs$poll == poll, ]
+  }
+
+  # Add status: 0: no violation, 100: violation reached threshold
+  excs <- mutate(excs, status= ifelse(exceedance_allowed_per_year==0,
+                                      pmin(exceedance_this_year*100, 100),
+                                      pmin(exceedance_this_year/exceedance_allowed_per_year*100, 100)
+                                      ))
+
+
+  # Take mean over relevant grouping (at least city, date and pollutant)
+  group_by_cols <- union(c('city', 'poll'), subplot_by)
+  excs <- mutate(excs, date=lubridate::floor_date(date, average_by))
+  excs <- excs %>% group_by_at(union(group_by_cols, 'date'))  %>% summarise(value = n(), status=max(status))
+
+  # Make date axis homogeneous i.e. a row for every day / month / year
+  # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
+  dates <- seq(min(excs$date), max(excs$date), by=paste(average_by))
+  group_by_uniques <- unique(excs[,group_by_cols])
+  df_placeholder <- merge(group_by_uniques, data.frame(date=dates), by=NULL)
+  df_placeholder <- transform(df_placeholder, date_str=format(date, "%Y-%m-%d"))
+
+  excs <- transform(excs, date_str=format(date, "%Y-%m-%d"))
+  excs <- subset(excs, select = -c(date))
+  excs <- merge(excs, df_placeholder, all=TRUE)
+
+  # Build plot
+  plt <- ggplot(excs, aes_string(x = 'date')) +
+    labs(x='', y='',
+         title=paste(''),
+         subtitle = '',
+         caption = '') +
+
+    theme_minimal() +
+    geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='status'), color='white') +
+    scale_y_discrete(limits = rev(unique(sort(excs$city)))) +
+    scale_fill_distiller(palette = "Spectral", na.value = 'white', limits = c(0,100))
+
+
+  if(separate_polls){
+      plt <- plt + facet_wrap('poll', scales = "free")
+  }
 
   return(plt)
 }
