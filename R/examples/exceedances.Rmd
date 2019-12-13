@@ -10,9 +10,19 @@ library(creadb)
 ```
 
 ```{r}
-exc_india <- creadb::exceedances(country=c('IN'))
-exc_india
+exc_cities<- creadb::exceedances(country=c('IN'), city=c('Delhi', 'Jaipur', 'Mumbai', 'Hyderabad'))
+exc_cities
 ```
 ```{r}
-plot_exceedances(exc_india, average_by='week')
+plot_exceedances(exc_cities, average_by='week')
+```
+Plot only the daily standards
+```{r}
+plot_exceedances(exc_cities[exc_cities$aggregation_period=='day',], average_by='week')
+```
+
+Plot only the year-based standards: in that case, the red indication mentions the day we know standard is going to bee breached this year, no mater how clean the air will be from then till the end of the year.
+
+```{r}
+plot_exceedances(exc_cities[exc_cities$aggregation_period=='year',], average_by='week')
 ```

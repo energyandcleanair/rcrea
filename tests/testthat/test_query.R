@@ -53,6 +53,32 @@ test_that("query return measurements", {
 
 })
 
+test_that("query return standard exceedances", {
+
+  browser() # For debug
+
+  # Filtering
+  exc_unknown <- exceedances(city='XXX')
+  expect_equal(nrow(exc_unknown), 0)
+
+  exc_delhi <- exceedances(city='Delhi')
+  expect_gt(nrow(exc_delhi), 0)
+  expect_equal(tolower(unique(exc_delhi$city)), 'delhi')
+  expect_gt(length(unique(exc_delhi$location)), 0)
+  expect_gt(length(unique(exc_delhi$poll)), 0)
+
+  exc_delhi_lower <- exceedances(city='delhi')
+  expect_equal(nrow(exc_delhi_lower), nrow(exc_delhi))
+
+  exc_delhi_jaipur <- exceedances(city=c('Delhi','Jaipur'))
+  expect_gt(nrow(exc_delhi_jaipur), nrow(exc_delhi))
+
+  exc_delhi_china <- exceedances(country='CN', city='Delhi')
+  expect_equal(nrow(exc_delhi_china), 0)
+
+
+})
+
 test_that("Measurements are correct", {
 
   meas_sirifort <- measurements(location='Sirifort, Delhi - CPCB',average_by='year')

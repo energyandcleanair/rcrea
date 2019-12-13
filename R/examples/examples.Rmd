@@ -20,14 +20,25 @@ library(zoo)
 
 Getting data for Delhi and Mumbai. By default, data is averaged by day.
 ```{r}
-meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai'), date_from='2015-01-01')
+meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'), date_from='2015-01-01')
 meas_cities
 ```
 
+Let's first see how many measurements we have, and whether there are holes in time.
+```{r}
+creadb::plot_measurements_count(meas_cities)
+```
+Black regions correspond to periods of time without any measurement in this city. Either data is not available or scraping has missed some values.
+
+There are too many locations in Delhi to show in this notebook. We remove Delhi from the demo dataset.
+```{r}
+meas_cities <- meas_cities[meas_cities$city != 'Delhi', ]
+```
 Plotting time series of PM 2.5 per location.
 
 Using location_id...
 ```{r}
+
 creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location_id')
 ```
 ... or location name
