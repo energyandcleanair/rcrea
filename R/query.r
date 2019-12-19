@@ -6,7 +6,8 @@ filter_sanity <- function(result){
   result <- result %>% filter(avg_day > 0) %>%
             filter(!is.na(location_id)) %>%
             filter(!is.na(date)) %>%
-            filter(!is.na(pollutant))
+            filter(!is.na(pollutant))  %>%
+            filter(avg_day < 2000 | pollutant==CO)
   # result <- result %>% filter(parameter != 'o3' || value > -9999)
   return(result)
 }
@@ -19,7 +20,7 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
 
   # Connecting
   con = connection()
-  result <- pgGetGeom(con, name=c("public","locations"), geom = "geometry")
+  result <- rpostgis::pgGetGeom(con, name=c("public","locations"), geom = "geometry")
   result <- sf::st_as_sf(result)
   # result <- dplyr::tbl(con, "locations") # Old version without explicit geomoetry column
 
@@ -53,7 +54,8 @@ measurements <- function(country=NULL,
                          date_from='2018-01-01',
                          average_by='day',
                          collect=TRUE,
-                         with_metadata=FALSE) {
+                         with_metadata=FALSE,
+                         user_filter=NULL) {
 
   # Variable names must be different to column names
   country_ <- country
@@ -115,6 +117,10 @@ measurements <- function(country=NULL,
 
   result <- filter_sanity(result)
 
+  if(!is.null(user_filter)){
+    result <- user_filter(result)
+  }
+
   # R package will use 'poll' instead of 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)
 
@@ -122,9 +128,9 @@ measurements <- function(country=NULL,
   # measurements_daily is already aggregated by day, so we only aggregate further if <> 'day'
   if(average_by != 'day'){
     result <- result %>% group_by(city, location, location_id, date=DATE_TRUNC(average_by, date), poll) %>%
-                      summarize(value=avg(avg_day)) %>% ungroup()
+                dplyr::summarize(value=avg(avg_day)) %>% ungroup()
   }else{
-    result <- result %>% mutate(value=avg_day)
+    result <- result %>% dplyr::mutate(value=avg_day)
   }
 
   # Whether to collect the query i.e. actually run the query
@@ -200,7 +206,7 @@ exceedances <- function(country=NULL,
 
 
   # Cast integer64 to integer. Prevents issues later on
-  result <- result %>% mutate_if(bit64::is.integer64, as.integer)
+  result <- result %>% dplyr::mutate_if(bit64::is.integer64, as.integer)
 
   # R package will use 'poll' instead of 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)

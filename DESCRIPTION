@@ -9,6 +9,7 @@ License: TBC
 Encoding: UTF-8
 LazyData: true
 Imports:
+    RPostgreSQL,
     rpostgis,
     dplyr,
     dbplyr,

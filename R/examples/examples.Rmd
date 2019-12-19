@@ -17,11 +17,22 @@ library(dplyr)
 library(ggplot2)
 library(zoo)
 ```
+## Locations
+```{r}
+locs <- creadb::locations()
+ggplot(data = locs) + geom_sf()
+```
 ## Measurements
 ### Downloading measurements
 Getting data for Delhi and Mumbai. By default, data is averaged by day.
 ```{r}
 meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'), date_from='2015-01-01')
+meas_cities
+```
+Filtering values above a certain threshold
+```{r}
+meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'), date_from='2015-01-01',
+                            user_filter=function(x){x %>% filter(avg_day<=1000 | pollutant==CO)})
 meas_cities
 ```
 
@@ -82,6 +93,11 @@ Evolution over years of monthly data
 creadb::plot_measurements(meas_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
 ```
 
+Doing the same with all cities for PM10
+```{r}
+meas_month_all_cities <- creadb::measurements(country='IN', average_by='month', date_from='2014-01-01', poll=PM25)
+creadb::plot_measurements(meas_month_all_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
+```
 Heatmap per location with monthly data
 ```{r}
 creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='heatmap', average_by='month')
@@ -104,29 +120,29 @@ exc_cities
 Plot all
 
 ```{r}
-plot_exceedances(exc_cities, average_by='week')
+creadb::plot_exceedances(exc_cities, average_by='week')
 ```
 
 Plot only exceedances of 8-hour standards
 ```{r}
-plot_exceedances(exc_cities[exc_cities$aggregation_period=='8-hour',], average_by='week')
+creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='8-hour',], average_by='week')
 ```
 
 Plot only exceedances of daily standards
 ```{r}
-plot_exceedances(exc_cities[exc_cities$aggregation_period=='day',], average_by='week')
+creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='day',], average_by='week')
 ```
 
 Plot only the year-based standards: in that case, the red indication mentions the day we know standard is going to bee breached this year, no mater how clean the air will be from then till the end of the year.
 
 ```{r}
-plot_exceedances(exc_cities[exc_cities$aggregation_period=='year',], average_by='week')
+creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='year',], average_by='week')
 ```
 Plot only exceedances of EU standards
 ```{r}
-plot_exceedances(exc_cities[exc_cities$standard_org=='EU',], average_by='week')
+creadb::plot_exceedances(exc_cities[exc_cities$standard_org=='EU',], average_by='week')
 ```
 Plot only exceedances happening last week
 ```{r}
-plot_exceedances(exc_cities[exc_cities$date >= Sys.Date()-7 , ], average_by='day')
+creadb::plot_exceedances(exc_cities[exc_cities$date >= Sys.Date()-7 , ], average_by='day')
 ```

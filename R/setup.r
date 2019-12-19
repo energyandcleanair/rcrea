@@ -1,4 +1,4 @@
-library(rpostgis)
+library(RPostgreSQL)
 library(sp)
 library(rgdal)
 library(DBI)
@@ -52,7 +52,7 @@ connection <- function(reconnect=FALSE) {
 
   if(is.null(pkg.globals$CON)){
 
-    pkg.globals$CON <- DBI::dbConnect("PostgreSQL", dbname = CONN_DBNAME,
+    pkg.globals$CON <- DBI::dbConnect(RPostgreSQL::PostgreSQL(), dbname = CONN_DBNAME,
                         host = CONN_HOST,
                         port = strtoi(CONN_PORT),
                         user = CONN_USER,

@@ -16,7 +16,7 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
   # Take mean over relevant grouping (at least city, date and pollutant)
   group_by_cols <- union(c('city', 'poll'), union(color_by, subplot_by))
   meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
-  meas <- meas %>% group_by_at(union(group_by_cols, 'date'))  %>% summarise(value = n())
+  meas <- meas %>% group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = n())
 
   # Make date axis homogeneous i.e. a row for every day / month / year
   # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
@@ -31,9 +31,9 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
 
   # Apply running average if need be
   if(is.null(running_days)){
-    meas <- arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
+    meas <- dplyr::arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
   }else{
-    meas <- meas %>% arrange(date) %>% group_by_at(group_by_cols)  %>%
+    meas <- meas %>% dplyr::arrange(date) %>% group_by_at(group_by_cols)  %>%
       dplyr::mutate(value_plot=rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
 
@@ -63,11 +63,7 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
     }
   }
 
-
-
   return(plt)
-
-
 }
 
 plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='ts'){
@@ -138,7 +134,7 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
 
 
   if(!is.null(subplot_by) && (type=='ts')){
-    plt <- plt + facet_wrap(subplot_by, scales = "free")
+    plt <- plt + facet_wrap(subplot_by, scales = ifelse(subplot_by=='city','fixed','free_y'))
 
     if(is.null(color_by) || (color_by==subplot_by)){
       plt <- plt + theme(legend.position = "none")
@@ -169,7 +165,7 @@ plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city'
   # Take mean over relevant grouping (at least city, date and pollutant)
   group_by_cols <- union(c('city', 'poll'), subplot_by)
   excs <- dplyr::mutate(excs, date=lubridate::floor_date(date, average_by))
-  excs <- excs %>% group_by_at(union(group_by_cols, 'date'))  %>% summarise(value = n(), status=max(status))
+  excs <- excs %>% group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = n(), status=max(status))
 
   # Make date axis homogeneous i.e. a row for every day / month / year
   # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
