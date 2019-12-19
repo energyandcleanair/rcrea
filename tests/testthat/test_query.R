@@ -43,6 +43,10 @@ test_that("query return measurements", {
   expect_equal(nrow(meas_delhi_china), 0)
 
   # Time aggregation
+  meas_delhi_day <- measurements(city='Delhi', average_by='day')
+  expect_equal(length(unique(day(meas_delhi_day$date))), 31)
+  expect_equal(length(unique(month(meas_delhi_day$date))), 12)
+
   meas_delhi_month <- measurements(city='Delhi', average_by='month')
   expect_equal(unique(day(meas_delhi_month$date)), 1)
   expect_equal(length(unique(month(meas_delhi_month$date))), 12)

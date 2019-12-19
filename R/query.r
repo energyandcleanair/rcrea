@@ -1,8 +1,5 @@
 source('R/setup.r')
 
-library(dbplyr)
-library(dplyr)
-
 
 filter_sanity <- function(result){
   # Filters out measurements that are obviously wrong
@@ -22,7 +19,9 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
 
   # Connecting
   con = connection()
-  result <- dplyr::tbl(con, "locations")
+  result <- pgGetGeom(con, name=c("public","locations"), geom = "geometry")
+  result <- st_as_sf(result)
+  # result <- dplyr::tbl(con, "locations") # Old version without explicit geomoetry column
 
   # Apply filters
   result <- switch(toString(length(country_)),
@@ -117,7 +116,7 @@ measurements <- function(country=NULL,
   result <- filter_sanity(result)
 
   # R package will use 'poll' instead of 'pollutant'
-  result <- result %>% rename(poll = pollutant)
+  result <- result %>% dplyr::rename(poll = pollutant)
 
   # Apply time and location aggregation
   # measurements_daily is already aggregated by day, so we only aggregate further if <> 'day'
@@ -204,7 +203,7 @@ exceedances <- function(country=NULL,
   result <- result %>% mutate_if(bit64::is.integer64, as.integer)
 
   # R package will use 'poll' instead of 'pollutant'
-  result <- result %>% rename(poll = pollutant)
+  result <- result %>% dplyr::rename(poll = pollutant)
 
   # Whether to collect the query i.e. actually run the query
   if(collect){

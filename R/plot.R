@@ -1,5 +1,3 @@
-require("ggplot2")
-
 library(ggplot2)
 library(zoo)
 
@@ -51,7 +49,7 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
                 "ts" = plt + geom_line(aes_string(color = color_by), size = 0.8) +
                   ylim(0, NA),
                 "heatmap" = plt +
-                  geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='ifelse(value_plot==0, NA, value_plot)'), color='red') +
+                  geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='ifelse(value_plot==0, NA, value_plot)')) +
                   scale_x_datetime(date_breaks = "3 month", expand=c(0,0)) +
                   scale_fill_distiller(palette = "Spectral", na.value = 'black')
   )

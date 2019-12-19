@@ -1,8 +1,6 @@
-require("RPostgres")
-require("purrr")
-require("dplyr")
-require("dbplyr")
-
+library(rpostgis)
+library(sp)
+library(rgdal)
 library(DBI)
 library(purrr)
 library(dplyr)
@@ -16,6 +14,12 @@ O3 = "o3"
 PM10 = "pm10"
 SO2 = "so2"
 
+# Constants for connection
+CONN_HOST = '34.77.246.210'
+CONN_DBNAME = 'production'
+CONN_USER = 'readonly'
+CONN_PASSWORD = '2hNETPw5'
+CONN_PORT = '5432'
 
 pkg.globals <- new.env()
 pkg.globals$CON <- NULL
@@ -32,6 +36,11 @@ poll_str <- function(poll){
   ))
 }
 
+connection_str <- function(){
+  return(sprintf("PG:dbname='%s' host='%s' port='%s' user='%s' password='%s'",
+                 CONN_DBNAME, CONN_HOST, CONN_PORT, CONN_USER, CONN_PASSWORD))
+}
+
 connection <- function(reconnect=FALSE) {
   # Connect to a specific postgres database i.e. Heroku
   if(reconnect && !is.null(pkg.globals$CON)){
@@ -43,11 +52,11 @@ connection <- function(reconnect=FALSE) {
 
   if(is.null(pkg.globals$CON)){
 
-    pkg.globals$CON <- DBI::dbConnect(RPostgres::Postgres(), dbname = 'production',
-                        host = '34.77.246.210',
-                        port = 5432, # or any other port specified by your DBA
-                        user = 'readonly',
-                        password = '2hNETPw5')
+    pkg.globals$CON <- DBI::dbConnect("PostgreSQL", dbname = CONN_DBNAME,
+                        host = CONN_HOST,
+                        port = strtoi(CONN_PORT),
+                        user = CONN_USER,
+                        password = CONN_PASSWORD)
   }
 
   return(pkg.globals$CON)

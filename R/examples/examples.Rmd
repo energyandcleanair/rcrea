@@ -3,21 +3,22 @@ title: "Demonstration of CREA R package (WIP)"
 output: html_notebook
 ---
 
-Installing package
+## Installing package
 
-```{r}
+```{r results="hide"}
 install.packages('devtools')
 library(devtools)
 url <- "https://gitlab.com/creaaq/crea_r_package"
 devtools::install_git(url = url)
 ```
-```{r}
+```{r results="hide"}
 library(creadb)
 library(dplyr)
 library(ggplot2)
 library(zoo)
 ```
-
+## Measurements
+### Downloading measurements
 Getting data for Delhi and Mumbai. By default, data is averaged by day.
 ```{r}
 meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'), date_from='2015-01-01')
@@ -34,6 +35,7 @@ There are too many locations in Delhi to show in this notebook. We remove Delhi 
 ```{r}
 meas_cities <- meas_cities[meas_cities$city != 'Delhi', ]
 ```
+### Plotting measurements
 Plotting time series of PM 2.5 per location.
 
 Using location_id...
@@ -83,4 +85,43 @@ creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='h
 Heatmap per city weekly values
 ```{r}
 creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='city', type='heatmap', average_by='month')
+```
+
+## Standard exceedances
+
+### Downloading standard exceedances
+```{r}
+exc_cities<- creadb::exceedances(country=c('IN'), city=c('Delhi', 'Jaipur', 'Mumbai', 'Hyderabad'))
+exc_cities
+```
+
+### Plotting standard exceedances
+Plot all
+
+```{r}
+plot_exceedances(exc_cities, average_by='week')
+```
+
+Plot only exceedances of 8-hour standards
+```{r}
+plot_exceedances(exc_cities[exc_cities$aggregation_period=='8-hour',], average_by='week')
+```
+
+Plot only exceedances of daily standards
+```{r}
+plot_exceedances(exc_cities[exc_cities$aggregation_period=='day',], average_by='week')
+```
+
+Plot only the year-based standards: in that case, the red indication mentions the day we know standard is going to bee breached this year, no mater how clean the air will be from then till the end of the year.
+
+```{r}
+plot_exceedances(exc_cities[exc_cities$aggregation_period=='year',], average_by='week')
+```
+Plot only exceedances of EU standards
+```{r}
+plot_exceedances(exc_cities[exc_cities$standard_org=='EU',], average_by='week')
+```
+Plot only exceedances happening last week
+```{r}
+plot_exceedances(exc_cities[exc_cities$date >= Sys.Date()-7 , ], average_by='day')
 ```
