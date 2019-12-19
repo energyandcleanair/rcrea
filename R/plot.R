@@ -15,7 +15,7 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
 
   # Take mean over relevant grouping (at least city, date and pollutant)
   group_by_cols <- union(c('city', 'poll'), union(color_by, subplot_by))
-  meas <- mutate(meas, date=lubridate::floor_date(date, average_by))
+  meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
   meas <- meas %>% group_by_at(union(group_by_cols, 'date'))  %>% summarise(value = n())
 
   # Make date axis homogeneous i.e. a row for every day / month / year
@@ -31,10 +31,10 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
 
   # Apply running average if need be
   if(is.null(running_days)){
-    meas <- arrange(meas, date)  %>% mutate(value_plot=value)
+    meas <- arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
   }else{
     meas <- meas %>% arrange(date) %>% group_by_at(group_by_cols)  %>%
-      mutate(value_plot=rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
+      dplyr::mutate(value_plot=rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
 
   # Build plot
@@ -87,9 +87,9 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
   }
 
   # Take mean over relevant grouping (at least city, date and pollutant)
-  group_by_cols <- union(c('city', 'poll'), union(color_by, subplot_by))
-  meas <- mutate(meas, date=lubridate::floor_date(date, average_by))
-  meas <- meas %>% group_by_at(union(group_by_cols, 'date'))  %>% summarise(value = mean(value))
+  group_by_cols <- union(c('city', 'poll'), union(setdiff(color_by,c("year")), setdiff(subplot_by,c("year"))))
+  meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
+  meas <- meas %>% dplyr::group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = mean(value))
 
   # Make date axis homogeneous i.e. a row for every day / month / year
   # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
@@ -104,10 +104,16 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
 
   # Apply running average if need be
   if(is.null(running_days)){
-    meas <- arrange(meas, date)  %>% mutate(value_plot=value)
+    meas <- dplyr::arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
   }else{
-    meas <- meas %>% arrange(date) %>% group_by_at(group_by_cols)  %>%
-            mutate(value_plot=rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
+    meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
+      dplyr::mutate(value_plot=rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
+  }
+
+  # Remove year for time series to overlap
+  if('year' %in% color_by){
+    meas <- meas %>% dplyr::mutate(year=factor(lubridate::year(date)))
+    lubridate::year(meas$date) <- 0
   }
 
   # Build plot
@@ -125,6 +131,10 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
                     geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot'), color='white') +
                     scale_y_discrete() + scale_fill_distiller(palette = "Spectral", na.value = 'white')
          )
+
+  if('year' %in% color_by){
+    plt <- plt + scale_x_datetime(date_labels = "%b")
+  }
 
 
   if(!is.null(subplot_by) && (type=='ts')){
@@ -150,7 +160,7 @@ plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city'
   }
 
   # Add status: 0: no violation, 100: violation reached threshold
-  excs <- mutate(excs, status= ifelse(exceedance_allowed_per_year==0,
+  excs <- dplyr::mutate(excs, status= ifelse(exceedance_allowed_per_year==0,
                                       pmin(exceedance_this_year*100, 100),
                                       pmin(exceedance_this_year/exceedance_allowed_per_year*100, 100)
                                       ))
@@ -158,7 +168,7 @@ plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city'
 
   # Take mean over relevant grouping (at least city, date and pollutant)
   group_by_cols <- union(c('city', 'poll'), subplot_by)
-  excs <- mutate(excs, date=lubridate::floor_date(date, average_by))
+  excs <- dplyr::mutate(excs, date=lubridate::floor_date(date, average_by))
   excs <- excs %>% group_by_at(union(group_by_cols, 'date'))  %>% summarise(value = n(), status=max(status))
 
   # Make date axis homogeneous i.e. a row for every day / month / year

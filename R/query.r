@@ -20,7 +20,7 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
   # Connecting
   con = connection()
   result <- pgGetGeom(con, name=c("public","locations"), geom = "geometry")
-  result <- st_as_sf(result)
+  result <- sf::st_as_sf(result)
   # result <- dplyr::tbl(con, "locations") # Old version without explicit geomoetry column
 
   # Apply filters

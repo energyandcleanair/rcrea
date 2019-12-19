@@ -31,4 +31,7 @@ test_that("plots do not trigger errors", {
   # Heatmap per city weekly values
   expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=PM25, subplot_by='city', type='heatmap'), NA)
 
+  # Evolution over years
+  expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=PM25, color_by='year', subplot_by='city', average_by='month'), NA)
+
 })

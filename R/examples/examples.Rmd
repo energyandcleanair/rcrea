@@ -77,6 +77,11 @@ Yearly average
 creadb::plot_measurements(meas_cities, poll=creadb::PM25, average_by='year', subplot_by='city')
 ```
 
+Evolution over years of monthly data
+```{r}
+creadb::plot_measurements(meas_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
+```
+
 Heatmap per location with monthly data
 ```{r}
 creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='heatmap', average_by='month')
