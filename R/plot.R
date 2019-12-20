@@ -14,20 +14,19 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
   }
 
   # Take mean over relevant grouping (at least city, date and pollutant)
-  group_by_cols <- union(c('city', 'poll'), union(color_by, subplot_by))
+  group_by_cols <- union(c('city'), union(color_by, subplot_by))
   meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
   meas <- meas %>% group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = n())
 
   # Make date axis homogeneous i.e. a row for every day / month / year
   # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
-  dates <- seq(min(meas$date), max(meas$date), by=paste(average_by))
+  dates <- seq(min(lubridate::date(meas$date)), max(lubridate::date(meas$date)), by=paste(average_by))
+  meas$date <- lubridate::date(meas$date)
   group_by_uniques <- unique(meas[,group_by_cols])
   df_placeholder <- merge(group_by_uniques, data.frame(date=dates), by=NULL)
-  df_placeholder <- transform(df_placeholder, date_str=format(date, "%Y-%m-%d"))
-
-  meas <- transform(meas, date_str=format(date, "%Y-%m-%d"))
-  meas <- subset(meas, select = -c(date))
   meas <- merge(meas, df_placeholder, all=TRUE)
+
+  meas$value[is.na(meas$value)] <- 0
 
   # Apply running average if need be
   if(is.null(running_days)){
@@ -50,7 +49,7 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
                   ylim(0, NA),
                 "heatmap" = plt +
                   geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='ifelse(value_plot==0, NA, value_plot)')) +
-                  scale_x_datetime(date_breaks = "3 month", expand=c(0,0)) +
+                  scale_x_date(date_breaks = "3 month", expand=c(0,0)) +
                   scale_fill_distiller(palette = "Spectral", na.value = 'black')
   )
 
