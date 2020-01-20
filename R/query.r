@@ -1,13 +1,24 @@
 source('R/setup.r')
 
 
-filter_sanity <- function(result){
+filter_sanity_daily <- function(result){
   # Filters out measurements that are obviously wrong
   result <- result %>% filter(avg_day > 0) %>%
             filter(!is.na(location_id)) %>%
             filter(!is.na(date)) %>%
             filter(!is.na(pollutant))  %>%
             filter(avg_day < 2000 | pollutant==CO)
+  # result <- result %>% filter(parameter != 'o3' || value > -9999)
+  return(result)
+}
+
+filter_sanity_raw <- function(result){
+  # Filters out measurements that are obviously wrong
+  result <- result %>% filter(value > 0) %>%
+    filter(!is.na(location_id)) %>%
+    filter(!is.na(date)) %>%
+    filter(!is.na(pollutant))  %>%
+    filter(value < 2000 | pollutant==CO)
   # result <- result %>% filter(parameter != 'o3' || value > -9999)
   return(result)
 }
@@ -47,6 +58,26 @@ locations <- function(country=NULL, city=NULL, collect=TRUE){
 }
 
 
+#' Query Measurements
+#'
+#' @param country ISO2 code of the country of interest [optional]
+#' @param city City as indicated in OpenAQ location
+#' @param location_id Identifier of the air quality measurement station (referring to \code{id} in \code{\link{stations}})
+#' @param poll Pollutant name (e.g. creadb::CO, "co", creadb::PM25, "pm25")
+#' @param date_from Beginning date of queried measurements ('yyyy-mm-dd')
+#' @param date_to End date of queried measurements ('yyyy-mm-dd')
+#' @param average_by How to time-average results e.g. 'day', 'week', 'month' or 'year' ('hour' not available yet)
+#' @param collect T/F Whether to collect results into local tibble (see \code{\link{dbplyr::collect}})
+#' @param with_metadata T/F Whether to attach information about the station (e.g. geometry, country, other names)
+#' @param user_filter Additional filtering function for measurements applied before time aggregation
+#' (although the most time-granular observation is already a daily-average calculated after scraping)
+#'
+#' @return a tibble (locally collected or not) of measurements matching search criteria.
+#' @export
+#'
+#' @examples
+#' meas_bj <- creadb::measurements(city=c('Beijing'), date_from='2018-01-01',average_by='month',with_metadata=T)
+#'
 measurements <- function(country=NULL,
                          city=NULL,
                          location_id=NULL,
@@ -67,7 +98,9 @@ measurements <- function(country=NULL,
   # Connecting
   con = connection()
 
-  query_initial = "measurements_daily"
+  query_initial = switch(average_by,
+                         "hour" = "measurements",
+                         "measurements_daily")
 
   tryCatch({
     result <- dplyr::tbl(con, query_initial)
@@ -104,7 +137,6 @@ measurements <- function(country=NULL,
                    result %>% filter(location_id %in% location_id_) # Vector
   )
 
-
   result <- switch(toString(length(date_from)),
                    "0" = result, # NULL
                    "1" = result %>% filter(date >= date_from)
@@ -115,8 +147,10 @@ measurements <- function(country=NULL,
                    "1" = result %>% filter(date <= date_to)
   )
 
-
-  result <- filter_sanity(result)
+  result <- switch(average_by,
+                   "hour" = filter_sanity_raw(result),
+                   filter_sanity_daily(result)
+  )
 
   if(!is.null(user_filter)){
     result <- user_filter(result)
@@ -127,11 +161,15 @@ measurements <- function(country=NULL,
 
   # Apply time aggregation
   # measurements_daily is already aggregated by day, so we only aggregate further if <> 'day'
-  if(average_by != 'day'){
+  if(average_by == 'hour'){
     result <- result %>% group_by(city, location, location_id, date=DATE_TRUNC(average_by, date), poll) %>%
-                dplyr::summarize(value=avg(avg_day)) %>% ungroup()
+      dplyr::summarize(value=avg(value)) %>% ungroup()
+  }else if(average_by == 'day'){
+    result <- result %>% dplyr::mutate(value=avg_day) %>%
+                    select(-c(id)) # To mimic aggregation so that columns are more or less similar
   }else{
-    result <- result %>% dplyr::mutate(value=avg_day)
+    result <- result %>% group_by(city, location, location_id, date=DATE_TRUNC(average_by, date), poll) %>%
+      dplyr::summarize(value=avg(avg_day)) %>% ungroup()
   }
 
   # Add metadata
@@ -227,11 +265,17 @@ exceedances <- function(country=NULL,
 
 join_noaa_observations <- function(meas, measurements_averaged_by='day', collect=T, radius_km=20){
 
+  # Check measurements have been fetched with metadata
+  if(!"geometry" %in% colnames(meas)){
+    stop("Station geometry missing. Please query measurements with the option 'with_metadata=T'")
+  }
+
   # Joining noaa stations
   result <- meas %>% dplyr::left_join(dplyr::tbl(connection(),"noaa_ids_stations"),
                                suffix=c("", "_noaa_ids_stations"),
                                sql_on= sprintf("(st_dwithin(\"LHS\".geometry::geography, \"RHS\".geometry::geography, %f))",radius_km*1000.0)
-                               )
+                               ) %>%
+          rename(id_noaa_ids_stations=id)
 
   # Average noaa observatinos accordingly
   obs_averaged  <- dplyr::tbl(connection(),"noaa_ids_observations") %>%
@@ -243,13 +287,14 @@ join_noaa_observations <- function(meas, measurements_averaged_by='day', collect
                      wind_ms=mean(wind_ms, na.rm=T),
                      sky_code=max(sky_code, na.rm=T),
                      prec_1h_mm=max(prec_1h_mm, na.rm=T),
-                     prec_6h_mm=max(prec_6h_mm, na.rm=T)
+                     prec_6h_mm=max(prec_6h_mm, na.rm=T),
+                     rh_percent=mean(rh_percent, na.rm=T),
                      ) %>%
     ungroup()
 
   # Joining noaa observationos
   result <- result %>% dplyr::left_join(obs_averaged,
-                                        sql_on= "(\"LHS\".id_noaa_ids_stations=\"RHS\".station_id) AND (\"LHS\".date=date_trunc('day',\"RHS\".date))"
+                                        sql_on= "(\"LHS\".id_noaa_ids_stations=\"RHS\".station_id) AND (\"LHS\".date=\"RHS\".date)"
                                         )
 
   # Whether to collect the query i.e. actually run the query
