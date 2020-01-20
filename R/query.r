@@ -52,6 +52,7 @@ measurements <- function(country=NULL,
                          location_id=NULL,
                          poll=NULL,
                          date_from='2018-01-01',
+                         date_to=NULL,
                          average_by='day',
                          collect=TRUE,
                          with_metadata=FALSE,
@@ -66,12 +67,7 @@ measurements <- function(country=NULL,
   # Connecting
   con = connection()
 
-  query_initial = ifelse(with_metadata,
-                         dbplyr::sql("SELECT * FROM measurements_daily
-                          LEFT JOIN (SELECT id as id_location, name, names, city, cities, country FROM locations) as locations
-                          ON ARRAY[measurements_daily] <@ (locations.names)"),
-                         "measurements_daily")
-
+  query_initial = "measurements_daily"
 
   tryCatch({
     result <- dplyr::tbl(con, query_initial)
@@ -114,6 +110,11 @@ measurements <- function(country=NULL,
                    "1" = result %>% filter(date >= date_from)
   )
 
+  result <- switch(toString(length(date_to)),
+                   "0" = result, # NULL
+                   "1" = result %>% filter(date <= date_to)
+  )
+
 
   result <- filter_sanity(result)
 
@@ -124,7 +125,7 @@ measurements <- function(country=NULL,
   # R package will use 'poll' instead of 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)
 
-  # Apply time and location aggregation
+  # Apply time aggregation
   # measurements_daily is already aggregated by day, so we only aggregate further if <> 'day'
   if(average_by != 'day'){
     result <- result %>% group_by(city, location, location_id, date=DATE_TRUNC(average_by, date), poll) %>%
@@ -133,6 +134,12 @@ measurements <- function(country=NULL,
     result <- result %>% dplyr::mutate(value=avg_day)
   }
 
+  # Add metadata
+  if(with_metadata){
+    result <- result %>% dplyr::left_join(dplyr::tbl(con, "locations"), by=c("location_id"="id"))
+  }
+
+
   # Whether to collect the query i.e. actually run the query
   if(collect){
     result <- result %>% collect()
@@ -140,8 +147,6 @@ measurements <- function(country=NULL,
 
   return(result)
 }
-
-
 
 
 exceedances <- function(country=NULL,
@@ -217,4 +222,38 @@ exceedances <- function(country=NULL,
   }
 
   return(result)
+}
+
+
+join_noaa_observations <- function(meas, measurements_averaged_by='day', collect=T, radius_km=20){
+
+  # Joining noaa stations
+  result <- meas %>% dplyr::left_join(dplyr::tbl(connection(),"noaa_ids_stations"),
+                               suffix=c("", "_noaa_ids_stations"),
+                               sql_on= sprintf("(st_dwithin(\"LHS\".geometry::geography, \"RHS\".geometry::geography, %f))",radius_km*1000.0)
+                               )
+
+  # Average noaa observatinos accordingly
+  obs_averaged  <- dplyr::tbl(connection(),"noaa_ids_observations") %>%
+    dplyr::mutate(date=DATE_TRUNC(measurements_averaged_by, date)) %>%
+    dplyr::group_by(station_id, date) %>%
+    dplyr::summarize(temp_c=mean(temp_c, na.rm=T),
+                     slp_hp=mean(slp_hp, na.rm=T),
+                     wind_deg=mean(wind_deg, na.rm=T),
+                     wind_ms=mean(wind_ms, na.rm=T),
+                     sky_code=max(sky_code, na.rm=T),
+                     prec_1h_mm=max(prec_1h_mm, na.rm=T),
+                     prec_6h_mm=max(prec_6h_mm, na.rm=T)
+                     ) %>%
+    ungroup()
+
+  # Joining noaa observationos
+  result <- result %>% dplyr::left_join(obs_averaged,
+                                        sql_on= "(\"LHS\".id_noaa_ids_stations=\"RHS\".station_id) AND (\"LHS\".date=date_trunc('day',\"RHS\".date))"
+                                        )
+
+  # Whether to collect the query i.e. actually run the query
+  if(collect){
+    result <- result %>% collect()
+  }
 }
