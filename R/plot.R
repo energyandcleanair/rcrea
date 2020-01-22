@@ -33,11 +33,11 @@ plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by=
     meas <- dplyr::arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
   }else{
     meas <- meas %>% dplyr::arrange(date) %>% group_by_at(group_by_cols)  %>%
-      dplyr::mutate(value_plot=rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
+      dplyr::mutate(value_plot=zoo::rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
 
   # Build plot
-  plt <- ggplot(meas, aes_string(x = 'date', y = 'value_plot', color = color_by)) +
+  plt <- ggplot2::ggplot(meas, aes_string(x = 'date', y = 'value_plot', color = color_by)) +
     labs(x='', y=paste('Number of measurements [/',average_by,']',sep=''),
          title=paste(''),
          subtitle = '',
@@ -102,7 +102,7 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
     meas <- dplyr::arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
   }else{
     meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
-      dplyr::mutate(value_plot=rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
+      dplyr::mutate(value_plot=zoo::rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
 
   # Remove year for time series to overlap
@@ -112,7 +112,7 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
   }
 
   # Build plot
-  plt <- ggplot(meas, aes_string(x = 'date', y = 'value_plot', color = color_by)) +
+  plt <- ggplot2::ggplot(meas, aes_string(x = 'date', y = 'value_plot', color = color_by)) +
     labs(x='', y=expression('concentration [' * mu * 'g/m'^3*']'),
          title=paste(''),
          subtitle = '',
@@ -178,7 +178,7 @@ plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city'
   excs <- merge(excs, df_placeholder, all=TRUE)
 
   # Build plot
-  plt <- ggplot(excs, aes_string(x = 'date')) +
+  plt <- ggplot2::ggplot(excs, aes_string(x = 'date')) +
     labs(x='', y='',
          title=paste(''),
          subtitle = '',

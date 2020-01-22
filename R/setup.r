@@ -5,6 +5,7 @@ library(DBI)
 library(purrr)
 library(dplyr)
 library(dbplyr)
+library(ggplot2)
 
 # Constants for user
 CO = "co"

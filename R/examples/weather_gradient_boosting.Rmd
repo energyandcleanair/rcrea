@@ -1,0 +1,150 @@
+---
+title: "Weather Gradient Boosting"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+```{r message=FALSE, warning=FALSE}
+library(creadb)
+library(ggplot2)
+library(dplyr)
+
+library(gbm)
+library(tidyr)
+library(lubridate)
+library(zoo)
+```
+
+Only need to edit these parameters.
+```{r}
+# Parameters
+city=c('Beijing','北京市')
+pollutant <- creadb::PM25
+
+# When to separate training data & prediction data
+training_prediction_cut <- lubridate::as_date("2017-10-01")
+
+# On what rolling average do we want to train the model
+training_average_by='hour'
+training_average_by_roll=3
+
+# On what rolling average do we want to plot results
+plotting_average_by='day'
+plotting_average_by_roll=30
+```
+
+```{r}
+# Variables
+weather_vars <- vars(temp_c, slp_hp, wind_deg, wind_ms, sky_code, prec_1h_mm, prec_6h_mm, rh_percent)
+id_vars <- vars(date)
+```
+
+```{r}
+# Get measurements
+meas <- creadb::measurements(city=city,
+                      date_from = '2015-01-01',
+                      collect=F, #to save time (only do collection at last step)
+                      poll=pollutant,
+                      average_by=training_average_by)
+
+# See how many air quality measurements we have per location and year
+meas %>% group_by(city, location_id) %>% tally()
+```
+We join weather observations from NOAA IDS dataset, that have been parsed and stored in CREA database. The function also aggregates everything by city (to avoid double counting measurements and very long dataframes).
+
+```{r}
+# Attach weather observations and aggregate by date
+meas_weather <- creadb::join_city_weather(meas,
+                             measurements_averaged_by=training_average_by,
+                             collect=T,
+                             radius_km=20) #weather stations within 20km of air quality stations
+meas_weather
+```
+
+```{r warning=FALSE}
+# Let's see the raw weather measurements we have on a random month (can be slow)
+weather.plot <- do.call(tidyr::gather, c(list(meas_weather), "indicator","value", weather_vars)) %>% drop_na(value)
+ggplot(weather.plot, aes(x=date, y=value)) +
+  geom_point() + facet_wrap(~indicator, scales="free_y") +
+  xlim(as.POSIXct("2019-08-01"), as.POSIXct("2019-08-31"))
+```
+
+Preparing training and prediction data.
+
+```{r}
+gbm.data.raw <- meas_weather
+
+# Make date axis homogeneous i.e. a row for every day / month / year
+dates <- seq(min(gbm.data.raw$date), max(gbm.data.raw$date), by=training_average_by)
+gbm.data.raw <- merge(gbm.data.raw, data.frame(date=dates), all=TRUE)
+#
+# Apply rolling mean for num (and most common element for other types e.g. sky_code)
+mean_fn <- function(x){
+  if(is.numeric(x)){
+    return(mean(x, na.rm = T))
+  }else{
+    return(names(sort(table(x), decreasing = T, na.last = T)[1]))
+  }
+}
+train_roll_fn <- function(var) rollapply(var, width=training_average_by_roll, FUN=mean_fn, align='right', fill=NA)
+gbm.data.rolled <- gbm.data.raw %>% arrange(date) %>%
+ mutate_at(weather_vars, train_roll_fn) %>%
+ mutate(value=train_roll_fn(value))
+
+# Remove rows with no weather observation
+gbm.data.rolled <-
+  gbm.data.rolled %>% filter_at(c(vars("value"), weather_vars), any_vars(!is.na(.)))
+
+# Separate in training and prediction data
+training_data <- gbm.data.rolled %>% filter(date < training_prediction_cut)
+predict_data <- gbm.data.rolled %>% filter(date >= training_prediction_cut)
+```
+
+
+```{r}
+gbm.fit <- gbm(
+  formula = value ~ temp_c + factor(wind_deg) + wind_ms + slp_hp + rh_percent + prec_6h_mm, #+ factor(sky_code),
+  data = training_data,
+  cv.folds = 5,
+  verbose = FALSE
+)
+summary(gbm.fit)
+```
+
+Plotting results:
+- 'measured': actual observations
+- 'fitted': values predicted by the model on training data
+- 'predicted': values predicted by the model after training (i.e. based on weather only)
+```{r warning=FALSE}
+roll_plot <- function(raw){
+  result <- raw %>% select(date,type,value) %>%
+  dplyr::mutate(date=lubridate::round_date(date, unit = plotting_average_by)) %>%
+  dplyr::group_by(date, type) %>%
+  dplyr::summarise(value=mean(value, na.rm = T)) %>% dplyr::ungroup() %>%
+  dplyr::arrange(date) %>% dplyr::group_by(type) %>%
+  dplyr::mutate(value=rollapply(value, width=plotting_average_by_roll,
+                                FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA)) %>%
+  dplyr::ungroup()
+
+  return(result)
+}
+
+measured_plot.raw <- gbm.data.rolled %>% select(date,value) %>%
+  mutate(measured=value) %>% tidyr::gather("type","value", measured)
+measured_plot.rolled <- measured_plot.raw %>% roll_plot()
+
+predict_data$predicted <- predict.gbm(gbm.fit, predict_data)
+predict_plot.raw <- predict_data %>% select(date, predicted) %>% tidyr::gather("type","value",predicted)
+predict_plot.rolled <- predict_plot.raw %>% roll_plot()
+
+training_data$fitted <- predict.gbm(gbm.fit, training_data)
+training_plot.raw <- training_data %>% select(date, fitted) %>% tidyr::gather("type", "value", fitted)
+training_plot.rolled <- training_plot.raw %>% roll_plot()
+
+ggplot(rbind(training_plot.rolled, predict_plot.rolled, measured_plot.rolled), aes(x=date)) +
+  geom_line(aes(y=value, colour=type)) +
+  geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", colour="blue") +
+  ggtitle(paste("Rolling ", plotting_average_by_roll,"-",plotting_average_by, " average of ", pollutant, " level in ",city))
+```
+

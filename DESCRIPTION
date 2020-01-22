@@ -13,10 +13,11 @@ Imports:
     rpostgis,
     dplyr,
     dbplyr,
-    ggplot2,
     sf,
     bit64,
     rgdal,
     zoo
+Depends:
+    ggplot2
 Suggests: 
     testthat (>= 2.1.0)

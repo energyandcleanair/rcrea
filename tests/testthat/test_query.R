@@ -27,7 +27,7 @@ test_that("query return measurements", {
   meas_unknown <- measurements(city='XXX')
   expect_equal(nrow(meas_unknown), 0)
 
-  meas_unkown <- measurements(user_filter=function(x){x %>% filter(avg_day<=1000 | pollutant==CO)})
+  meas_unkown <- measurements(user_filter=function(x){x %>% dplyr::filter(avg_day<=1000 | pollutant==CO)})
 
   meas_delhi <- measurements(city='Delhi')
   expect_gt(nrow(meas_delhi), 0)
