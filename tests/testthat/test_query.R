@@ -57,6 +57,22 @@ test_that("query return measurements", {
   expect_equal(unique(day(meas_delhi_year$date)), 1)
   expect_equal(unique(month(meas_delhi_year$date)), 1)
 
+  # Columns independent from aggregation
+  average_bys <- c("hour", "day", "week", "month", "year")
+  with_metadatas <- c(F,T)
+
+  for(with_metadata in with_metadatas){
+    lengths <- c()
+    for(average_by in average_bys){
+      lengths <- lengths %>% c(length(colnames(measurements(city='Delhi', average_by=average_by, with_metadata=with_metadata, collect=F))))
+    }
+    expect_equal(length(unique(lengths)), 1)
+  }
+
+  # Metadata reduction: check there are fewer columns without metadata
+  meas_light <- measurements(city='Delhi', average_by='year', with_metadata = F, collect=F)
+  meas_full <- measurements(city='Delhi', average_by='year', with_metadata = T, collect=F)
+  expect_lt(length(colnames(meas_light)), length(colnames(meas_full)))
 })
 
 test_that("query return standard exceedances", {
@@ -83,11 +99,44 @@ test_that("query return standard exceedances", {
   expect_equal(nrow(exc_delhi_china), 0)
 
 
+  # Exceedance status in a given year
+  exc_status <- exceedance_status(country='IN', with_location=T)
+  expect_gt(nrow(exc_status), 0)
+  expec("geometry" %in% colnames(exc_status), "Missing geometry column")
+
 })
 
 test_that("Measurements are correct", {
-
   meas_sirifort <- measurements(location='Sirifort, Delhi - CPCB',average_by='year')
+})
+
+test_that("Weather data is properly joined", {
+
+  city=c('Beijing','北京市')
+  pollutant <- creadb::PM25
+  training_average_by <- 'hour'
+
+  meas <- measurements(city=city,
+                       date_from = '2015-01-01',
+                       collect=F,
+                       poll=pollutant,
+                       average_by=training_average_by)
+
+  for (aggregate_per_city in c(T,F)){
+    meas_weather <- join_weather_data(meas,
+                                      measurements_averaged_by=training_average_by,
+                                      aggregate_per_city=aggregate_per_city,
+                                      collect=F,
+                                      radius_km=20)
+
+    # Check city aggregation (or lack of)
+    expect_equal("city" %in% colnames(meas_weather), !aggregate_per_city)
+    expect_equal("noaa_station_id" %in% colnames(meas_weather), !aggregate_per_city)
+    expect_equal("location_id" %in% colnames(meas_weather), !aggregate_per_city)
+  }
 
 
+
+  nrow(meas_weather)
+  a<-meas %>% summarize(n())
 })

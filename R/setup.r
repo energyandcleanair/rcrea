@@ -7,13 +7,14 @@ library(dplyr)
 library(dbplyr)
 library(ggplot2)
 
-# Constants for user
+# Constants for user: Pollutants
 CO = "co"
 PM25 = "pm25"
 NO2 = "no2"
 O3 = "o3"
 PM10 = "pm10"
 SO2 = "so2"
+
 
 # Constants for connection
 CONN_HOST = '34.77.246.210'
@@ -64,4 +65,14 @@ connection <- function(reconnect=FALSE) {
   return(pkg.globals$CON)
 }
 
-
+tbl_safe <- function(con, query_initial){
+  result <- tryCatch({
+    dplyr::tbl(con, query_initial)
+  },error = function(e) {
+    print("Trying to reconnect")
+    con <- connection(reconnect = TRUE)
+    result <- dplyr::tbl(con, query_initial)
+    return(result)
+  })
+  return(result)
+}

@@ -55,8 +55,9 @@ We join weather observations from NOAA IDS dataset, that have been parsed and st
 
 ```{r}
 # Attach weather observations and aggregate by date
-meas_weather <- creadb::join_city_weather(meas,
+meas_weather <- creadb::join_weather_data(meas,
                              measurements_averaged_by=training_average_by,
+                             aggregate_per_city=T,
                              collect=T,
                              radius_km=20) #weather stations within 20km of air quality stations
 meas_weather

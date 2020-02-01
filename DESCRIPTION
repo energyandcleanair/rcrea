@@ -11,13 +11,13 @@ LazyData: true
 Imports:
     RPostgreSQL,
     rpostgis,
-    dplyr,
     dbplyr,
     sf,
     bit64,
     rgdal,
     zoo
 Depends:
-    ggplot2
+    ggplot2,
+    dplyr
 Suggests: 
     testthat (>= 2.1.0)

@@ -1,8 +1,7 @@
 library(ggplot2)
 library(zoo)
 
-plot_measurements_count <-function(meas, poll=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='heatmap'){
-
+plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='heatmap'){
 
   if(!is.null(running_days) && (average_by != 'day')){
     stop(paste("You cannot have rolling mean when averaging by", average_by))
@@ -81,6 +80,11 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
     meas = meas[meas$poll == poll, ]
   }
 
+  # Check not empty
+  if(nrow(meas)==0){
+    stop("No measurement")
+  }
+
   # Take mean over relevant grouping (at least city, date and pollutant)
   group_by_cols <- union(c('city', 'poll'), union(setdiff(color_by,c("year")), setdiff(subplot_by,c("year"))))
   meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
@@ -139,9 +143,6 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
       plt <- plt + theme(legend.position = "none")
     }
   }
-
-
-
   return(plt)
 }
 
@@ -194,5 +195,10 @@ plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city'
       plt <- plt + facet_wrap('poll', scales = "free")
   }
 
+  return(plt)
+}
+
+map_exceedance_status <- function(exc_status){
+  plt <- ggplot(data = sf::st_as_sf(exc_status)) + geom_sf(aes(colour=status))
   return(plt)
 }
