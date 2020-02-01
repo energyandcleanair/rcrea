@@ -130,7 +130,7 @@ creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='8-hour',], a
 
 Plot only exceedances of daily standards
 ```{r}
-creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='day',], average_by='week')
+creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='24-hour',], average_by='week')
 ```
 
 Plot only the year-based standards: in that case, the red indication mentions the day we know standard is going to bee breached this year, no mater how clean the air will be from then till the end of the year.

@@ -156,7 +156,7 @@ measurements <- function(country=NULL,
   if(with_metadata){
     group_by_meta_cols <- c("location", "name", "city", "country","geometry")
   }else{
-    group_by_meta_cols <- c("city") # keeping city regardless because required in plots
+    group_by_meta_cols <- c("city", "location") # keeping city regardless because required in plots
   }
 
   # Apply time aggregation
