@@ -17,8 +17,9 @@ predict_aq_from_weather <- function(city,
   meas <- creadb::measurements(city=city,
                                date_from = '2015-01-01',
                                collect=F, #to save time (only do collection at last step)
-                               poll=pollutant,
-                               average_by=training_average_by)
+                               poll=poll,
+                               average_by=training_average_by,
+                               with_metadata = T)
 
   # Attach weather observations and aggregate by date
   meas_weather <- creadb::join_weather_data(meas,
@@ -41,7 +42,7 @@ predict_aq_from_weather <- function(city,
       return(names(sort(table(x), decreasing = T, na.last = T)[1]))
     }
   }
-  train_roll_fn <- function(var) rollapply(var, width=training_average_by_roll, FUN=mean_fn, align='right', fill=NA)
+  train_roll_fn <- function(var) rollapply(var, width=training_average_by_width, FUN=mean_fn, align='right', fill=NA)
   gbm.data.rolled <- gbm.data.raw %>% arrange(date) %>%
     mutate_at(weather_vars, train_roll_fn) %>%
     mutate(value=train_roll_fn(value))
@@ -55,7 +56,7 @@ predict_aq_from_weather <- function(city,
   predict_data <- gbm.data.rolled %>% filter(date >= training_prediction_cut)
 
   # Train model
-  gbm.fit <- gbm(
+  gbm.fit <- gbm::gbm(
     formula = value ~ temp_c + factor(wind_deg) + wind_ms + slp_hp + rh_percent + prec_6h_mm, #+ factor(sky_code),
     data = training_data,
     cv.folds = 5,

@@ -1,4 +1,4 @@
-library(RPostgreSQL)
+library(RPostgres)
 library(sp)
 library(rgdal)
 library(DBI)
@@ -6,6 +6,7 @@ library(purrr)
 library(dplyr)
 library(dbplyr)
 library(ggplot2)
+library(gbm)
 
 # Constants for user: Pollutants
 CO = "co"
@@ -14,7 +15,6 @@ NO2 = "no2"
 O3 = "o3"
 PM10 = "pm10"
 SO2 = "so2"
-
 
 # Constants for connection
 CONN_HOST = '34.77.246.210'
@@ -45,8 +45,8 @@ connection_str <- function(){
 
 connection <- function(reconnect=FALSE) {
 
-  # Connect to a specific postgres database i.e. Heroku
-  if(reconnect && !is.null(pkg.globals$CON)){
+
+  if(!is.null(pkg.globals$CON) && (reconnect || !DBI::dbIsValid(pkg.globals$CON))){
     tryCatch({
       DBI::dbDisconnect(pkg.globals$CON)
     })
@@ -54,13 +54,14 @@ connection <- function(reconnect=FALSE) {
   }
 
   if(is.null(pkg.globals$CON)){
-
-    pkg.globals$CON <- DBI::dbConnect(RPostgreSQL::PostgreSQL(), dbname = CONN_DBNAME,
+    pkg.globals$CON <- DBI::dbConnect(RPostgres::Postgres(), dbname = CONN_DBNAME,
                         host = CONN_HOST,
                         port = strtoi(CONN_PORT),
                         user = CONN_USER,
                         password = CONN_PASSWORD)
   }
+
+
 
   return(pkg.globals$CON)
 }

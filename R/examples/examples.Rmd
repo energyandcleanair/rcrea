@@ -32,7 +32,7 @@ meas_cities
 Filtering values above a certain threshold
 ```{r}
 meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'), date_from='2015-01-01',
-                            user_filter=function(x){x %>% filter(avg_day<=1000 | pollutant==CO)})
+                            user_filter=function(x){x %>% filter(avg_day<=1000 | poll==CO)})
 meas_cities
 ```
 

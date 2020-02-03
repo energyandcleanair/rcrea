@@ -117,7 +117,7 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
 
   # Build plot
   plt <- ggplot2::ggplot(meas, aes_string(x = 'date', y = 'value_plot', color = color_by)) +
-    labs(x='', y=expression('concentration [' * mu * 'g/m'^3*']'),
+        labs(x='', y=expression('concentration [' * mu * 'g/m'^3*']'),
          title=paste(''),
          subtitle = '',
          caption = '') +
@@ -127,8 +127,15 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
          "ts" = plt + geom_line(aes_string(color = color_by), size = 0.8) +
                 ylim(0, NA),
          "heatmap" = plt +
-                    geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot'), color='white') +
-                    scale_y_discrete() + scale_fill_distiller(palette = "Spectral", na.value = 'white')
+                    geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot'), color='white') +
+                    scale_y_discrete() + scale_fill_distiller(palette = "Spectral", na.value = 'white'),
+         "heatmap_w_text" = plt +
+                    geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot'), color='grey50') +
+                    scale_y_discrete(expand=c(0,0)) + scale_fill_distiller(palette = "Spectral", na.value = 'white') +
+                     geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'),
+                                          label="paste(sprintf('%.0f', value_plot))"), size=3, color='black') +
+                       theme(legend.position = "none") + theme(axis.text.x = element_text()) +
+                      labs(x='', y='', subtitle=expression('[' * mu * 'g/m'^3*']'), title=paste(poll_str(poll), 'concentration'))
          )
 
   if('year' %in% color_by){
@@ -199,6 +206,6 @@ plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city'
 }
 
 map_exceedance_status <- function(exc_status){
-  plt <- ggplot(data = sf::st_as_sf(exc_status)) + geom_sf(aes(colour=status))
+  plt <- ggplot(data = sf::st_as_sf(exc_status)) + geom_sf(aes(color=status))
   return(plt)
 }

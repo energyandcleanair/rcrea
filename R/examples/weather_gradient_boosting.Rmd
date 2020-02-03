@@ -20,7 +20,7 @@ Only need to edit these parameters.
 ```{r}
 # Parameters
 city=c('Beijing','北京市')
-pollutant <- creadb::PM25
+poll <- creadb::PM25
 
 # When to separate training data & prediction data
 training_prediction_cut <- lubridate::as_date("2017-10-01")
@@ -45,7 +45,7 @@ id_vars <- vars(date)
 meas <- creadb::measurements(city=city,
                       date_from = '2015-01-01',
                       collect=F, #to save time (only do collection at last step)
-                      poll=pollutant,
+                      poll=poll,
                       average_by=training_average_by)
 
 # See how many air quality measurements we have per location and year
@@ -146,6 +146,6 @@ training_plot.rolled <- training_plot.raw %>% roll_plot()
 ggplot(rbind(training_plot.rolled, predict_plot.rolled, measured_plot.rolled), aes(x=date)) +
   geom_line(aes(y=value, colour=type)) +
   geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", colour="blue") +
-  ggtitle(paste("Rolling ", plotting_average_by_roll,"-",plotting_average_by, " average of ", pollutant, " level in ",city))
+  ggtitle(paste("Rolling ", plotting_average_by_roll,"-",plotting_average_by, " average of ", poll, " level in ",city))
 ```
 

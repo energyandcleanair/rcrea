@@ -1,5 +1,50 @@
 library(testthat)
 library(lubridate)
+library(DBI)
+
+# Testing philosophy
+# To save time on regular testings, we use 'random' pollutants and rather late date_from
+# Indeed, query time is almost proportional to number of rows returned
+
+test_that("reconnection works", {
+
+  con <- connection()
+  expect_true(DBI::dbIsValid(con), "Invalid connection")
+  meas1 <- measurements(city='Delhi', date_from="2020-01-01", collect=F)
+
+  # Test whether reconnection works automatically and is shared across queries
+  DBI::dbDisconnect(con)
+  expect_false(DBI::dbIsValid(con), "Connection should be invalid")
+  meas2 <- measurements(location_id='IN-107', poll=creadb::CO, date_from="2020-01-01", collect=T) # Queries first locations and then measurements
+  expect_gt(nrow(meas2),0)
+})
+#
+# test_that("RPostgres faster than RPostgresQL", {
+#
+#   library(RPostgres)
+#   library(RPostgreSQL)
+#
+#   con_postgres <- DBI::dbConnect(RPostgres::Postgres(), dbname = CONN_DBNAME,
+#                                     host = CONN_HOST,
+#                                     port = strtoi(CONN_PORT),
+#                                     user = CONN_USER,
+#                                     password = CONN_PASSWORD)
+#
+#   time_postgres <- system.time(measurements(con=con_postgres, date_from='2019-01-01', city='Delhi', poll=creadb::CO, collect=T))
+#   DBI::dbDisconnect(con_postgres)
+#
+#   con_postgresql <- DBI::dbConnect(RPostgres::Postgres(), dbname = CONN_DBNAME,
+#                                  host = CONN_HOST,
+#                                  port = strtoi(CONN_PORT),
+#                                  user = CONN_USER,
+#                                  password = CONN_PASSWORD)
+#
+#   time_postgresql <- system.time(measurements(con=con_postgresql, date_from='2019-01-01', city='Delhi', poll=creadb::CO, collect=T))
+#   DBI::dbDisconnect(con_postgresql)
+#
+#   expect_lt(time_postgres['elapsed'], time_postgresql['elapsed'])
+#
+# })
 
 test_that("query return locations", {
 
@@ -27,33 +72,33 @@ test_that("query return measurements", {
   meas_unknown <- measurements(city='XXX')
   expect_equal(nrow(meas_unknown), 0)
 
-  meas_unkown <- measurements(user_filter=function(x){x %>% dplyr::filter(avg_day<=1000 | pollutant==CO)})
+  meas_unkown <- measurements(city='Mumbai', user_filter=function(x){x %>% dplyr::filter(avg_day<=1000 | poll==CO)})
 
-  meas_delhi <- measurements(city='Delhi')
+  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2019-01-01')
   expect_gt(nrow(meas_delhi), 0)
   expect_equal(tolower(unique(meas_delhi$city)), 'delhi')
   expect_gt(length(unique(meas_delhi$location)), 0)
   expect_gt(length(unique(meas_delhi$poll)), 0)
 
-  meas_delhi_lower <- measurements(city='delhi')
+  meas_delhi_lower <- measurements(city='delhi', poll=creadb::CO, date_from='2019-01-01')
   expect_equal(nrow(meas_delhi_lower), nrow(meas_delhi))
 
-  meas_delhi_jaipur <- measurements(city=c('Delhi','Jaipur'))
+  meas_delhi_jaipur <- measurements(city=c('Delhi','Jaipur'), poll=creadb::CO, date_from='2019-01-01')
   expect_gt(nrow(meas_delhi_jaipur), nrow(meas_delhi))
 
   meas_delhi_china <- measurements(country='CN', city='Delhi')
   expect_equal(nrow(meas_delhi_china), 0)
 
   # Time aggregation
-  meas_delhi_day <- measurements(city='Delhi', average_by='day')
-  expect_equal(length(unique(day(meas_delhi_day$date))), 31)
-  expect_equal(length(unique(month(meas_delhi_day$date))), 12)
+  meas_delhi_day <- measurements(city='Delhi', average_by='day', poll=creadb::PM10, collect=T)
+  expect_equal(length(unique(lubridate::day(meas_delhi_day$date))), 31)
+  expect_equal(length(unique(lubridate::month(meas_delhi_day$date))), 12)
 
-  meas_delhi_month <- measurements(city='Delhi', average_by='month')
-  expect_equal(unique(day(meas_delhi_month$date)), 1)
-  expect_equal(length(unique(month(meas_delhi_month$date))), 12)
+  meas_delhi_month <- measurements(city='Delhi', average_by='month', poll=creadb::PM10)
+  expect_equal(unique(lubridate::day(meas_delhi_month$date)), 1)
+  expect_equal(length(unique(lubridate::month(meas_delhi_month$date))), 12)
 
-  meas_delhi_year <- measurements(city='Delhi', average_by='year')
+  meas_delhi_year <- measurements(city='Delhi', average_by='year', poll=creadb::PM10)
   expect_equal(unique(day(meas_delhi_year$date)), 1)
   expect_equal(unique(month(meas_delhi_year$date)), 1)
 
@@ -89,10 +134,10 @@ test_that("query return standard exceedances", {
   expect_gt(length(unique(exc_delhi$location)), 0)
   expect_gt(length(unique(exc_delhi$poll)), 0)
 
-  exc_delhi_lower <- exceedances(city='delhi')
+  exc_delhi_lower <- exceedances(city='delhi', poll=creadb::PM25)
   expect_equal(nrow(exc_delhi_lower), nrow(exc_delhi))
 
-  exc_delhi_jaipur <- exceedances(city=c('Delhi','Jaipur'))
+  exc_delhi_jaipur <- exceedances(city=c('Delhi','Jaipur'), poll=creadb::PM25)
   expect_gt(nrow(exc_delhi_jaipur), nrow(exc_delhi))
 
   exc_delhi_china <- exceedances(country='CN', city='Delhi')
@@ -102,25 +147,22 @@ test_that("query return standard exceedances", {
   # Exceedance status in a given year
   exc_status <- exceedance_status(country='IN', with_location=T)
   expect_gt(nrow(exc_status), 0)
-  expec("geometry" %in% colnames(exc_status), "Missing geometry column")
+  expect("geometry" %in% colnames(exc_status), "Missing geometry column")
 
-})
-
-test_that("Measurements are correct", {
-  meas_sirifort <- measurements(location='Sirifort, Delhi - CPCB',average_by='year')
 })
 
 test_that("Weather data is properly joined", {
 
   city=c('Beijing','北京市')
-  pollutant <- creadb::PM25
+  poll <- creadb::PM25
   training_average_by <- 'hour'
 
   meas <- measurements(city=city,
                        date_from = '2015-01-01',
                        collect=F,
-                       poll=pollutant,
-                       average_by=training_average_by)
+                       poll=poll,
+                       average_by=training_average_by,
+                       with_metadata = T)
 
   for (aggregate_per_city in c(T,F)){
     meas_weather <- join_weather_data(meas,

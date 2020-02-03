@@ -11,6 +11,7 @@ ui <- fluidPage(
                     selectInput("city",
                                 "City:",
                                 choices = locations$city,
+                                multiple=T,
                                 selected = "Delhi"
                     ),
                     selectInput("poll",
@@ -22,11 +23,18 @@ ui <- fluidPage(
                                 "Time averaging:",
                                 choices = averagings,
                                 selected = "day"
-                    )
+                    ),
+                    sliderInput("years", "Year", min=2014, max=2020, value=c(2014, 2020), step=1, sep = ""
+                    ),
+                    selectInput("plot_type",
+                                "Plot type",
+                                choices = plot_types,
+                                selected = plot_types[2]
+                    ),
                 ),
                 # Show a plot of the generated distribution
                 mainPanel(
-                   plotOutput("meas_plot")
+                   plotOutput("meas_plot", height = 600)
                 )
             )
         ),
@@ -36,7 +44,7 @@ ui <- fluidPage(
                  sidebarPanel(
                      sliderInput("year",
                                  "Year:",
-                                 min = 2015, max = 2020, value = 2020
+                                 min=2015, max=2020, value=2020, sep="", step=1
                      ),
                      selectInput("country",
                                  "Country:",
@@ -53,8 +61,9 @@ ui <- fluidPage(
                  ),
 
                  mainPanel(
-                    plotOutput("exc_status_map")
-                )
+                    plotOutput("exc_status_map"),
+                    dataTableOutput("exc_status_table")
+                 )
             )
         )
     )

@@ -5,8 +5,8 @@ filter_sanity_daily <- function(result){
   result <- result %>% dplyr::filter(avg_day > 0) %>%
     dplyr::filter(!is.na(location_id)) %>%
     dplyr::filter(!is.na(date)) %>%
-    dplyr::filter(!is.na(pollutant))  %>%
-    dplyr::filter(avg_day < 1500 | pollutant==CO)
+    dplyr::filter(!is.na(poll))  %>%
+    dplyr::filter(avg_day < 1500 | poll==CO)
   # result <- result %>% filter(parameter != 'o3' || value > -9999)
   return(result)
 }
@@ -17,8 +17,8 @@ filter_sanity_raw <- function(result){
   result <- result %>% dplyr::filter(value > 0) %>%
     dplyr::filter(!is.na(location_id)) %>%
     dplyr::filter(!is.na(date)) %>%
-    dplyr::filter(!is.na(pollutant))  %>%
-    dplyr::filter(value < 1500 | pollutant==CO)
+    dplyr::filter(!is.na(poll))  %>%
+    dplyr::filter(value < 1500 | poll==CO)
   # result <- result %>% filter(parameter != 'o3' || value > -9999)
   return(result)
 }
@@ -27,9 +27,10 @@ filter_sanity_raw <- function(result){
 locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, con=NULL){
 
   # Variable names must be different to column names
-  country_ <- country
-  city_ <- city
+  country_ <- tolower(country)
+  city_ <- tolower(city)
   id_ <- id
+
 
   # Connecting
   con = if(!is.null(con)) con else connection()
@@ -43,14 +44,14 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, con=NULL){
   # Apply filters
   result <- switch(toString(length(country_)),
                    "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(country == country_), # Single country name
-                   result %>% dplyr::filter(country %in% country_) # Vector of country names
+                   "1" = result %>% dplyr::filter(tolower(country) == country_), # Single country name
+                   result %>% dplyr::filter(tolower(country) %in% country_) # Vector of country names
   )
 
   result <- switch(toString(length(city_)),
                    "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(city == city_), # Single city name
-                   result %>% dplyr::filter(city %in% city_) # Vector of city names
+                   "1" = result %>% dplyr::filter(tolower(city) == city_), # Single city name
+                   result %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
   )
 
   result <- switch(toString(length(id_)),
@@ -102,15 +103,14 @@ measurements <- function(country=NULL,
   # Variable names must be different to column names
   poll_ <- tolower(poll)
 
-  # Connecting
-  con = if(!is.null(con)) con else connection()
-
   # Find locations that match filters
   locs <- locations(country=country,
                     city=city,
                     id=location_id,
-                    collect=F,
-                    con=con)
+                    collect=F)
+
+  # Connecting
+  con = if(!is.null(con)) con else connection()
 
   # Take measurements at these locations
   query_initial = switch(average_by,
@@ -119,6 +119,9 @@ measurements <- function(country=NULL,
 
   result <- tbl_safe(con, query_initial)
 
+  # R package uses 'poll' whilst db is using 'pollutant'
+  result <- result %>% dplyr::rename(poll = pollutant)
+
   # Joining location information
   result <- result %>% dplyr::select(-c(city, country)) %>% # Avoid double columns (plus location is last truth)
                        dplyr::right_join(locs, by=c("location_id"="id"))
@@ -126,8 +129,8 @@ measurements <- function(country=NULL,
   # Filtering based on user request
   result <- switch(toString(length(poll_)),
                    "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(pollutant) == poll_), # Single value
-                   result %>% dplyr::filter(tolower(pollutant) %in% poll_) # Vector
+                   "1" = result %>% dplyr::filter(tolower(poll) == poll_), # Single value
+                   result %>% dplyr::filter(tolower(poll) %in% poll_) # Vector
   )
 
   result <- switch(toString(length(date_from)),
@@ -150,8 +153,7 @@ measurements <- function(country=NULL,
     result <- user_filter(result)
   }
 
-  # R package uses 'poll' whilst db is using 'pollutant'
-  result <- result %>% dplyr::rename(poll = pollutant)
+
 
   if(with_metadata){
     group_by_meta_cols <- c("location", "name", "city", "country","geometry")
@@ -212,6 +214,9 @@ exceedances <- function(country=NULL,
   con = connection()
   result  <- tbl_safe(con,"standard_exceedances")
 
+  # R package uses 'poll' whilst db is using 'pollutant'
+  result <- result %>% dplyr::rename(poll = pollutant)
+
   # Apply filters
   result <- switch(toString(length(country_)),
                    "0" = result, # NULL
@@ -229,8 +234,8 @@ exceedances <- function(country=NULL,
   poll_ <- tolower(poll_)
   result <- switch(toString(length(poll_)),
                    "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(pollutant) == poll_), # Single value
-                   result %>% dplyr::filter(tolower(pollutant) %in% poll_) # Vector
+                   "1" = result %>% dplyr::filter(tolower(poll) == poll_), # Single value
+                   result %>% dplyr::filter(tolower(poll) %in% poll_) # Vector
   )
 
   result <- switch(toString(length(location_id_)),
@@ -252,9 +257,6 @@ exceedances <- function(country=NULL,
 
   # Cast integer64 to integer. Prevents issues later on
   result <- result %>% dplyr::mutate_if(bit64::is.integer64, as.integer)
-
-  # R package will use 'poll' instead of 'pollutant'
-  result <- result %>% dplyr::rename(poll = pollutant)
 
   # Whether to collect the query i.e. actually run the query
   if(collect){
@@ -330,7 +332,7 @@ join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_pe
 
   # Check measurements have been fetched with metadata
   if(!"geometry" %in% colnames(meas)){
-    stop("Station geometry missing.")
+    stop("Station geometry missing. Use with_metadata=T when querying measurements.")
   }
 
   # Find NOAA stations close by
