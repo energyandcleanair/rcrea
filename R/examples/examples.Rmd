@@ -8,8 +8,8 @@ output: html_notebook
 ```{r results="hide"}
 install.packages('devtools')
 library(devtools)
-url <- "https://gitlab.com/creaaq/crea_r_package"
-devtools::install_git(url = url)
+url <- "https://github.com/hubert-thieriot/crea_r_package"
+devtools::install_github(url)
 ```
 ```{r results="hide"}
 library(creadb)
