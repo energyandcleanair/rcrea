@@ -128,7 +128,7 @@ test_that("query return standard exceedances", {
   exc_unknown <- exceedances(city='XXX')
   expect_equal(nrow(exc_unknown), 0)
 
-  exc_delhi <- exceedances(city='Delhi')
+  exc_delhi <- exceedances(city='Delhi', poll=creadb::PM25)
   expect_gt(nrow(exc_delhi), 0)
   expect_equal(tolower(unique(exc_delhi$city)), 'delhi')
   expect_gt(length(unique(exc_delhi$location)), 0)
