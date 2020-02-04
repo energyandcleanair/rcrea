@@ -1,12 +1,12 @@
-library(RPostgres)
-library(sp)
+require(RPostgres)
+# library(sp)
 # library(rgdal)
-library(DBI)
-library(purrr)
-library(dplyr)
-library(dbplyr)
-library(ggplot2)
-library(gbm)
+require(DBI)
+require(purrr)
+require(dplyr)
+require(dbplyr)
+require(ggplot2)
+require(gbm)
 
 # Constants for user: Pollutants
 CO = "co"

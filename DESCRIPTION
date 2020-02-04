@@ -1,7 +1,7 @@
 Package: creadb
 Type: Package
 Title: Query And Plot Air Quality And Weather Data from CREA Database
-Version: 0.1.1
+Version: 0.1.2
 Author: Hubert Thieriot
 Maintainer: Hubert Thieriot <hubert.thieriot@gmail.com>
 Description: Creadb packages offers a set of functions to query and plot air quality and weather data stored in CREA database.
@@ -9,7 +9,7 @@ License: TBC
 Encoding: UTF-8
 LazyData: true
 Imports:
-    RPostgreSQL,
+    RPostgre,
     rpostgis,
     dbplyr,
     sf,
