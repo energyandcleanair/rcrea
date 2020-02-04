@@ -78,7 +78,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
   # Deprecated argument(s)
   if(!is.null(running_days)){
-    warn("running_days argument is deprecated. Use running_width instead.")
+    warning("running_days argument is deprecated. Use running_width instead.")
     running_width = ifelse(is.na(running_width), running_days, running_width)
   }
 
