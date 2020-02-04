@@ -1,8 +1,9 @@
 require(creadb)
 require(maptools)
+require(DT)
 
 
-locations <- creadb::locations(country=c("IN","CN"))
+locations <- creadb::locations(country=c("IN"), with_location=F)
 standards <- creadb::standards(collect=T)
 polls <- c(creadb::PM25, creadb::PM10, creadb::NO2, creadb::O3, creadb::SO2, creadb::CO)
 averagings <- c("hour", "day", "week", "month", "year")

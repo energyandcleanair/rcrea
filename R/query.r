@@ -24,7 +24,7 @@ filter_sanity_raw <- function(result){
 }
 
 
-locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, con=NULL){
+locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_location=TRUE, con=NULL){
 
   # Variable names must be different to column names
   country_ <- tolower(country)
@@ -34,14 +34,9 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, con=NULL){
 
   # Connecting
   con = if(!is.null(con)) con else connection()
-  if(collect){
-    result <- rpostgis::pgGetGeom(con, name=c("public","locations"), geom = "geometry")
-    result <- sf::st_as_sf(result)
-  }else{
-    result <- tbl_safe(con, "locations") # Old version without explicit geomoetry column
-  }
+  result <- tbl_safe(con, "locations") # Old version without explicit geomoetry column
 
-  # Apply filters
+    # Apply filters
   result <- switch(toString(length(country_)),
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(tolower(country) == country_), # Single country name
@@ -60,10 +55,20 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, con=NULL){
                    result %>% dplyr::filter(id %in% id_) # Vector of station ids
   )
 
-  # # Whether to collect the query i.e. actually run the query
-  # if(collect){
-  #   result <- result %>% collect()
-  # }
+  # Keeping only interesting columns
+  cols <- if(with_location) c("id", "name", "city", "country", "geometry") else c("id", "name", "city", "country")
+
+  result <- result %>% dplyr::select_at(cols)
+
+
+  # Whether to collect the query i.e. actually run the query
+  if(collect){
+    result <- result %>% dplyr::collect()
+    if(with_location){
+      result <- result %>% dplyr::mutate(geometry=sf::sf_as_sfc.pq_geometry(geometry))
+    }
+  }
+
   return(result)
 }
 
@@ -200,6 +205,7 @@ exceedances <- function(country=NULL,
                          city=NULL,
                          location_id=NULL,
                          poll=NULL,
+                         standard_org=NULL,
                          date_from='2018-01-01',
                          date_to=NULL,
                          collect=TRUE) {
@@ -209,6 +215,7 @@ exceedances <- function(country=NULL,
   city_ <- city
   poll_ <- poll
   location_id_ <- location_id
+  standard_org_ <- standard_org
 
   # Connecting
   con = connection()
@@ -244,6 +251,11 @@ exceedances <- function(country=NULL,
                    result %>% dplyr::filter(location_id %in% location_id_) # Vector
   )
 
+  result <- switch(toString(length(standard_org_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(standard_org == standard_org_), # Single value
+                   result %>% dplyr::filter(standard_org %in% standard_org_) # Vector
+  )
 
   result <- switch(toString(length(date_from)),
                    "0" = result, # NULL
@@ -271,7 +283,7 @@ exceedance_status <- function(country=NULL,
                               city=NULL,
                               location_id=NULL,
                               poll=NULL,
-                              organization=NULL,
+                              standard_org=NULL,
                               year=lubridate::year(now()),
                               collect=TRUE,
                               with_location=F) {
@@ -285,6 +297,7 @@ exceedance_status <- function(country=NULL,
                    city=city,
                    location_id=location_id,
                    poll=poll,
+                   standard_org=standard_org,
                    date_from=lubridate::ymd(year*10000+101),
                    date_to = lubridate::ymd(year*10000+1231),
                    collect=F)
@@ -300,7 +313,7 @@ exceedance_status <- function(country=NULL,
     excs <- excs %>% collect()
     if(with_location){
       # Getting a location per city
-      city_locations <- locations(country=country,city=city, collect=T) %>%
+      city_locations <- locations(country=country,city=city, collect=T, with_location=T) %>%
         dplyr::select(country,city,geometry) %>% distinct(country, city)
 
       excs <- excs %>% right_join(city_locations)

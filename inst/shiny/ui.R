@@ -1,4 +1,4 @@
-ui <- fillPage(
+ui <- fluidPage(
 
     # Application title
     titlePanel("CREA - Air Quality Monitoring"),
@@ -8,6 +8,7 @@ ui <- fillPage(
         tabPanel("Measurements", fluid = TRUE,
             sidebarLayout(
                 sidebarPanel(
+                    width = 2,
                     selectInput("city",
                                 "City:",
                                 choices = locations$city,
@@ -46,29 +47,36 @@ ui <- fillPage(
         tabPanel("Exceedances", fluid = TRUE,
              sidebarLayout(
                  sidebarPanel(
-                     sliderInput("year",
+                     width = 2,
+                     sliderInput("exc_year",
                                  "Year:",
                                  min=2015, max=2020, value=2020, sep="", step=1
                      ),
-                     selectInput("country",
-                                 "Country:",
-                                 choices = unique(locations$country),
-                                 multiple = F,
-                                 selected = "IN"
+                     selectInput("exc_city",
+                                 "Cities:",
+                                 choices = unique(locations$city),
+                                 multiple = T,
+                                 selected = "Delhi"
                      ),
-                     selectInput("standard_org",
+                     selectInput("exc_poll",
+                                 "Pollutant:",
+                                 choices = polls,
+                                 selected = creadb::PM25
+                     ),
+                     selectInput("exc_standard_org",
                                  "Standard source:",
                                  choices = unique(standards$organization),
                                  multiple = T,
-                                 selected = c("EU","WHO")
+                                 selected = c("EU","WHO","NAAQS")
                      ),
-                     downloadButton("downloadExcs", "Download")
+                     downloadButton("exc_download", "Download")
 
                  ),
 
                  mainPanel(
-                    plotOutput("exc_status_map"),
-                    dataTableOutput("exc_status_table")
+                    # plotOutput("exc_status_map"),
+                    # DT::dataTableOutput("exc_status_table")
+                    DT::dataTableOutput("exc_table")
                  )
             )
         )
