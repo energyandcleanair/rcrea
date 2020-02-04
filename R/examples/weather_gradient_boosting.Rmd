@@ -144,8 +144,8 @@ training_plot.raw <- training_data %>% select(date, fitted) %>% tidyr::gather("t
 training_plot.rolled <- training_plot.raw %>% roll_plot()
 
 ggplot(rbind(training_plot.rolled, predict_plot.rolled, measured_plot.rolled), aes(x=date)) +
-  geom_line(aes(y=value, colour=type)) +
-  geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", colour="blue") +
+  geom_line(aes(y=value, color=type)) +
+  geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", color="blue") +
   ggtitle(paste("Rolling ", plotting_average_by_roll,"-",plotting_average_by, " average of ", poll, " level in ",city))
 ```
 

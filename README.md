@@ -13,8 +13,13 @@ url <- "https://github.com/hubert-thieriot/crea_r_package"
 devtools::install_github(url)
 ```
 
-### Usage
+## Usage
+### Shiny Application
+```buildoutcfg
+runShinyApp()
+```
+### R Code
 ```buildoutcfg
 df_locations <- creadb::locations(country='IN')
-df_measurements <- creadb::measurements(country='IN') # This will take a lot of time
+df_measurements <- creadb::measurements(country='IN', poll=creadb::PM25, city='Delhi')
 ``` 

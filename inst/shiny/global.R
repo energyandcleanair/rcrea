@@ -1,5 +1,5 @@
-library(creadb)
-library(maptools)
+require(creadb)
+require(maptools)
 
 
 locations <- creadb::locations(country=c("IN","CN"))

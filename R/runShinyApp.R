@@ -18,7 +18,7 @@ deployShinyApp <- function() {
   require('dotenv')
   library(devtools)
   url <- "https://github.com/hubert-thieriot/crea_r_package"
-  devtools::install_github(url = url)
+  devtools::install_github(url, force=T)
 
   load_dot_env()
   appDir <- getAppDir()

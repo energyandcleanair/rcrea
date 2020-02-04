@@ -1,6 +1,6 @@
 library(RPostgres)
 library(sp)
-library(rgdal)
+# library(rgdal)
 library(DBI)
 library(purrr)
 library(dplyr)

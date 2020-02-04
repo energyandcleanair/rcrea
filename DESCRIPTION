@@ -14,7 +14,6 @@ Imports:
     dbplyr,
     sf,
     bit64,
-    rgdal,
     zoo
 Depends:
     ggplot2,

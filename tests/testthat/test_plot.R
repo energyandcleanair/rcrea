@@ -26,12 +26,12 @@ test_that("plots do not trigger errors", {
   expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, average_by='year', subplot_by='city'), NA)
 
   # Heatmap per location with monthly data
-  expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=PM25, subplot_by='location', type='heatmap', average_by='month'), NA)
+  expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, subplot_by='location', type='heatmap', average_by='month'), NA)
 
   # Heatmap per city weekly values
-  expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=PM25, subplot_by='city', type='heatmap'), NA)
+  expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, subplot_by='city', type='heatmap'), NA)
 
   # Evolution over years
-  expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=PM25, color_by='year', subplot_by='city', average_by='month'), NA)
+  expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, color_by='year', subplot_by='city', average_by='month'), NA)
 
 })
