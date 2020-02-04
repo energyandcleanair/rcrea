@@ -314,7 +314,7 @@ exceedance_status <- function(country=NULL,
     if(with_location){
       # Getting a location per city
       city_locations <- locations(country=country,city=city, collect=T, with_location=T) %>%
-        dplyr::select(country,city,geometry) %>% distinct(country, city)
+        dplyr::select(country,city,geometry) %>% dplyr::distinct(country, city, .keep_all = TRUE)
 
       excs <- excs %>% right_join(city_locations)
     }
