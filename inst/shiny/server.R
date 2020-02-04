@@ -2,7 +2,7 @@ require(creadb)
 library(lubridate)
 library(raster)
 
-server <- function(input, output) {
+server <- function(input, output, session) {
 
     # Global Variables ---------------------------------------
     # Reactive Lists ------------------------------------------
@@ -14,9 +14,9 @@ server <- function(input, output) {
     meas <- reactive({
         city <- input$city
         poll <- input$poll
-        averaging <- input$averaging
+        averaging <-  input$averaging
         years <- input$years
-        req(city, poll, averaging)
+        req(city, poll, averaging, years)
 
         date_from <- lubridate::ymd(years[1]*10000+101)
         date_to <- lubridate::ymd(years[2]*10000+1231)
@@ -27,9 +27,23 @@ server <- function(input, output) {
 
 
     # Observers -----------------------------------------------
+
     # Event Observers --------------------------------------
+    observeEvent(input$averaging, {
+        updateNumericInput(session, "running_width", label = paste("Running average (", input$averaging, ")",sep=""))
+    })
+
     # Output Elements --------------------------------------
     # Download Handlers ----------------------------------
+    # Downloadable csv of selected dataset ----
+    output$downloadMeas <- downloadHandler(
+        filename = function() {
+            paste("measurements_", input$city,"_",input$poll, ".csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(meas(), file, row.names = FALSE)
+        }
+    )
 
 
     # Output Elements --------------------------------------
@@ -37,6 +51,8 @@ server <- function(input, output) {
         poll <- input$poll
         averaging <- input$averaging
         plot_type <- input$plot_type
+        running_width <- input$running_width
+
         req(poll, averaging, plot_type)
 
         type <- switch(plot_type,
@@ -57,7 +73,9 @@ server <- function(input, output) {
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
-        creadb::plot_measurements(meas(), input$poll, running_days=NULL, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
+
+
+        creadb::plot_measurements(meas(), input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
     })
 
 
@@ -76,6 +94,16 @@ server <- function(input, output) {
         creadb::exceedance_status(country=country, year=year, organization=standard_orgs, with_location = T)
     })
 
+    # Downloadable csv of selected dataset ----
+    output$downloadExcs <- downloadHandler(
+        filename = function() {
+            paste("standard_exceedances.csv", sep = "")
+        },
+        content = function(file) {
+            write.csv(exc_status(), file, row.names = FALSE)
+        }
+    )
+
     # Output Elements --------------------------------------
     output$exc_status_table <- renderDataTable({
         exc_status()
@@ -84,4 +112,6 @@ server <- function(input, output) {
     output$exc_status_map <- renderPlot({
         creadb::map_exceedance_status(exc_status()) + geom_sf(data=sf::st_as_sf(countries_map()), fill = NA)
     })
+
+
 }

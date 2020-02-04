@@ -1,4 +1,4 @@
-ui <- fluidPage(
+ui <- fillPage(
 
     # Application title
     titlePanel("CREA - Air Quality Monitoring"),
@@ -24,13 +24,17 @@ ui <- fluidPage(
                                 choices = averagings,
                                 selected = "day"
                     ),
-                    sliderInput("years", "Year", min=2014, max=2020, value=c(2014, 2020), step=1, sep = ""
+                    sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=1, step=1, sep = ""
+                    ),
+                    sliderInput("years", "Year", min=2015, max=2020, value=c(2018, 2020), step=1, sep = ""
                     ),
                     selectInput("plot_type",
                                 "Plot type",
                                 choices = plot_types,
                                 selected = plot_types[2]
                     ),
+                    downloadButton("downloadMeas", "Download")
+
                 ),
                 # Show a plot of the generated distribution
                 mainPanel(
@@ -58,6 +62,8 @@ ui <- fluidPage(
                                  multiple = T,
                                  selected = c("EU","WHO")
                      ),
+                     downloadButton("downloadExcs", "Download")
+
                  ),
 
                  mainPanel(

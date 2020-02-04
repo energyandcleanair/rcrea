@@ -64,20 +64,22 @@ plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by
   return(plt)
 }
 
-plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='ts'){
+plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='ts'){
 
   # Testing the charts make sense (i.e. not averaging different pollutants)
   if(is.null(poll) && (!'poll' %in% color_by) && (!'poll' %in% subplot_by)){
     stop("You need to specify pollutant to display")
   }
 
-  if(!is.null(running_days) && (average_by != 'day')){
-    stop(paste("You cannot have rolling mean when averaging by", average_by))
-  }
-
   # Select pollutants
   if(!is.null(poll)){
     meas = meas[meas$poll == poll, ]
+  }
+
+  # Deprecated argument(s)
+  if(!is.null(running_days)){
+    warn("running_days argument is deprecated. Use running_width instead.")
+    running_width = ifelse(is.na(running_width), running_days, running_width)
   }
 
   # Check not empty
@@ -102,11 +104,11 @@ plot_measurements <-function(meas, poll=NULL, running_days=NULL, color_by='city'
   meas <- merge(meas, df_placeholder, all=TRUE)
 
   # Apply running average if need be
-  if(is.null(running_days)){
+  if(is.null(running_width) || (running_width==1)){
     meas <- dplyr::arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
   }else{
     meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
-      dplyr::mutate(value_plot=zoo::rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
+      dplyr::mutate(value_plot=zoo::rollapply(value, width=running_width, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
 
   # Remove year for time series to overlap

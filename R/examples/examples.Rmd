@@ -65,7 +65,7 @@ creadb::plot_measurements(meas_cities, subplot_by='poll')
 ```
 Using a 1-year rolling mean
 ```{r}
-creadb::plot_measurements(meas_cities, running_days=365, subplot_by='poll')
+creadb::plot_measurements(meas_cities, average_by='day', running_width=365, subplot_by='poll')
 ```
 
 Time series of PM2.5 per location (yearly running average)

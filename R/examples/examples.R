@@ -20,14 +20,14 @@ creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location')
 
 # Time series per pollutant (average per city is taken by default)
 creadb::plot_measurements(meas_cities, subplot_by='poll')
-creadb::plot_measurements(meas_cities, running_days=365, subplot_by='poll')
+creadb::plot_measurements(meas_cities, running_width=365, subplot_by='poll')
 
 
 # Time series of PM2.5 per location (yearly running average)
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_days=365, subplot_by='location')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_width=365, subplot_by='location')
 
 # Time series of PM2.5 per city (yearly running average)
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_days=365, color_by='city')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_width=365, color_by='city')
 
 # Monthly average
 creadb::plot_measurements(meas_cities, poll=creadb::PM25, average_by='month', subplot_by='city')
