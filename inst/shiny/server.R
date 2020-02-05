@@ -124,7 +124,8 @@ server <- function(input, output, session) {
     })
 
     output$exc_table <- DT::renderDataTable({
-        exc()
+
+        exc() %>% filter(aggregation_period %in% input$exc_aggregation_period)
     })
 
     # output$exc_status_map <- renderPlot({

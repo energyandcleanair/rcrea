@@ -63,6 +63,12 @@ ui <- fluidPage(
                                  choices = polls,
                                  selected = creadb::PM25
                      ),
+                     selectInput("exc_aggregation_period",
+                                 "Averaging time:",
+                                 choices = unique(standards$aggregation_period),
+                                 multiple = T,
+                                 selected = unique(standards$aggregation_period)
+                     ),
                      selectInput("exc_standard_org",
                                  "Standard source:",
                                  choices = unique(standards$organization),

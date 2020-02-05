@@ -1,6 +1,39 @@
 library(ggplot2)
 library(zoo)
 
+
+# Utils -------------
+
+cut_poll <- function(poll, value){
+  # Transforms continuous to category value
+  scale <- if(poll==creadb::PM25){
+    cut(value,c(0, 30, 60, 90, 120, 250, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
+  }else if(poll==creadb::PM10){
+    cut(value,c(0, 50, 100, 250, 350, 430, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
+  }else if(poll==creadb::CO){
+    cut(value,c(0, 1000, 2000, 10000, 17000, 34000, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
+  }else if(poll==creadb::NO2){
+    cut(value,c(0, 40, 80, 180, 280, 400, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
+  }else if(poll==creadb::SO2){
+    cut(value,c(0, 40, 80, 380, 800, 1600, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
+  }else if(poll==creadb::O3){
+    cut(value,c(0, 50, 100, 168, 208, 748, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
+  }else{
+    cut(value,c(0, 0, 0, 0, 0, 0, 0))
+  }
+  return(scale)
+}
+
+scale_fill_poll <- function(organization, poll){
+
+  return(scale_fill_manual(name=NULL, values = c("Good"="green4","Satisfactory"="green3","Moderate"="yellow","Poor"="orange","Very Poor"="red", "Severe"="red4"),
+                           drop = FALSE,
+                           na.translate = FALSE))
+}
+
+
+
+# Plot functions ---------------
 plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='heatmap'){
 
   if(!is.null(running_days) && (average_by != 'day')){
@@ -117,6 +150,9 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
     lubridate::year(meas$date) <- 0
   }
 
+  # Add categorical variable
+  meas <- meas %>% mutate(value_plot_cat=cut_poll(poll, value))
+
   # Build plot
   plt <- ggplot2::ggplot(meas, aes_string(x = 'date', y = 'value_plot', color = color_by)) +
         labs(x='', y=expression('concentration [' * mu * 'g/m'^3*']'),
@@ -129,14 +165,17 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
          "ts" = plt + geom_line(aes_string(color = color_by), size = 0.8) +
                 ylim(0, NA),
          "heatmap" = plt +
-                    geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot'), color='white') +
-                    scale_y_discrete() + scale_fill_distiller(palette = "Spectral", na.value = 'white'),
+                    geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot_cat'), color='white') +
+                    scale_y_discrete() +
+                    scale_fill_poll(NULL, poll) +
+                    theme(legend.position = "right"),
          "heatmap_w_text" = plt +
-                    geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot'), color='grey50') +
-                    scale_y_discrete(expand=c(0,0)) + scale_fill_distiller(palette = "Spectral", na.value = 'white') +
-                     geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'),
+                    geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot_cat'), color='white') +
+                    scale_y_discrete(expand=c(0,0)) +
+                    scale_fill_poll(NULL, poll) +
+                    geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'),
                                           label="paste(sprintf('%.0f', value_plot))"), size=3, color='black') +
-                       theme(legend.position = "none") + theme(axis.text.x = element_text()) +
+                    theme(legend.position = "right") + theme(axis.text.x = element_text()) +
                       labs(x='', y='', subtitle=expression('[' * mu * 'g/m'^3*']'), title=paste(poll_str(poll), 'concentration'))
          )
 
