@@ -63,16 +63,16 @@ partial_plot_target <- function(poll, target, country, city, location_id, date_f
     # Flat segments if not averaged by years
     if(average_by!='year' | 'year' %in% color_by){
       plot_data_yearend <- tibble(year=years, value=values, target=target$short_name)
-      plot_data_yearend <- plot_data_yearend %>% mutate(date = lubridate::as_datetime(lubridate::ymd(year*10000 + 1231)))
+      plot_data_yearend <- plot_data_yearend %>% mutate(date = pmin(date_to, lubridate::as_datetime(lubridate::ymd(year*10000 + 1231))))
       plot_data <- bind_rows(plot_data, plot_data_yearend)
     }
 
     if('year' %in% color_by){
       plot_data <- plot_data %>% dplyr::mutate(year=factor(lubridate::year(date)))
       lubridate::year(plot_data$date) <- 0
-      result <- geom_line(data=plot_data, aes(x=date, y=value, color=year, linetype='target'))
+      result <- geom_line(data=plot_data, aes(x=date, y=value, color=year, linetype=target), size=0.8)
     }else{
-      result <- geom_line(data=plot_data, aes(x=date, y=value, color=target), linetype='dashed')
+      result <- geom_line(data=plot_data, aes(x=date, y=value, color=target), linetype='dashed', size=0.8)
     }
 
   }
