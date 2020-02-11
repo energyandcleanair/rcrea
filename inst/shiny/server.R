@@ -96,7 +96,7 @@ server <- function(input, output, session) {
         if(!is.null(input$target)){
             for (i_target in 1:length(input$target)){
                 target <- targets() %>% filter(short_name == input$target[i_target])
-                target_line <- partial_plot_target(poll=poll, target=target, country=country, city=city, location_id=NULL,
+                target_line <- creadb::partial_plot_target(poll=poll, target=target, country=country, city=city, location_id=NULL,
                                                            average_by=averaging,
                                                            date_from = min(meas()$date), date_to = max(meas()$date),
                                                            type=type, color_by=color_by)
