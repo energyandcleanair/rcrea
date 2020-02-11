@@ -19,4 +19,6 @@ Depends:
     ggplot2,
     dplyr
 Suggests: 
-    testthat (>= 2.1.0)
+    testthat (>= 2.1.0),
+    purrrlyr
+

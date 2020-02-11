@@ -25,15 +25,22 @@ server <- function(input, output, session) {
         creadb::measurements(city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, with_metadata = F)
     })
 
+    targets <- reactive({
+        country <- input$country
+        city <- input$city
+        poll <- input$poll
+        req(country, city, poll)
 
-    # Observers -----------------------------------------------
+        # Get measurements
+        creadb::targets(country=country, city=city, poll=poll)
+    })
 
     # Event Observers --------------------------------------
     observeEvent(input$averaging, {
         updateNumericInput(session, "running_width", label = paste("Running average (", input$averaging, ")",sep=""))
     })
 
-    # Output Elements --------------------------------------
+
     # Download Handlers ----------------------------------
     # Downloadable csv of selected dataset ----
     output$downloadMeas <- downloadHandler(
@@ -47,13 +54,23 @@ server <- function(input, output, session) {
 
 
     # Output Elements --------------------------------------
+    output$selectInputCity <- renderUI({
+        selectInput("city", "City:", choices = (locations %>% filter(country==input$country))$city)
+    })
+
+    output$selectInputTarget <- renderUI({
+        selectInput("target", "Applicable targets:", multiple=T, choices = targets()$short_name)
+    })
+
     output$meas_plot <- renderPlot({
         poll <- input$poll
         averaging <- input$averaging
         plot_type <- input$plot_type
         running_width <- input$running_width
+        city <- input$city
+        country <- input$country
 
-        req(poll, averaging, plot_type)
+        req(poll, averaging, plot_type, city, country)
 
         type <- switch(plot_type,
                "ts" = "ts",
@@ -73,7 +90,23 @@ server <- function(input, output, session) {
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
-        creadb::plot_measurements(meas(), input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
+        meas_plot <- creadb::plot_measurements(meas(), input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
+
+        # Adding target lines if any
+        if(!is.null(input$target)){
+            for (i_target in 1:length(input$target)){
+                target <- targets() %>% filter(short_name == input$target[i_target])
+                target_line <- partial_plot_target(poll=poll, target=target, country=country, city=city, location_id=NULL,
+                                                           average_by=averaging,
+                                                           date_from = min(meas()$date), date_to = max(meas()$date),
+                                                           type=type, color_by=color_by)
+
+                if(!is.null(target_line)){
+                    meas_plot <- meas_plot + target_line
+                }
+            }
+        }
+        meas_plot
     })
 
     # Tab 2 -----------------------------------------------------
@@ -131,6 +164,4 @@ server <- function(input, output, session) {
     # output$exc_status_map <- renderPlot({
     #     creadb::map_exceedance_status(exc_status()) + geom_sf(data=sf::st_as_sf(countries_map()), fill = NA)
     # })
-
-
 }

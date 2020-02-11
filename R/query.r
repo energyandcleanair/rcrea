@@ -23,7 +23,6 @@ filter_sanity_raw <- function(result){
   return(result)
 }
 
-
 locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_location=TRUE, con=NULL){
 
   # Variable names must be different to column names
@@ -200,6 +199,67 @@ standards <- function(collect=TRUE){
   }
   return(standards)
 }
+
+
+
+targets <- function(country=NULL,
+                    city=NULL,
+                    region=NULL,
+                    poll=NULL,
+                    organization=NULL,
+                    collect=TRUE){
+
+  # Variable names must be different to column names
+  country_ <- country
+  city_ <- tolower(city)
+  region_ <- tolower(region)
+  poll_ <- tolower(poll)
+  organization_ <- organization
+
+  # Connecting
+  con = connection()
+  result  <- tbl_safe(con,"targets")
+
+  # R package uses 'poll' whilst db is using 'pollutant'
+  result <- result %>% dplyr::rename(poll = pollutant)
+
+  # Apply filters
+  result <- switch(toString(length(country_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(country) == tolower(country_) | is.na(country) ), # Single value
+                   result %>% dplyr::filter(country %in% country_  | is.na(country) ) # Vector
+  )
+
+  result <- switch(toString(length(city_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(city) == city_  | is.na(city)), # Single value
+                   result %>% dplyr::filter(tolower(city) %in% city_  | is.na(city)) # Vector
+  )
+
+  result <- switch(toString(length(region_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(region) == region_ | is.na(region) ), # Single value
+                   result %>% dplyr::filter(tolower(region) %in% region_ | is.na(region) ) # Vector
+  )
+
+  result <- switch(toString(length(poll_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(poll) == poll_ | is.na(poll) ), # Single value
+                   result %>% dplyr::filter(tolower(poll) %in% poll_ | is.na(poll) ) # Vector
+  )
+
+  result <- switch(toString(length(organization_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(organization == organization_), # Single value
+                   result %>% dplyr::filter(organization %in% organization_) # Vector
+  )
+
+  if(collect){
+    result <- result %>% collect()
+  }
+  return(result)
+}
+
 
 exceedances <- function(country=NULL,
                          city=NULL,

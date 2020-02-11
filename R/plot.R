@@ -33,7 +33,52 @@ scale_fill_poll <- function(organization, poll){
 
 
 
+
+
 # Plot functions ---------------
+partial_plot_target <- function(poll, target, country, city, location_id, date_from, date_to, average_by, type, color_by){
+
+  result <- NULL
+  if(type=='ts'){
+
+    # Get target values per year
+    value_baseline <- creadb::measurements(country=country, city=city, poll=poll, average_by='year', collect=F,
+                                       date_from = lubridate::ymd(target$year_baseline*10000 + 101),
+                                       date_to = lubridate::ymd(target$year_baseline*10000 + 1231)) %>%
+                      summarize(value=mean(value)) %>% collect()
+    value_baseline <- value_baseline[[1]]
+
+    years <- seq(lubridate::year(date_from), lubridate::year(date_to))
+    values <- c()
+    for(year in years){
+      values <- c(values, value_baseline[1] * (1 + target$target_magnitude * (year-target$year_start)/(target$year_end-target$year_start)))
+    }
+
+
+
+    # Prepare plot
+    plot_data <- tibble(year=years, value=values, target=target$short_name)
+    plot_data <- plot_data %>% mutate(date = lubridate::as_datetime(lubridate::ymd(year*10000 + 101)))
+
+    # Flat segments if not averaged by years
+    if(average_by!='year' | 'year' %in% color_by){
+      plot_data_yearend <- tibble(year=years, value=values, target=target$short_name)
+      plot_data_yearend <- plot_data_yearend %>% mutate(date = lubridate::as_datetime(lubridate::ymd(year*10000 + 1231)))
+      plot_data <- bind_rows(plot_data, plot_data_yearend)
+    }
+
+    if('year' %in% color_by){
+      plot_data <- plot_data %>% dplyr::mutate(year=factor(lubridate::year(date)))
+      lubridate::year(plot_data$date) <- 0
+      result <- geom_line(data=plot_data, aes(x=date, y=value, color=year, linetype='target'))
+    }else{
+      result <- geom_line(data=plot_data, aes(x=date, y=value, color=target), linetype='dashed')
+    }
+
+  }
+  return(result)
+}
+
 plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='heatmap'){
 
   if(!is.null(running_days) && (average_by != 'day')){

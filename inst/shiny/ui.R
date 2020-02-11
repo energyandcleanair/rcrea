@@ -9,12 +9,13 @@ ui <- fluidPage(
             sidebarLayout(
                 sidebarPanel(
                     width = 2,
-                    selectInput("city",
-                                "City:",
-                                choices = locations$city,
+                    selectInput("country",
+                                "Country:",
+                                choices = unique(locations$country),
                                 multiple=T,
-                                selected = "Delhi"
+                                selected = "IN"
                     ),
+                    uiOutput("selectInputCity"),
                     selectInput("poll",
                                 "Pollutant:",
                                 choices = polls,
@@ -34,6 +35,7 @@ ui <- fluidPage(
                                 choices = plot_types,
                                 selected = plot_types[2]
                     ),
+                    uiOutput("selectInputTarget"),
                     downloadButton("downloadMeas", "Download")
 
                 ),

@@ -64,6 +64,22 @@ test_that("query return locations", {
 
 })
 
+test_that("query return targets", {
+
+  browser() # For debug
+
+  targets_unkown <- targets(country='XXX')
+  expect_equal(nrow(targets_unkown), 0)
+
+
+  targets_india <- targets(country='IN')
+  expect_gt(nrow(targets_india), 0)
+
+  targets_delhi <- targets(city='Delhi')
+  expect_gt(nrow(targets_delhi), 0)
+
+})
+
 test_that("query return measurements", {
 
   browser() # For debug
