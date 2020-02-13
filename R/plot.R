@@ -149,6 +149,14 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
     stop("You need to specify pollutant to display")
   }
 
+  if(('location' %in% c(subplot_by, color_by) %% is.na(unique(meas$location)))){
+    warning("location information missing. Run measurements query with keep_location_id=T")
+  }
+
+  if(('location_id' %in% c(subplot_by, color_by) %% is.na(unique(meas$location_id)))){
+    warning("location information missing. Run measurements query with keep_location_id=T")
+  }
+
   # Select pollutants
   if(!is.null(poll)){
     meas = meas[meas$poll == poll, ]
@@ -157,7 +165,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   # Deprecated argument(s)
   if(!is.null(running_days)){
     warning("running_days argument is deprecated. Use running_width instead.")
-    running_width = ifelse(is.na(running_width), running_days, running_width)
+    running_width = ifelse(is.null(running_width), running_days, running_width)
   }
 
   # Check not empty
