@@ -105,6 +105,12 @@ test_that("query return measurements", {
   meas_delhi_china <- measurements(country='CN', city='Delhi')
   expect_equal(nrow(meas_delhi_china), 0)
 
+  # Location id
+  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', keep_location_id = T)
+  length(unique(meas_delhi$location_id)) >= 23 # 23 stations with CO data  in Delhi at the time of writing
+  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', keep_location_id = F)
+  length(unique(meas_delhi$location_id)) == 1
+
   # Time aggregation
   meas_delhi_day <- measurements(city='Delhi', average_by='day', poll=creadb::PM10, collect=T)
   expect_equal(length(unique(lubridate::day(meas_delhi_day$date))), 31)

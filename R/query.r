@@ -30,7 +30,6 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_locat
   city_ <- tolower(city)
   id_ <- id
 
-
   # Connecting
   con = if(!is.null(con)) con else connection()
   result <- tbl_safe(con, "locations") # Old version without explicit geomoetry column
@@ -84,6 +83,7 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_locat
 #' @param collect T/F Whether to collect results into local tibble (see \code{\link{dbplyr::collect}})
 #' @param with_metadata T/F Whether to add additional information columnes (e.g. city, country, location name, geometry). If True, query takes significantly more time
 #' @param user_filter Additional filtering function for measurements applied before time aggregation
+#' @param keep_location_id T/F Whether or not to keep measurements at the station level (otherwise, aggregate at city level)
 #' (although the most time-granular observation is already a daily-average calculated after scraping)
 #'
 #' @return a tibble (locally collected or not) of measurements matching search criteria.
@@ -102,7 +102,17 @@ measurements <- function(country=NULL,
                          collect=TRUE,
                          with_metadata=FALSE,
                          user_filter=NULL,
+                         keep_location_id=FALSE,
                          con=NULL) {
+
+  # Accept both NA and NULL
+  location_id <- if(!is.null(location_id) && is.na(location_id)) NULL else location_id
+  city <- if(!is.null(city) && length(city)==1 && is.na(city)) NULL else city
+  country <- if(!is.null(country) && is.na(country)) NULL else country
+
+
+  # If location_id specified, we have to keep it
+  keep_location_id <- keep_location_id | !is.null(location_id)
 
   # Variable names must be different to column names
   poll_ <- tolower(poll)
@@ -117,9 +127,12 @@ measurements <- function(country=NULL,
   con = if(!is.null(con)) con else connection()
 
   # Take measurements at these locations
-  query_initial = switch(average_by,
-                         "hour" = "measurements",
-                         "measurements_daily")
+  query_initial = ifelse(is.null(average_by),
+                         "measurements",
+                         switch(average_by,
+                           "hour" = "measurements",
+                           "measurements_daily")
+                        )
 
   result <- tbl_safe(con, query_initial)
 
@@ -137,10 +150,10 @@ measurements <- function(country=NULL,
                    result %>% dplyr::filter(tolower(poll) %in% poll_) # Vector
   )
 
+
   result <- switch(toString(length(date_from)),
                    "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(date_trunc('day', date) >= date_from)
-                   # We have an index on day in Postgres hence the date_trunc to make query faster
+                   "1" = result %>% dplyr::filter(date >= date_from)
   )
 
   result <- switch(toString(length(date_to)),
@@ -148,38 +161,71 @@ measurements <- function(country=NULL,
                    "1" = result %>% dplyr::filter(date <= date_to)
   )
 
-  result <- switch(average_by,
-                   "hour" = filter_sanity_raw(result),
-                   filter_sanity_daily(result)
-  )
+  result <- if(is.null(average_by)){
+                filter_sanity_raw(result)
+            }else{
+              switch(average_by,
+                     "hour" = filter_sanity_raw(result),
+                     filter_sanity_daily(result)
+              )
+            }
+
 
   if(!is.null(user_filter)){
     result <- user_filter(result)
   }
 
-
-
   if(with_metadata){
-    group_by_meta_cols <- c("location", "name", "city", "country","geometry")
+    group_by_meta_cols <- c("name", "city", "country","geometry")
   }else{
-    group_by_meta_cols <- c("city", "location") # keeping city regardless because required in plots
+    group_by_meta_cols <- c("city") # keeping city regardless because required in plots
+  }
+
+  if(keep_location_id){
+    group_by_meta_cols <- c(group_by_meta_cols, "location", "location_id")
   }
 
   # Apply time aggregation
   # if hour, we fetched the raw measurements table
   # if not hour (e.g. day, week, month, year), we fetched from measurements_daily which is already aggregated by day,
   # so we only aggregate further if <> 'day'
-  if(average_by == 'hour'){
+  if(is.null(average_by)){
+    result <- result %>%
+      dplyr::select_at(c(group_by_meta_cols, "date", "poll", "value"))
+  }else if(average_by == 'hour'){
     result <- result %>% dplyr::mutate(date=DATE_TRUNC(average_by, date)) %>%
-      dplyr::group_by_at(c(group_by_meta_cols, "location_id", "date", "poll")) %>%
+      dplyr::group_by_at(c(group_by_meta_cols, "date", "poll")) %>%
       dplyr::summarize(value=avg(value)) %>% dplyr::ungroup()
   }else if(average_by == 'day'){
-    result <- result %>% dplyr::mutate(value=avg_day) %>%
-      dplyr::select(-c(id)) %>% select_at(c(group_by_meta_cols, "location_id", "date", "poll", "value")) # To mimic aggregation so that columns are more or less similar
+    result <- result %>% dplyr::mutate(value=avg_day)
+    if(keep_location_id){# Mimic aggregation for consistent column selection
+      result <- result %>%
+        dplyr::select_at(c(group_by_meta_cols, "date", "poll", "value"))
+    }else{ # Average across locations if need be
+      result <- result %>%
+        dplyr::group_by_at(c(group_by_meta_cols, "date", "poll"))%>%
+        dplyr::summarize(value=avg(value)) %>% dplyr::ungroup()
+    }
   }else{
-    result <- result %>% dplyr::mutate(date=DATE_TRUNC(average_by, date)) %>%
-      dplyr::group_by_at(c(group_by_meta_cols, "location_id", "date", "poll")) %>%
-      dplyr::summarize(value=avg(avg_day)) %>% dplyr::ungroup()
+    result <- result %>% dplyr::mutate(value=avg_day)
+    # First average per day across locations
+    if(!keep_location_id){
+      result <- result %>%
+        dplyr::group_by_at(unique(c(group_by_meta_cols, "date", "poll"))) %>%
+        dplyr::summarize(value=avg(value)) %>%
+        dplyr::ungroup()
+    }
+
+    # Then average across days
+    result <- result %>%
+      dplyr::mutate(date=DATE_TRUNC(average_by, date)) %>%
+      dplyr::group_by_at(c(group_by_meta_cols, "date", "poll")) %>%
+      dplyr::summarize(value=avg(value)) %>% dplyr::ungroup()
+  }
+
+  # To homogenize columns
+  if(!keep_location_id){
+    result <- result %>% mutate(location=NA, location_id=NA)
   }
 
   # Whether to collect the query i.e. actually run the query

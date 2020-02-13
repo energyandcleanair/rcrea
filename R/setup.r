@@ -15,6 +15,8 @@ NO2 = "no2"
 O3 = "o3"
 PM10 = "pm10"
 SO2 = "so2"
+NO = "no"
+NOX = "nox"
 
 # Constants for connection
 CONN_HOST = '34.77.246.210'
