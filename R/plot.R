@@ -149,11 +149,11 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
     stop("You need to specify pollutant to display")
   }
 
-  if(('location' %in% c(subplot_by, color_by) %% is.na(unique(meas$location)))){
+  if(('location' %in% c(subplot_by, color_by) & is.na(unique(meas$location)))){
     warning("location information missing. Run measurements query with keep_location_id=T")
   }
 
-  if(('location_id' %in% c(subplot_by, color_by) %% is.na(unique(meas$location_id)))){
+  if(('location_id' %in% c(subplot_by, color_by) & is.na(unique(meas$location_id)))){
     warning("location information missing. Run measurements query with keep_location_id=T")
   }
 
