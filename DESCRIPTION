@@ -14,12 +14,11 @@ Imports:
     dbplyr,
     sf,
     bit64,
-    zoo
+    zoo,
+    ggnewscale
 Depends:
     ggplot2,
     dplyr
 Suggests: 
     testthat (>= 2.1.0),
-    purrrlyr,
-    ggnewscale
-
+    purrrlyr
