@@ -35,6 +35,14 @@ server <- function(input, output, session) {
         creadb::targets(country=country, city=city, poll=poll)
     })
 
+    scales <- reactive({
+        poll <- input$poll
+        req(poll)
+
+        # Get scales
+        creadb::scales(poll=poll)
+    })
+
     # Event Observers --------------------------------------
     observeEvent(input$averaging, {
         updateNumericInput(session, "running_width", label = paste("Running average (", input$averaging, ")",sep=""))
@@ -60,6 +68,10 @@ server <- function(input, output, session) {
 
     output$selectInputTarget <- renderUI({
         selectInput("target", "Applicable targets:", multiple=T, choices = targets()$short_name)
+    })
+
+    output$selectInputTarget <- renderUI({
+        selectInput("scale", "Applicable scales:", multiple=T, choices = scales()$name)
     })
 
     output$meas_plot <- renderPlot({
@@ -106,6 +118,25 @@ server <- function(input, output, session) {
                 }
             }
         }
+
+        # Adding scale colours if any and if timeseries
+        if(type=='ts'){
+            if(!is.null(input$scale)){
+                for (i_scale in 1:length(input$scale)){
+                    scale <- scales() %>% filter(name == input$scale[i_scale]) %>% filter(poll == poll)
+
+                    if(plot_type=='ts_year'){
+                        date_from <- as.POSIXct("0000-01-01")
+                        date_to <- as.POSIXct("0001-01-01")
+                    }else{
+                        date_from <- min(meas()$date)
+                        date_to <- max(meas()$date)
+                    }
+                    meas_plot <- add_plot_scale(meas_plot, scale=scale, date_from=date_from, date_to=date_to)
+                }
+            }
+        }
+
         meas_plot
     })
 

@@ -36,6 +36,7 @@ ui <- fluidPage(
                                 selected = plot_types[2]
                     ),
                     uiOutput("selectInputTarget"),
+                    uiOutput("selectInputScales"),
                     downloadButton("downloadMeas", "Download")
 
                 ),

@@ -5,7 +5,7 @@ test_that("plots do not trigger errors", {
 
   browser() # For debug
 
-  meas_delhi_mumbai<- measurements(city=c('Delhi','Mumbai'), date_from='2019-01-01', poll=c(creadb::PM25, creadb::PM10))
+  meas_delhi_mumbai<- measurements(city=c('Delhi','Mumbai'), date_from='2019-01-01', poll=c(creadb::PM25, creadb::PM10), keep_location_id = T)
 
   # Time series per location
   expect_error(plt <- plot_measurements(meas_delhi_mumbai, poll=creadb::PM25, subplot_by='location'), NA)

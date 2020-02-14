@@ -79,6 +79,7 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_locat
 #' @param poll Pollutant name (e.g. creadb::CO, "co", creadb::PM25, "pm25")
 #' @param date_from Beginning date of queried measurements ('yyyy-mm-dd')
 #' @param date_to End date of queried measurements ('yyyy-mm-dd')
+#' @param source Source of the data. e.g. cpcb, openaq, openaq-archive
 #' @param average_by How to time-average results e.g. 'hour', day', 'week', 'month' or 'year'
 #' @param collect T/F Whether to collect results into local tibble (see \code{\link{dbplyr::collect}})
 #' @param with_metadata T/F Whether to add additional information columnes (e.g. city, country, location name, geometry). If True, query takes significantly more time
@@ -98,6 +99,7 @@ measurements <- function(country=NULL,
                          poll=NULL,
                          date_from='2015-01-01',
                          date_to=NULL,
+                         source=NULL,
                          average_by='day',
                          collect=TRUE,
                          with_metadata=FALSE,
@@ -116,6 +118,7 @@ measurements <- function(country=NULL,
 
   # Variable names must be different to column names
   poll_ <- tolower(poll)
+  source_ <- tolower(source)
 
   # Find locations that match filters
   locs <- locations(country=country,
@@ -150,7 +153,6 @@ measurements <- function(country=NULL,
                    result %>% dplyr::filter(tolower(poll) %in% poll_) # Vector
   )
 
-
   result <- switch(toString(length(date_from)),
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(date >= date_from)
@@ -159,6 +161,12 @@ measurements <- function(country=NULL,
   result <- switch(toString(length(date_to)),
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(date <= date_to)
+  )
+
+  result <- switch(toString(length(source_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
+                   result %>% dplyr::filter(tolower(source) %in% source_) # Vector
   )
 
   result <- if(is.null(average_by)){
@@ -427,6 +435,43 @@ exceedance_status <- function(country=NULL,
   }
   return(excs)
 }
+
+
+scales <- function(poll=NULL){
+
+  # Variable names must be different to column names
+  poll_ <- poll
+
+  # Connecting
+  con = connection()
+  result  <- tbl_safe(con,"scales")
+
+  # R package uses 'poll' whilst db is using 'pollutant'
+  result <- result %>% dplyr::rename(poll = pollutant)
+
+  # Apply filters
+  result <- switch(toString(length(poll_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(poll) == poll_ | is.na(poll) ), # Single value
+                   result %>% dplyr::filter(tolower(poll) %in% poll_ | is.na(poll) ) # Vector
+  )
+
+  result <- result %>% collect()
+
+  pgarray_to_list <- function(column, as_type){
+    column = gsub(fixed=T, "{", "", column)
+    column = gsub(fixed=T, "}", "", column)
+    column = gsub(fixed=T, "\\\"", "", column)
+    return(lapply(column, function(x)  as_type(gsub(fixed=T, "\"", "", unlist(strsplit(x, ",", fixed=T), use.names = F)))))
+  }
+
+  result$thresholds <- pgarray_to_list(result$thresholds, as.numeric)
+  result$labels <- pgarray_to_list(result$labels, as.character)
+  result$colours <- pgarray_to_list(result$colours, as.character)
+
+  return(result)
+}
+
 
 #' Attach weather information to air quality measurements
 #'

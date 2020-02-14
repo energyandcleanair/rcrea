@@ -1,5 +1,6 @@
 library(ggplot2)
 library(zoo)
+library(ggnewscale)
 
 
 # Utils -------------
@@ -54,8 +55,6 @@ partial_plot_target <- function(poll, target, country, city, location_id, date_f
       values <- c(values, value_baseline[1] * (1 + target$target_magnitude * (year-target$year_start)/(target$year_end-target$year_start)))
     }
 
-
-
     # Prepare plot
     plot_data <- tibble(year=years, value=values, target=target$short_name)
     plot_data <- plot_data %>% mutate(date = lubridate::as_datetime(lubridate::ymd(year*10000 + 101)))
@@ -78,6 +77,26 @@ partial_plot_target <- function(poll, target, country, city, location_id, date_f
   }
   return(result)
 }
+
+add_plot_scale <- function(plot, scale, date_from, date_to){
+
+  lower <- scale$thresholds[[1]]
+  upper <- c(tail(lower, -1), Inf)
+  colour <- scale$colours[[1]]
+  label <- scale$labels[[1]]
+
+  scale_df = tibble(lower, upper, colour, label)
+
+  # Preparing colours
+  colour_scale_values <- as.list(colour)
+  names(colour_scale_values)<- label
+
+  return(plot +  new_scale_color() + new_scale_fill() +
+           geom_rect(data=scale_df, aes(ymin=lower, x=NULL, y=NULL, ymax=upper, xmin=date_from, xmax=date_to, colour_new=NULL, fill=label),  size=0, colour='white', alpha=0.2) +
+           scale_fill_manual(values=colour_scale_values, breaks=rev(label))
+         )
+}
+
 
 plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='heatmap'){
 
