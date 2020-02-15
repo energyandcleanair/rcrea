@@ -91,7 +91,7 @@ add_plot_scale <- function(plot, scale, date_from, date_to){
   colour_scale_values <- as.list(colour)
   names(colour_scale_values)<- label
 
-  return(plot +  new_scale_color() + new_scale_fill() +
+  return(plot +  ggnewscale::new_scale_color() + ggnewscale::new_scale_fill() +
            geom_rect(data=scale_df, aes(ymin=lower, x=NULL, y=NULL, ymax=upper, xmin=date_from, xmax=date_to, colour_new=NULL, fill=label),  size=0, colour='white', alpha=0.2) +
            scale_fill_manual(values=colour_scale_values, breaks=rev(label))
          )
