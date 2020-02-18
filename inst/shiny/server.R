@@ -63,16 +63,17 @@ server <- function(input, output, session) {
 
     # Output Elements --------------------------------------
     output$selectInputCity <- renderUI({
-        selectInput("city", "City:", choices = (locations %>% filter(country==input$country))$city)
+        selectInput("city", "City:", multiple=T, choices = (locations %>% filter(country==input$country))$city)
     })
 
     output$selectInputTarget <- renderUI({
         selectInput("target", "Applicable targets:", multiple=T, choices = targets()$short_name)
     })
 
-    output$selectInputTarget <- renderUI({
+    output$selectInputScale <- renderUI({
         selectInput("scale", "Applicable scales:", multiple=T, choices = scales()$name)
     })
+
 
     output$meas_plot <- renderPlot({
         poll <- input$poll
@@ -91,13 +92,13 @@ server <- function(input, output, session) {
                "heatmap_w_text" = "heatmap_w_text")
 
         color_by <-  switch(plot_type,
-                            "ts" = "city",
+                            "ts" = switch(input$overlayCities+1, NULL, "city"),
                             "ts_year" = "year",
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
         subplot_by <-  switch(plot_type,
-                            "ts" = NULL,
+                            "ts" = switch(input$overlayCities+1, "city", NULL),
                             "ts_year" = "city",
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)

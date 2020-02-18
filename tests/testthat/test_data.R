@@ -120,13 +120,15 @@ test_that("Numbers match previous studies", {
   # S.No	From Date	To Date	PM2.5 (ug/m3)	NO (ug/m3)	NO2 (ug/m3)	CO (mg/m3)	Ozone (ug/m3)	PM10 (ug/m3)	NOx (ppb)
   # 2	01-Jan-2016 - 00:00	01-Jan-2017 - 00:00	66.07	11.68	13.85	1.48	26.72	167.13	25.53
   link <- 'https://app.cpcbccr.com/ccr/#/caaqm-dashboard-all/caaqm-view-data-report/'
+  obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', PM10, 2016, NA, NA, 167.13, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', PM25, 2016, NA, NA, 66.07, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', NO, 2016, NA, NA, 11.68, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', NO2, 2016, NA, NA, 13.85, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', NOX, 2016, NA, NA, 25.53, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', CO, 2016, NA, NA, 1480, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', O3, 2016, NA, NA, 26.72, link)
-  obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', PM10, 2016, NA, NA, 167.13, link)
-  obs[nrow(obs) + 1,] <- list("IN", 'Delhi', 'IN-82', NOX, 2016, NA, NA, 25.53, link)
+
+
 
   # S.No	From Date	To Date	NO (ug/m3)	PM10 (ug/m3)	PM2.5 (ug/m3)	NO2 (ug/m3)	NOx (ppb)	CO (mg/m3)Ozone (ug/m3)
   # 1	01-Nov-2018 - 00:00	02-Nov-2018 - 00:00	171.68	379.09	283.77	127.78	299.3	4.16		28.74
@@ -145,6 +147,18 @@ test_that("Numbers match previous studies", {
 
 
   # Victoria, Kolkata - WBPCB
+  # S.No	From Date	To Date	                    PM10 (ug/m3)	PM2.5 (ug/m3)	NO (ug/m3)	NO2 (ug/m3)	NOx (ppb)	CO (mg/m3)	Ozone (ug/m3)
+  # 1	01-Jan-2017 - 00:00	01-Jan-2018 - 00:00	88.34		      -             49.66	        50.11	      100.07	    4.86	    31.68
+  obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', PM10, 2017, NA, NA, 88.34, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', PM25, 2017, NA, NA, NA, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', NO, 2017, NA, NA, 49.66, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', NO2, 2017, NA, NA, 50.11, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', NOX, 2017, NA, NA, 100.07, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', CO, 2017, NA, NA, 4860, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', O3, 2017, NA, NA, 31.68, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', SO2, 2017, NA, NA, NA, link)
+
+
   # S.No	From Date	To Date	PM10 (ug/m3)	PM2.5 (ug/m3)	Ozone (ug/m3)	SO2 (ug/m3)	NO2 (ug/m3)	NO (ug/m3)	CO (mg/m3)	NOx (ppb)
   # 1	01-Jan-2018 - 00:00	01-Jan-2019 - 00:00	84.57	51.51	19.58	4.95	40.69	29.3	1.06	69.57
   obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', PM25, 2018, NA, NA, 51.51, link)
@@ -167,6 +181,7 @@ test_that("Numbers match previous studies", {
   obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', NOX, 2019, 10, 20, 74.75, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Kolkata', 'IN-142', SO2, 2019, 10, 20, 3.28, link)
 
+  # Adarsh Nagar, Jaipur - RSPCB "IN-297"
 
   # "Bandra, Mumbai - MPCB"	"IN-22"
   # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	CO (mg/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	NO (ug/m3)	NOx (ppb)
@@ -180,20 +195,111 @@ test_that("Numbers match previous studies", {
   obs[nrow(obs) + 1,] <- list("IN", 'Mumbai', 'IN-22', NO, 2019, 2, 20, 54.33, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Mumbai', 'IN-22', NOX, 2019, 2, 20, 82.29, link)
 
+  # S.No	From Date	To Date	PM10 (ug/m3)	PM2.5 (ug/m3)	NO (ug/m3)	NO2 (ug/m3)	NOx (ppb)	CO (mg/m3)	Ozone (ug/m3)
+  # 1	01-Jan-2016 - 00:00	01-Jan-2017 - 00:00					40.2	0.0
+  obs[nrow(obs) + 1,] <- list("IN", 'Mumbai', 'IN-22', NOX, 2016, NA, NA, 40.2, link)
 
   # "Ardhali Bazar, Varanasi - UPPCB"	"IN-84"
+  # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	CO (mg/m3)	NO (ug/m3)	NOx (ppb)
+  # 1	15-Mar-2017 - 00:00	16-Mar-2017 - 00:00	86.81	202.84	12.71	13.25	21.71	1.13	8.45	30.16
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2017, 3, 15, 86.81, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2017, 3, 15, 202.84, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2017, 3, 15, 1130, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2017, 3, 15, 8.45, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2017, 3, 15, 12.71, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2017, 3, 15, 13.25, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO2, 2017, 3, 15, 21.71, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NOX, 2017, 3, 15, 30.16, link)
+
+  # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	CO (mg/m3)	NO (ug/m3)	NOx (ppb)
+  # 1	15-Mar-2018 - 00:00	16-Mar-2018 - 00:00	145.06	356.74	34.52	30.98	104.11	1.25	34.09	53.1
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2018, 3, 15, 145.06, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2018, 3, 15, 356.74, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2018, 3, 15, 1250, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2018, 3, 15, 34.09, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2018, 3, 15, 34.52, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2018, 3, 15, 30.98, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO2, 2018, 3, 15, 104.11, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NOX, 2018, 3, 15, 53.1, link)
+
   # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	CO (mg/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	NO (ug/m3)	NOx (ppb)
   # 1	20-Feb-2019 - 00:00	21-Feb-2019 - 00:00	154.41	305.38	1.1	31.78	66.59	117.26	43.49	75.22
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2019, 2, 20, 154.41, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2019, 2, 20, 305.38, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2019, 2, 20, 1100, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2019, 2, 20, 43.49, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2019, 2, 20, 31.78, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2019, 2, 20, 66.59, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO2, 2019, 2, 20, 117.26, link)
-  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2019, 2, 20, 43.49, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NOX, 2019, 2, 20, 75.22, link)
 
+  # S.No	From Date	To Date	                  PM2.5 (ug/m3)	PM10 (ug/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	CO (mg/m3)	NO (ug/m3)	NOx (ppb)
+  # 1	22-Jan-2020 - 00:00	23-Jan-2020 - 00:00	137.17		                  14.29	40.75	50.62		                              8.76	20.11
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2020, 1, 22, 137.17, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2020, 1, 22, NA, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2020, 1, 22, NA, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2020, 1, 22, 8.76, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2020, 1, 22, 14.29, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2020, 1, 22, 40.75, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO2, 2020, 1, 22, 50.62, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NOX, 2020, 1, 22, 20.11, link)
+
+  # S.No	From Date	To Date	PM10 (ug/m3)	PM2.5 (ug/m3)	NO (ug/m3)	NO2 (ug/m3)	NOx (ppb)	CO (mg/m3)	Ozone (ug/m3)
+  # 1	01-Jan-2016 - 00:00	01-Jan-2017 - 00:00	266.36	154.12	11.14	20.92	32.12	1.13	12.36
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2016, NA, NA, 266.36, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2016, NA, NA, 154.12, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2016, NA, NA, 11.14, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO2, 2016, NA, NA, 20.92, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NOX, 2016, NA, NA, 32.12, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2016, NA, NA, 1130, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2016, NA, NA, 12.36, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2016, NA, NA, 5.76, link)
+
+  # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	NO2 (ug/m3)	NO (ug/m3)	NOx (ppb)	SO2 (ug/m3)	CO (mg/m3)	Ozone (ug/m3)
+  # 1	01-Jan-2017 - 00:00	01-Jan-2018 - 00:00	105.54	217.7	36.5	11.48	41.55	6.91	0.57	11.54
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2017, NA, NA, 105.54, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2017, NA, NA, 217.7, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO2, 2017, NA, NA, 36.5, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2017, NA, NA, 11.48, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NOX, 2017, NA, NA, 41.55, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2017, NA, NA, 6.91, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2017, NA, NA, 570, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2017, NA, NA, 11.54, link)
+
+  # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	NO2 (ug/m3)	NO (ug/m3)	NOx (ppb)	SO2 (ug/m3)	CO (mg/m3)	Ozone (ug/m3)
+  # 2	01-Jan-2018 - 00:00	01-Jan-2019 - 00:00	103.25	219.62	77.84	19.41	35.8	22.1	1.0	42.82
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2018, NA, NA, 103.25, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2018, NA, NA, 219.62, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO2, 2018, NA, NA, 77.84, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2018, NA, NA, 19.41, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NOX, 2018, NA, NA, 35.8, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2018, NA, NA, 22.1, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2018, NA, NA, 1000, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2018, NA, NA, 42.82, link)
+
+  # S.No	From Date	To Date	                  PM2.5 (ug/m3)	PM10 (ug/m3)	NO2 (ug/m3)	NO (ug/m3)	NOx (ppb)	SO2 (ug/m3)	CO (mg/m3)	Ozone (ug/m3)
+  # 1	01-Jan-2019 - 00:00	01-Jan-2020 - 00:00	97.96	        207.15	      55.33	      14.17	      25.45   	22.88	      0.68	      61.97
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2019, NA, NA, 97.96, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2019, NA, NA, 207.15, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO2, 2019, NA, NA, 55.33, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2019, NA, NA, 14.17, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NOX, 2019, NA, NA, 25.45, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2019, NA, NA, 22.88, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2019, NA, NA, 680, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2019, NA, NA, 61.97, link)
+
   # "Central University, Hyderabad - TSPCB"	"IN-63"
+  # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	CO (mg/m3)	NO (ug/m3)	NOx (ppb)
+  # 1	15-Mar-2018 - 00:00	16-Mar-2018 - 00:00	43.25	104.67	6.75	69.79	49.54	1.01	6.48	32.27
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', PM25, 2018, 3, 15, 43.25, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', PM10, 2018, 3, 15, 104.67, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', CO, 2018, 3, 15, 1010, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', SO2, 2018, 3, 15, 6.75, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', O3, 2018, 3, 15, 69.79, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NO2, 2018, 3, 15, 49.54, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NO, 2018, 3, 15, 6.48, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NOX, 2018, 3, 15, 32.27, link)
+
   # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	CO (mg/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	NO (ug/m3)	NOx (ppb)
   # 1	20-Feb-2019 - 00:00	21-Feb-2019 - 00:00	28.11	83.2	0.42	3.83	38.56	28.72	3.18	17.87
   obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', PM25, 2019, 2, 20, 28.11, link)
@@ -204,6 +310,28 @@ test_that("Numbers match previous studies", {
   obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NO2, 2019, 2, 20, 28.72, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NO, 2019, 2, 20, 3.18, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NOX, 2019, 2, 20, 17.87, link)
+
+  # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	CO (mg/m3)	NO (ug/m3)	NOx (ppb)
+  # 1	15-Jan-2020 - 00:00	16-Jan-2020 - 00:00	33.94	70.54	2.67	36.14	20.41	0.0	4.06	14.14
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', PM25, 2020, 1, 15, 33.94, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', PM10, 2020, 1, 15, 70.54, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', CO, 2020, 1, 15, 0, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', SO2, 2020, 1, 15, 2.67, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', O3, 2020, 1, 15, 36.14, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NO2, 2020, 1, 15, 20.41, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NO, 2020, 1, 15, 4.06, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-63', NOX, 2020, 1, 15, 14.14, link)
+
+  # Sanathnagar, Hyderabad - TSPCB IN-111
+  # S.No	From Date	To Date	NO (ug/m3)	NO2 (ug/m3)	NOx (ppb)	CO (mg/m3)	Ozone (ug/m3)	SO2 (ug/m3)	PM2.5 (ug/m3)
+  # 1	01-Jan-2019 - 00:00	01-Jan-2020 - 00:00	6.56	32.51	22.61	0.7	28.37	8.24	48.05
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-111', PM25, 2019, NA, NA, 48.05, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-111', CO, 2019, NA, NA, 700, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-111', SO2, 2019, NA, NA, 8.24, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-111', O3, 2019, NA, NA, 28.37, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-111', NO2, 2019, NA, NA, 32.51, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-111', NO, 2019, NA, NA, 6.56, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Hyderabad', 'IN-111', NOX, 2019, NA, NA, 22.61, link)
 
   # "Ashok Nagar, Udaipur - RSPCB"	"IN-139"
   # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	CO (mg/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	NO (ug/m3)	NOx (ppb)
@@ -216,6 +344,9 @@ test_that("Numbers match previous studies", {
   obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', NO2, 2019, 2, 20, 53.95, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', NO, 2019, 2, 20, 68.24, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', NOX, 2019, 2, 20, 122.24, link)
+
+
+
 
   # Carbon Copy Dashboard
   link <- "https://ncap.carboncopy.info/ncap-cities/"
@@ -266,14 +397,13 @@ test_that("Numbers match previous studies", {
     return(meas)
   }
 
-#
-#   # # For each row
-#   obs_crea <- obs %>% by_row(..f = get_crea_value, .to = "crea_value", .collate = "cols")
-#
-#   # Reshaping
-#   obs_crea <- obs_crea %>%
-#     dplyr::mutate(rel_diff=sprintf("%1.2f%%", 100*abs(value-crea_value1)/value)) %>%
-#     dplyr::select(-source,source) %>%
-#     dplyr::rename(value_official=value, value_crea=crea_value1)
+  # # For each row
+  obs_crea <- obs %>% by_row(..f = get_crea_value, .to = "crea_value", .collate = "cols")
+
+  # Reshaping
+  obs_crea <- obs_crea %>%
+    dplyr::mutate(rel_diff=sprintf("%1.2f%%", 100*abs(value-crea_value1)/value)) %>%
+    dplyr::select(-source,source) %>%
+    dplyr::rename(value_official=value, value_crea=crea_value1)
 
 })

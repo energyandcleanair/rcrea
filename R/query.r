@@ -2,7 +2,8 @@ source('R/setup.r')
 
 filter_sanity_daily <- function(result){
   # Filters out measurements that are obviously wrong
-  result <- result %>% dplyr::filter(avg_day > 0) %>%
+  result <- result %>%
+    # dplyr::filter(avg_day > 0) %>%
     dplyr::filter(!is.na(location_id)) %>%
     dplyr::filter(!is.na(date)) %>%
     dplyr::filter(!is.na(poll))  %>%
@@ -14,7 +15,8 @@ filter_sanity_daily <- function(result){
 
 filter_sanity_raw <- function(result){
   # Filters out measurements that are obviously wrong
-  result <- result %>% dplyr::filter(value > 0) %>%
+  result <- result %>%
+    # dplyr::filter(value > 0) %>%
     dplyr::filter(!is.na(location_id)) %>%
     dplyr::filter(!is.na(date)) %>%
     dplyr::filter(!is.na(poll))  %>%
@@ -22,6 +24,7 @@ filter_sanity_raw <- function(result){
   # result <- result %>% filter(parameter != 'o3' || value > -9999)
   return(result)
 }
+
 
 locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_location=TRUE, con=NULL){
 

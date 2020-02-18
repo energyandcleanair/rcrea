@@ -1,7 +1,7 @@
 ui <- fluidPage(
 
     # Application title
-    titlePanel("CREA - Air Quality Monitoring"),
+    titlePanel(title=div(img(src="crea_logo.svg", width=220))),
 
     tabsetPanel(
         # Measurements
@@ -35,14 +35,17 @@ ui <- fluidPage(
                                 choices = plot_types,
                                 selected = plot_types[2]
                     ),
+                    conditionalPanel( condition = "input.plot_type=='ts'",
+                                      checkboxInput("overlayCities", "Overlay cities", value=FALSE)),
+
                     uiOutput("selectInputTarget"),
-                    uiOutput("selectInputScales"),
+                    uiOutput("selectInputScale"),
                     downloadButton("downloadMeas", "Download")
 
                 ),
                 # Show a plot of the generated distribution
                 mainPanel(
-                   plotOutput("meas_plot", height = 600)
+                   plotOutput("meas_plot", height = 800)
                 )
             )
         ),
