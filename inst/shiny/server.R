@@ -1,6 +1,7 @@
 require(creadb)
 library(lubridate)
 library(raster)
+library(shinyWidgets)
 
 server <- function(input, output, session) {
 
@@ -51,12 +52,21 @@ server <- function(input, output, session) {
 
     # Download Handlers ----------------------------------
     # Downloadable csv of selected dataset ----
-    output$downloadMeas <- downloadHandler(
+    output$download_csv <- downloadHandler(
         filename = function() {
-            paste("measurements_", input$city,"_",input$poll, ".csv", sep = "")
+            paste("measurements.csv", sep = "")
         },
         content = function(file) {
             write.csv(meas(), file, row.names = FALSE)
+        }
+    )
+
+    output$download_rds <- downloadHandler(
+        filename = function() {
+            paste("measurement.rds", sep = "")
+        },
+        content = function(file) {
+            saveRDS(meas(), file)
         }
     )
 
@@ -148,33 +158,25 @@ server <- function(input, output, session) {
     #     getData("GADM", country=input$country, level=1)
     # })
 
-    exc_status <- reactive({
+    exc <- reactive({
+        country <- input$exc_country
         year <- input$exc_year
         city <- input$exc_city
-        poll <- input$exc_poll
-        standard_org <- input$exc_standard_org
-        req(year, city, poll, standard_org)
+        req(year, country, city)
 
         # Get exceedances status
-        creadb::exceedance_status(city=city, year=year, poll=poll, standard_org=standard_org, with_location = F)
+        exceedances(country=country, city=city, year=year) %>%
+            mutate(status=cut(
+                ifelse(exceedance_allowed_per_year==0,
+                       exceedance_this_year, exceedance_this_year/exceedance_allowed_per_year),
+                breaks=exc_status_breaks,
+                labels=exc_status_labels
+            ))
     })
 
-    exc <- reactive({
-        year <- input$exc_year
-        city <- input$exc_city
-        poll <- input$exc_poll
-        standard_org <- input$exc_standard_org
-        req(year, city, poll, standard_org)
-
-        date_from=lubridate::ymd(year*10000+101)
-        date_to = lubridate::ymd(year*10000+1231)
-
-        # Get exceedances
-        creadb::exceedances(city=city, poll=poll, date_from=date_from, date_to=date_to, standard_org=standard_org)
-    })
 
     # Downloadable csv of selected dataset ----
-    output$exc_download <- downloadHandler(
+    output$exc_download_csv <- downloadHandler(
         filename = function() {
             paste("standard_exceedances.csv", sep = "")
         },
@@ -183,15 +185,67 @@ server <- function(input, output, session) {
         }
     )
 
+    output$exc_download_rds <- downloadHandler(
+        filename = function() {
+            paste("standard_exceedances.rds", sep = "")
+        },
+        content = function(file) {
+            saveRDS(exc(), file)
+        }
+    )
+
     # Output Elements --------------------------------------
-    output$exc_status_table <- DT::renderDataTable({
-        exc_status()
+    output$selectInputExcCity <- renderUI({
+        cities <- unique((locations %>% filter(country==input$country))$city)
+        pickerInput("exc_city","City", choices=cities, options = list(`actions-box` = TRUE),multiple = T)
+        # selectInput("exc_city", "City:", multiple=T, selected = cities, choices = cities)
     })
 
     output$exc_table <- DT::renderDataTable({
-
-        exc() %>% filter(aggregation_period %in% input$exc_aggregation_period)
+         DT::datatable(data=exc() %>%
+            dplyr::filter(aggregation_period %in% input$exc_aggregation_period) %>%
+            dplyr::filter(poll %in% input$exc_poll) %>%
+            dplyr::filter(standard_org %in% input$exc_standard_org) %>%
+            dplyr::filter(status %in% input$exc_status) %>%
+            dplyr::mutate(threshold_str=paste0(threshold," ", unit, " [", aggregation_period,"]")) %>%
+            dplyr::select(
+                city,
+                poll,
+                status,
+                exceedance_this_year,
+                exceedance_allowed_per_year,
+                breach_date,
+                threshold_str,
+                standard_org,
+            ),
+            options = list(
+                columnDefs = list(list(visible=FALSE, targets=c())),
+                pageLength = 15,
+                autoWidth = TRUE,
+                rowCallback = JS(
+                    "function(row, data) {",
+                    "var n_exc = data[3];",
+                    "var str_exc = n_exc < 1 ? (n_exc * 100).toFixed(0).toString() + '%' :  Math.floor(n_exc).toString() + ' times';",
+                    "$('td:eq(3)', row).html(str_exc);",
+                    "}"
+                    )
+                # callback = JS("var tips = ['tooltip1', 'tooltip2', 'tooltip3', 'tooltip4', 'tooltip5'],
+                #             firstRow = $('#exc_status_table thead tr th');
+                #             for (var i = 0; i < tips.length; i++) {
+                #               $(firstRow[i]).attr('title', tips[i]);
+                #             }")
+         ),
+         rownames = FALSE,
+         ) %>%
+            formatDate(c(6), "toLocaleDateString") %>%
+            formatStyle(
+                'status',
+                target = 'row',
+                backgroundColor = styleEqual(exc_status_labels, exc_status_colours)
+            )
     })
+
+
 
     # output$exc_status_map <- renderPlot({
     #     creadb::map_exceedance_status(exc_status()) + geom_sf(data=sf::st_as_sf(countries_map()), fill = NA)
