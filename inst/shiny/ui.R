@@ -1,7 +1,7 @@
 ui <- fluidPage(
 
     # Application title
-    titlePanel(title=div(img(src="crea_logo.svg", width=220))),
+    titlePanel(windowTitle="CREA - Air Quality Monitoring", title=div(img(src="crea_logo.svg", width=220))),
 
     tabsetPanel(
         # Measurements
@@ -28,7 +28,7 @@ ui <- fluidPage(
                     ),
                     sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=1, step=1, sep = ""
                     ),
-                    sliderInput("years", "Year", min=2015, max=2020, value=c(2018, 2020), step=1, sep = ""
+                    sliderInput("years", "Year", min=2015, max=2020, value=c(2018, 2020), step=1, sep = "", ticks = F
                     ),
                     selectInput("plot_type",
                                 "Plot type",
@@ -40,7 +40,8 @@ ui <- fluidPage(
 
                     uiOutput("selectInputTarget"),
                     uiOutput("selectInputScale"),
-                    downloadButton("downloadMeas", "Download")
+                    downloadButton("download_csv", "Download (.csv)"),
+                    downloadButton("download_rds", "Download (.rds)"),
 
                 ),
                 # Show a plot of the generated distribution
@@ -54,38 +55,60 @@ ui <- fluidPage(
              sidebarLayout(
                  sidebarPanel(
                      width = 2,
+                     selectInput("exc_country",
+                                 "Country:",
+                                 choices = unique(locations$country),
+                                 multiple=T,
+                                 selected = "IN"
+                     ),
+                     uiOutput("selectInputExcCity"),
+
+
                      sliderInput("exc_year",
                                  "Year:",
-                                 min=2015, max=2020, value=2020, sep="", step=1
+                                 min=2015, max=2020, value=2020, sep="", step=1, ticks = F
                      ),
-                     selectInput("exc_city",
-                                 "Cities:",
-                                 choices = unique(locations$city),
+
+                     pickerInput("exc_status",
+                                 "Status",
+                                 choices = exc_status_labels,
+                                 options = list(`actions-box` = TRUE,
+                                                `selected-text-format` = "count > 3"),
                                  multiple = T,
-                                 selected = "Delhi"
-                     ),
-                     selectInput("exc_poll",
-                                 "Pollutant:",
+                                 selected = exc_status_labels),
+
+
+                     pickerInput("exc_poll",
+                                 "Pollutant",
                                  choices = polls,
-                                 selected = creadb::PM25
-                     ),
-                     selectInput("exc_aggregation_period",
-                                 "Averaging time:",
+                                 options = list(`actions-box` = TRUE,
+                                                `selected-text-format` = "count > 3"),
+                                 multiple = T,
+                                 selected = polls),
+
+                     pickerInput("exc_aggregation_period",
+                                 "Aggregation period:",
                                  choices = unique(standards$aggregation_period),
+                                 options = list(`actions-box` = TRUE,
+                                                `selected-text-format` = "count > 3"),
                                  multiple = T,
                                  selected = unique(standards$aggregation_period)
                      ),
-                     selectInput("exc_standard_org",
+
+                     pickerInput("exc_standard_org",
                                  "Standard source:",
                                  choices = unique(standards$organization),
                                  multiple = T,
+                                 options = list(`actions-box` = TRUE),
                                  selected = c("EU","WHO","NAAQS")
                      ),
-                     downloadButton("exc_download", "Download")
+                     downloadButton("exc_download_csv", "Download (.csv)"),
+                     downloadButton("exc_download_rds", "Download (.rds)")
 
                  ),
 
                  mainPanel(
+                     width=10,
                     # plotOutput("exc_status_map"),
                     # DT::dataTableOutput("exc_status_table")
                     DT::dataTableOutput("exc_table")

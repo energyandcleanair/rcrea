@@ -319,19 +319,17 @@ targets <- function(country=NULL,
 
 
 exceedances <- function(country=NULL,
-                         city=NULL,
-                         location_id=NULL,
-                         poll=NULL,
-                         standard_org=NULL,
-                         date_from='2018-01-01',
-                         date_to=NULL,
-                         collect=TRUE) {
+                        city=NULL,
+                        poll=NULL,
+                        standard_org=NULL,
+                        year=lubridate::year(now()),
+                        collect=TRUE) {
 
   # Variable names must be different to column names
   country_ <- country
   city_ <- city
   poll_ <- poll
-  location_id_ <- location_id
+  year_ <- year
   standard_org_ <- standard_org
 
   # Connecting
@@ -362,26 +360,16 @@ exceedances <- function(country=NULL,
                    result %>% dplyr::filter(tolower(poll) %in% poll_) # Vector
   )
 
-  result <- switch(toString(length(location_id_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(location_id == location_id_), # Single value
-                   result %>% dplyr::filter(location_id %in% location_id_) # Vector
-  )
-
   result <- switch(toString(length(standard_org_)),
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(standard_org == standard_org_), # Single value
                    result %>% dplyr::filter(standard_org %in% standard_org_) # Vector
   )
 
-  result <- switch(toString(length(date_from)),
+  result <- switch(toString(length(year_)),
                    "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(date >= date_from)
-  )
-
-  result <- switch(toString(length(date_to)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(date <= date_to)
+                   "1" = result %>% dplyr::filter(year == year_),
+                   result %>% dplyr::filter(year %in% year_) # Vector
   )
 
   # Cast integer64 to integer. Prevents issues later on
@@ -395,49 +383,55 @@ exceedances <- function(country=NULL,
   return(result)
 }
 
-
-exceedance_status <- function(country=NULL,
-                              city=NULL,
-                              location_id=NULL,
-                              poll=NULL,
-                              standard_org=NULL,
-                              year=lubridate::year(now()),
-                              collect=TRUE,
-                              with_location=F) {
-
-  if(with_location && !collect){
-    stop("Adding location only works with collect")
-  }
-
-  # Get exceedances
-  excs <- exceedances(country=country,
-                   city=city,
-                   location_id=location_id,
-                   poll=poll,
-                   standard_org=standard_org,
-                   date_from=lubridate::ymd(year*10000+101),
-                   date_to = lubridate::ymd(year*10000+1231),
-                   collect=F)
-
-  # Get maximum status
-  excs <- excs %>% dplyr::mutate(status= ifelse(exceedance_allowed_per_year==0,
-                                     pmin(exceedance_this_year*100, 100),
-                                     pmin(exceedance_this_year/exceedance_allowed_per_year*100, 100)
-  )) %>% group_by(standard_id, standard_org, aggregation_period, country, city, poll) %>%
-    summarise(status=max(status, na.rm=T))
-
-  if(collect){
-    excs <- excs %>% collect()
-    if(with_location){
-      # Getting a location per city
-      city_locations <- locations(country=country,city=city, collect=T, with_location=T) %>%
-        dplyr::select(country,city,geometry) %>% dplyr::distinct(country, city, .keep_all = TRUE)
-
-      excs <- excs %>% right_join(city_locations)
-    }
-  }
-  return(excs)
-}
+#
+# exceedance_status <- function(country=NULL,
+#                               city=NULL,
+#                               location_id=NULL,
+#                               poll=NULL,
+#                               standard_org=NULL,
+#                               year=lubridate::year(now()),
+#                               collect=TRUE,
+#                               with_location=F) {
+#
+#   if(with_location && !collect){
+#     stop("Adding location only works with collect")
+#   }
+#
+#   # Get exceedances
+#   excs <- exceedances(country=country,
+#                    city=city,
+#                    location_id=location_id,
+#                    poll=poll,
+#                    standard_org=standard_org,
+#                    date_from = lubridate::ymd(year*10000+101),
+#                    date_to = lubridate::ymd(year*10000+1231),
+#                    collect=F)
+#
+#
+#   # Get maximum status
+#   excs <- excs %>% dplyr::mutate(breach_number=
+#                                    ifelse(exceedance_allowed_per_year==0,
+#                                      exceedance_this_year,
+#                                      exceedance_this_year/exceedance_allowed_per_year),
+#                                  ) %>%
+#                   dplyr::mutate(breach_date= ifelse(exceedance_this_year>=exceedance_allowed_per_year, date, NA)) %>%
+#     dplyr::group_by(standard_id, standard_org, aggregation_period, threshold, unit, country, city, poll) %>%
+#     dplyr::summarise(breach_number=max(breach_number, na.rm=T), first_breach=min(breach_date, na.rm = T))
+#
+#
+#
+#   if(collect){
+#     excs <- excs %>% collect()
+#     if(with_location){
+#       # Getting a location per city
+#       city_locations <- locations(country=country,city=city, collect=T, with_location=T) %>%
+#         dplyr::select(country,city,geometry) %>% dplyr::distinct(country, city, .keep_all = TRUE)
+#
+#       excs <- excs %>% right_join(city_locations)
+#     }
+#   }
+#   return(excs)
+# }
 
 
 scales <- function(poll=NULL){

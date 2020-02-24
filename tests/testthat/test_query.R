@@ -150,27 +150,20 @@ test_that("query return standard exceedances", {
   exc_unknown <- exceedances(city='XXX')
   expect_equal(nrow(exc_unknown), 0)
 
-  exc_delhi <- exceedances(city='Delhi', date_from='2020-01-01', poll=creadb::PM25)
+  exc_delhi <- exceedances(city='Delhi', year=2020, poll=creadb::PM25)
   expect_gt(nrow(exc_delhi), 0)
   expect_equal(tolower(unique(exc_delhi$city)), 'delhi')
   expect_gt(length(unique(exc_delhi$location)), 0)
   expect_gt(length(unique(exc_delhi$poll)), 0)
 
-  exc_delhi_lower <- exceedances(city='delhi', date_from='2020-01-01', poll=creadb::PM25)
+  exc_delhi_lower <- exceedances(city='delhi', year=2020, poll=creadb::PM25)
   expect_equal(nrow(exc_delhi_lower), nrow(exc_delhi))
 
-  exc_delhi_jaipur <- exceedances(city=c('Delhi','Jaipur'), date_from='2020-01-01', poll=creadb::PM25)
+  exc_delhi_jaipur <- exceedances(city=c('Delhi','Jaipur'), year=2020, poll=creadb::PM25)
   expect_gt(nrow(exc_delhi_jaipur), nrow(exc_delhi))
 
   exc_delhi_china <- exceedances(country='CN', city='Delhi')
   expect_equal(nrow(exc_delhi_china), 0)
-
-
-  # Exceedance status in a given year
-  exc_status <- exceedance_status(country='IN', with_location=T)
-  expect_gt(nrow(exc_status), 0)
-  expect("geometry" %in% colnames(exc_status), "Missing geometry column")
-
 })
 
 test_that("Weather data is properly joined", {

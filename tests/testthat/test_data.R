@@ -236,8 +236,8 @@ test_that("Numbers match previous studies", {
   # S.No	From Date	To Date	                  PM2.5 (ug/m3)	PM10 (ug/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	CO (mg/m3)	NO (ug/m3)	NOx (ppb)
   # 1	22-Jan-2020 - 00:00	23-Jan-2020 - 00:00	137.17		                  14.29	40.75	50.62		                              8.76	20.11
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM25, 2020, 1, 22, 137.17, link)
-  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2020, 1, 22, NA, link)
-  obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2020, 1, 22, NA, link)
+  # obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', PM10, 2020, 1, 22, NA, link)
+  # obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2020, 1, 22, NA, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', NO, 2020, 1, 22, 8.76, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2020, 1, 22, 14.29, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2020, 1, 22, 40.75, link)
@@ -287,6 +287,7 @@ test_that("Numbers match previous studies", {
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', SO2, 2019, NA, NA, 22.88, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', CO, 2019, NA, NA, 680, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Varanasi', 'IN-84', O3, 2019, NA, NA, 61.97, link)
+
 
   # "Central University, Hyderabad - TSPCB"	"IN-63"
   # S.No	From Date	To Date	PM2.5 (ug/m3)	PM10 (ug/m3)	SO2 (ug/m3)	Ozone (ug/m3)	NO2 (ug/m3)	CO (mg/m3)	NO (ug/m3)	NOx (ppb)
@@ -345,7 +346,16 @@ test_that("Numbers match previous studies", {
   obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', NO, 2019, 2, 20, 68.24, link)
   obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', NOX, 2019, 2, 20, 122.24, link)
 
-
+  # S.No	From Date	To Date	PM10 (ug/m3)	PM2.5 (ug/m3)	NO (ug/m3)	NO2 (ug/m3)	NOx (ppb)	SO2 (ug/m3)	Ozone (ug/m3)	CO (mg/m3)
+  # 1	01-Feb-2020 - 00:00	02-Feb-2020 - 00:00	90.46	40.37	25.88	38.6	64.48	9.57	30.5	1.61
+  obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', PM25, 2020, 2, 1, 40.37, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', PM10, 2020, 2, 1, 90.46, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', CO, 2020, 2, 1, 1610, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', SO2, 2020, 2, 1, 9.57, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', O3, 2020, 2, 1, 30.5, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', NO2, 2020, 2, 1, 38.6, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', NO, 2020, 2, 1, 25.88, link)
+  obs[nrow(obs) + 1,] <- list("IN", 'Udaipur', 'IN-139', NOX, 2020, 2, 1, 64.48, link)
 
 
   # Carbon Copy Dashboard
@@ -387,23 +397,23 @@ test_that("Numbers match previous studies", {
 
     # Average per city if we want a national figure
     if(is.na(row$city) && is.na(row$location_id)){
-      meas <- meas %>% group_by(city) %>% summarize(value=mean(value)) %>% ungroup()
+      meas <- meas %>% group_by(city) %>% summarize(value=mean(value, na.rm = T)) %>% ungroup()
     }
 
     # Finally average all measurements
-    meas <- meas %>% summarize(crea_value=mean(value))
+    meas <- meas %>% summarize(crea_value=mean(value, na.rm = T))
     meas <- meas %>% collect()
 
     return(meas)
   }
 
   # # For each row
-  obs_crea <- obs %>% by_row(..f = get_crea_value, .to = "crea_value", .collate = "cols")
-
-  # Reshaping
-  obs_crea <- obs_crea %>%
-    dplyr::mutate(rel_diff=sprintf("%1.2f%%", 100*abs(value-crea_value1)/value)) %>%
-    dplyr::select(-source,source) %>%
-    dplyr::rename(value_official=value, value_crea=crea_value1)
+  # obs_crea <- obs %>% by_row(..f = get_crea_value, .to = "crea_value", .collate = "cols")
+  #
+  #   # Reshaping
+  # obs_crea <- obs_crea %>%
+  #   dplyr::mutate(rel_diff=sprintf("%1.2f%%", 100*abs(value-crea_value1)/value)) %>%
+  #   dplyr::select(-source,source) %>%
+  #   dplyr::rename(value_official=value, value_crea=crea_value1)
 
 })

@@ -15,7 +15,9 @@ Imports:
     sf,
     bit64,
     zoo,
-    ggnewscale
+    ggnewscale,
+    shiny,
+    shinyWidgets
 Depends:
     ggplot2,
     dplyr
