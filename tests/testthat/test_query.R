@@ -106,9 +106,9 @@ test_that("query return measurements", {
   expect_equal(nrow(meas_delhi_china), 0)
 
   # Location id
-  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', keep_location_id = T)
+  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', aggregate_at_city_level =  F)
   length(unique(meas_delhi$location_id)) >= 23 # 23 stations with CO data  in Delhi at the time of writing
-  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', keep_location_id = F)
+  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', aggregate_at_city_level =  F)
   length(unique(meas_delhi$location_id)) == 1
 
   # Time aggregation
@@ -124,22 +124,36 @@ test_that("query return measurements", {
   expect_equal(unique(day(meas_delhi_year$date)), 1)
   expect_equal(unique(month(meas_delhi_year$date)), 1)
 
-  # Columns independent from aggregation
+  # Columns independent from time and spatial aggregation
   average_bys <- c("hour", "day", "week", "month", "year")
   with_metadatas <- c(F,T)
+  aggregate_at_city_levels <- c(F,T)
 
   for(with_metadata in with_metadatas){
     lengths <- c()
     for(average_by in average_bys){
-      lengths <- lengths %>% c(length(colnames(measurements(city='Delhi', average_by=average_by, with_metadata=with_metadata, collect=F))))
+      for(aggregate_at_city_level in aggregate_at_city_levels){
+        lengths <- lengths %>% c(length(colnames(measurements(city='Delhi',
+                                                              average_by=average_by,
+                                                              with_metadata=with_metadata,
+                                                              aggregate_at_city_level=aggregate_at_city_level,
+                                                              collect=F))))
+      }
     }
     expect_equal(length(unique(lengths)), 1)
   }
+
 
   # Metadata reduction: check there are fewer columns without metadata
   meas_light <- measurements(city='Delhi', average_by='year', with_metadata = F, collect=F)
   meas_full <- measurements(city='Delhi', average_by='year', with_metadata = T, collect=F)
   expect_lt(length(colnames(meas_light)), length(colnames(meas_full)))
+
+  # Querying measurements with noaa station ids
+  meas_wo_noaa <- measurements(city='Delhi',
+                               add_noaa_station_ids = T, collect=F)
+  expect_true('noaa_station_ids' %in% colnames(meas_wo_noaa))
+
 })
 
 test_that("query return standard exceedances", {
@@ -153,7 +167,6 @@ test_that("query return standard exceedances", {
   exc_delhi <- exceedances(city='Delhi', year=2020, poll=creadb::PM25)
   expect_gt(nrow(exc_delhi), 0)
   expect_equal(tolower(unique(exc_delhi$city)), 'delhi')
-  expect_gt(length(unique(exc_delhi$location)), 0)
   expect_gt(length(unique(exc_delhi$poll)), 0)
 
   exc_delhi_lower <- exceedances(city='delhi', year=2020, poll=creadb::PM25)
@@ -177,19 +190,20 @@ test_that("Weather data is properly joined", {
                        collect=F,
                        poll=poll,
                        average_by=training_average_by,
+                       add_noaa_station_ids = T,
+                       noaa_station_radius_km = 20,
                        with_metadata = T)
 
-  for (aggregate_per_city in c(T,F)){
+  for (aggregate_at_city_level in c(T,F)){
     meas_weather <- join_weather_data(meas,
                                       measurements_averaged_by=training_average_by,
-                                      aggregate_per_city=aggregate_per_city,
-                                      collect=F,
-                                      radius_km=20)
+                                      aggregate_at_city_level=aggregate_at_city_level,
+                                      collect=F)
 
     # Check city aggregation (or lack of)
-    expect_equal("city" %in% colnames(meas_weather), !aggregate_per_city)
-    expect_equal("noaa_station_id" %in% colnames(meas_weather), !aggregate_per_city)
-    expect_equal("location_id" %in% colnames(meas_weather), !aggregate_per_city)
+    expect_equal("city" %in% colnames(meas_weather), !aggregate_at_city_level)
+    expect_equal("noaa_station_id" %in% colnames(meas_weather), !aggregate_at_city_level)
+    expect_equal("location_id" %in% colnames(meas_weather), !aggregate_at_city_level)
   }
 
 

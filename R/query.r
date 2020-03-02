@@ -16,8 +16,8 @@ filter_sanity_daily <- function(result){
 filter_sanity_raw <- function(result){
   # Filters out measurements that are obviously wrong
   result <- result %>%
-    # dplyr::filter(value > 0) %>%
-    dplyr::filter(!is.na(location_id)) %>%
+    dplyr::filter(value >= 0) %>%
+    #dplyr::filter(!is.na(location_id)) %>%
     dplyr::filter(!is.na(date)) %>%
     dplyr::filter(!is.na(poll))  %>%
     dplyr::filter(value < 1500 | poll==CO)
@@ -26,7 +26,10 @@ filter_sanity_raw <- function(result){
 }
 
 
-locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_location=TRUE, con=NULL){
+locations <- function(country=NULL, city=NULL, id=NULL,
+                      collect=TRUE,
+                      with_geometry=TRUE,
+                      con=NULL){
 
   # Variable names must be different to column names
   country_ <- tolower(country)
@@ -37,7 +40,7 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_locat
   con = if(!is.null(con)) con else connection()
   result <- tbl_safe(con, "locations") # Old version without explicit geomoetry column
 
-    # Apply filters
+  # Apply filters
   result <- switch(toString(length(country_)),
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(tolower(country) == country_), # Single country name
@@ -57,7 +60,7 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_locat
   )
 
   # Keeping only interesting columns
-  cols <- if(with_location) c("id", "name", "city", "country", "geometry") else c("id", "name", "city", "country")
+  cols <- if(with_geometry) c("id", "name", "city", "country", "geometry") else c("id", "name", "city", "country")
 
   result <- result %>% dplyr::select_at(cols)
 
@@ -65,7 +68,7 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_locat
   # Whether to collect the query i.e. actually run the query
   if(collect){
     result <- result %>% dplyr::collect()
-    if(with_location){
+    if(with_geometry){
       result <- result %>% dplyr::mutate(geometry=sf::sf_as_sfc.pq_geometry(geometry))
     }
   }
@@ -87,8 +90,8 @@ locations <- function(country=NULL, city=NULL, id=NULL, collect=TRUE, with_locat
 #' @param collect T/F Whether to collect results into local tibble (see \code{\link{dbplyr::collect}})
 #' @param with_metadata T/F Whether to add additional information columnes (e.g. city, country, location name, geometry). If True, query takes significantly more time
 #' @param user_filter Additional filtering function for measurements applied before time aggregation
-#' @param keep_location_id T/F Whether or not to keep measurements at the station level (otherwise, aggregate at city level)
-#' (although the most time-granular observation is already a daily-average calculated after scraping)
+#' @param aggregate_at_city_level T/F Whether or not to keep measurements at the station level (otherwise, aggregate at city level)
+#' #' @param add_noaa_station_ids T/F Whether or not to add an array of noaa_station_ids located within @param noaa_station_radius_km
 #'
 #' @return a tibble (locally collected or not) of measurements matching search criteria.
 #' @export
@@ -107,7 +110,9 @@ measurements <- function(country=NULL,
                          collect=TRUE,
                          with_metadata=FALSE,
                          user_filter=NULL,
-                         keep_location_id=FALSE,
+                         aggregate_at_city_level=TRUE,
+                         add_noaa_station_ids=FALSE,
+                         noaa_station_radius_km=20,
                          con=NULL) {
 
   # Accept both NA and NULL
@@ -117,37 +122,130 @@ measurements <- function(country=NULL,
 
 
   # If location_id specified, we have to keep it
-  keep_location_id <- keep_location_id | !is.null(location_id)
+  aggregate_at_city_level <- aggregate_at_city_level & is.null(location_id)
 
-  # Variable names must be different to column names
+  # Note: variable names must be different to column names for dbplyr filters to work
   poll_ <- tolower(poll)
   source_ <- tolower(source)
-
-  # Find locations that match filters
-  locs <- locations(country=country,
-                    city=city,
-                    id=location_id,
-                    collect=F)
+  city_ <- tolower(city)
 
   # Connecting
   con = if(!is.null(con)) con else connection()
 
-  # Take measurements at these locations
-  query_initial = ifelse(is.null(average_by),
-                         "measurements",
-                         switch(average_by,
-                           "hour" = "measurements",
-                           "measurements_daily")
-                        )
+  # ----------------------
+  # Set actions to do
+  #-----------------------
+  # Explanation: we don't need to perform same averaging and aggregating operations based on user parameters
+  # Plus the database contains three measurement tables with different averaging/aggregations pre-computed:
+  #     - 'measurements': all raw measurements
+  #     - 'measurements_daily': daily average per location (with rolling values for standards)
+  #     - 'measurements_hourly_city': hourly value per city (not per location). Mainly used for poll/weather analysis
+  # if no time aggregation, we fetched the raw measurements table
+  # if hour aggregation, we either fetch raw table or city_hour aggregated one (if need info at city level)
+  # if not hour (e.g. day, week, month, year), we fetched from measurements_daily which is already aggregated by day
+  table_name <- NULL
+  value_col_name <- NULL
+  need_time_averaging <- NULL
+  need_grouping_before_time_averaging <- NULL
+  need_grouping <- NULL
+  filter_fn <- NULL
+  locs_meas_join_by <- NULL
 
-  result <- tbl_safe(con, query_initial)
+  if(is.null(average_by)){
+    table_name <= 'measurements'
+    need_time_averaging <- FALSE
+    value_col_name <- 'value'
+    filter_fn <- filter_sanity_raw
+    need_grouping_before_time_averaging <- FALSE
+    need_grouping <- aggregate_at_city_level
+    locs_meas_join_by <- c("location_id"="id")
+  }else if(average_by=='hour'){
+    table_name <- if(aggregate_at_city_level) 'measurements_city_hourly' else 'measurements'
+    need_time_averaging <- if(aggregate_at_city_level) FALSE else TRUE
+    value_col_name <- 'value'
+    filter_fn <- filter_sanity_raw
+    need_grouping_before_time_averaging <- FALSE
+    need_grouping <- if(aggregate_at_city_level) FALSE else FALSE
+    locs_meas_join_by <- if(aggregate_at_city_level) c("city", "country") else c("location_id"="id")
+  }else if(average_by=='day'){
+    table_name <- 'measurements_daily'
+    need_time_averaging <- FALSE
+    value_col_name <- 'avg_day'
+    filter_fn <- filter_sanity_daily
+    need_grouping_before_time_averaging <- FALSE
+    need_grouping <- if(aggregate_at_city_level) TRUE else FALSE
+    locs_meas_join_by <- c("location_id"="id")
+  }else{
+    table_name <- 'measurements_daily'
+    need_time_averaging <- TRUE
+    value_col_name <- 'avg_day'
+    filter_fn <- filter_sanity_daily
+    # First average per day across locations then within period hence the two groupings
+    need_grouping_before_time_averaging <- if(aggregate_at_city_level) TRUE else FALSE
+    need_grouping <- if(aggregate_at_city_level) TRUE else FALSE
+    locs_meas_join_by <- c("location_id"="id")
+  }
+
+  meta_cols <- if(with_metadata){
+    if (aggregate_at_city_level) c('country','geometry') else c("name", "location", "location_id", "country","geometry")
+  }else{
+    if (aggregate_at_city_level) c() else c("location", "location_id")
+  }
+  group_by_cols <- c('city', 'date', 'poll', meta_cols)
+  if(add_noaa_station_ids){
+    group_by_cols <- c(group_by_cols, 'noaa_station_ids')
+  }
+
+
+  # ----------------------
+  # Perform actions
+  #-----------------------
+  # Prepare locations
+  locs <- locations(country=country,
+                    city=city,
+                    id=location_id,
+                    collect=F,
+                    con = con)
+
+  # If we aggregate at city level, we replace stations geometries with 'city' geometry
+  # This is significantly faster than doing it on measurements (with lots of duplicated geometries)
+  # The city geometry is mainly used if we want to plot results or find weather stations close by
+  # Right now using ST_UNION (vs e.g. an enveloppe): it is better for the accurate look up of weather stations,
+  # but not as good for beautiful maps (there will be several points per city)
+  if(aggregate_at_city_level){
+    locs <- locs %>% left_join(locs %>% group_by(country, city) %>%
+                                 summarise(city_geometry=st_union(geometry)) %>% ungroup()
+    ) %>%
+      dplyr::mutate(geometry=city_geometry) %>% dplyr::select(-c(city_geometry))
+  }
+
+  if(add_noaa_station_ids){
+    locs_group_by <- colnames(locs)
+    locs <- locs %>% dplyr::left_join(
+      tbl_safe(con,"noaa_ids_stations") %>% dplyr::select(noaa_station_id=id, noaa_geometry=geometry),
+      sql_on= sprintf("(st_dwithin(\"LHS\".geometry::geography, \"RHS\".noaa_geometry::geography, %f))",noaa_station_radius_km*1000.0)
+    ) %>% group_by_at(locs_group_by) %>%
+      # Need to order for further group_by with noaa_station_ids not to be impacted
+      dplyr::summarise(noaa_station_ids=array_agg(sql('noaa_station_id order by noaa_station_id'))) %>%
+      dplyr::ungroup()
+  }
+
+  # Take measurements at these locations
+  result <- tbl_safe(con, table_name)
 
   # R package uses 'poll' whilst db is using 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)
 
   # Joining location information
-  result <- result %>% dplyr::select(-c(city, country)) %>% # Avoid double columns (plus location is last truth)
-                       dplyr::right_join(locs, by=c("location_id"="id"))
+  # If city is defined, we first filter measurements to use index in Postgres
+  result <- switch(toString(length(city_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(city) == city_), # Single city name
+                   result %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
+  )
+
+  result <- result %>%
+    dplyr::right_join(locs, by=locs_meas_join_by, suffix = c("_remove", ""))
 
   # Filtering based on user request
   result <- switch(toString(length(poll_)),
@@ -172,71 +270,46 @@ measurements <- function(country=NULL,
                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
   )
 
-  result <- if(is.null(average_by)){
-                filter_sanity_raw(result)
-            }else{
-              switch(average_by,
-                     "hour" = filter_sanity_raw(result),
-                     filter_sanity_daily(result)
-              )
-            }
-
+  result <- filter_fn(result)
 
   if(!is.null(user_filter)){
     result <- user_filter(result)
   }
 
-  if(with_metadata){
-    group_by_meta_cols <- c("name", "city", "country","geometry")
-  }else{
-    group_by_meta_cols <- c("city") # keeping city regardless because required in plots
+
+  # Apply time (and defacto spatial aggregation if aggregate_at_city_level==T) aggregation
+  if(value_col_name!='value'){
+    result <- result %>% dplyr::rename(value=all_of(value_col_name))
   }
 
-  if(keep_location_id){
-    group_by_meta_cols <- c(group_by_meta_cols, "location", "location_id")
+  if(need_grouping_before_time_averaging){
+    result <- result %>%
+      dplyr::group_by_at(group_by_cols) %>%
+      dplyr::summarize(value=avg(value)) %>%
+      dplyr::ungroup()
   }
 
-  # Apply time aggregation
-  # if hour, we fetched the raw measurements table
-  # if not hour (e.g. day, week, month, year), we fetched from measurements_daily which is already aggregated by day,
-  # so we only aggregate further if <> 'day'
-  if(is.null(average_by)){
-    result <- result %>%
-      dplyr::select_at(c(group_by_meta_cols, "date", "poll", "value"))
-  }else if(average_by == 'hour'){
-    result <- result %>% dplyr::mutate(date=DATE_TRUNC(average_by, date)) %>%
-      dplyr::group_by_at(c(group_by_meta_cols, "date", "poll")) %>%
-      dplyr::summarize(value=avg(value)) %>% dplyr::ungroup()
-  }else if(average_by == 'day'){
-    result <- result %>% dplyr::mutate(value=avg_day)
-    if(keep_location_id){# Mimic aggregation for consistent column selection
-      result <- result %>%
-        dplyr::select_at(c(group_by_meta_cols, "date", "poll", "value"))
-    }else{ # Average across locations if need be
-      result <- result %>%
-        dplyr::group_by_at(c(group_by_meta_cols, "date", "poll"))%>%
-        dplyr::summarize(value=avg(value)) %>% dplyr::ungroup()
-    }
-  }else{
-    result <- result %>% dplyr::mutate(value=avg_day)
-    # First average per day across locations
-    if(!keep_location_id){
-      result <- result %>%
-        dplyr::group_by_at(unique(c(group_by_meta_cols, "date", "poll"))) %>%
-        dplyr::summarize(value=avg(value)) %>%
-        dplyr::ungroup()
-    }
+  if(need_time_averaging){
+    result <- result %>% dplyr::mutate(date=DATE_TRUNC(average_by, date))
+  }
 
-    # Then average across days
+  if(need_grouping){
     result <- result %>%
-      dplyr::mutate(date=DATE_TRUNC(average_by, date)) %>%
-      dplyr::group_by_at(c(group_by_meta_cols, "date", "poll")) %>%
-      dplyr::summarize(value=avg(value)) %>% dplyr::ungroup()
+      dplyr::group_by_at(group_by_cols) %>%
+      dplyr::summarize(value=avg(value)) %>%
+      dplyr::ungroup()
+  }else{
+    result <- result %>%
+      dplyr::select_at(c(group_by_cols, 'value'))
   }
 
   # To homogenize columns
-  if(!keep_location_id){
-    result <- result %>% mutate(location=NA, location_id=NA)
+  if(aggregate_at_city_level){
+    if(with_metadata){
+      result <- result %>% dplyr::mutate(location=NA, location_id=NA, name=NA)
+    }else{
+      result <- result %>% dplyr::mutate(location=NA, location_id=NA)
+    }
   }
 
   # Whether to collect the query i.e. actually run the query
@@ -256,7 +329,6 @@ standards <- function(collect=TRUE){
   }
   return(standards)
 }
-
 
 
 targets <- function(country=NULL,
@@ -383,57 +455,6 @@ exceedances <- function(country=NULL,
   return(result)
 }
 
-#
-# exceedance_status <- function(country=NULL,
-#                               city=NULL,
-#                               location_id=NULL,
-#                               poll=NULL,
-#                               standard_org=NULL,
-#                               year=lubridate::year(now()),
-#                               collect=TRUE,
-#                               with_location=F) {
-#
-#   if(with_location && !collect){
-#     stop("Adding location only works with collect")
-#   }
-#
-#   # Get exceedances
-#   excs <- exceedances(country=country,
-#                    city=city,
-#                    location_id=location_id,
-#                    poll=poll,
-#                    standard_org=standard_org,
-#                    date_from = lubridate::ymd(year*10000+101),
-#                    date_to = lubridate::ymd(year*10000+1231),
-#                    collect=F)
-#
-#
-#   # Get maximum status
-#   excs <- excs %>% dplyr::mutate(breach_number=
-#                                    ifelse(exceedance_allowed_per_year==0,
-#                                      exceedance_this_year,
-#                                      exceedance_this_year/exceedance_allowed_per_year),
-#                                  ) %>%
-#                   dplyr::mutate(breach_date= ifelse(exceedance_this_year>=exceedance_allowed_per_year, date, NA)) %>%
-#     dplyr::group_by(standard_id, standard_org, aggregation_period, threshold, unit, country, city, poll) %>%
-#     dplyr::summarise(breach_number=max(breach_number, na.rm=T), first_breach=min(breach_date, na.rm = T))
-#
-#
-#
-#   if(collect){
-#     excs <- excs %>% collect()
-#     if(with_location){
-#       # Getting a location per city
-#       city_locations <- locations(country=country,city=city, collect=T, with_location=T) %>%
-#         dplyr::select(country,city,geometry) %>% dplyr::distinct(country, city, .keep_all = TRUE)
-#
-#       excs <- excs %>% right_join(city_locations)
-#     }
-#   }
-#   return(excs)
-# }
-
-
 scales <- function(poll=NULL){
 
   # Variable names must be different to column names
@@ -475,7 +496,7 @@ scales <- function(poll=NULL){
 #' @param meas dataframe / tibble of measurements
 #' @param measurements_averaged_by The freequency at which measurements have been averaged to e.g. hour, day, week, month, year
 #' (same aggregation needs to be applied to weather observations)
-#' @param aggregate_per_city T/F whether to aggregate information at the city level. Staying at the location level may result in very large dataframe and double counting
+#' @param aggregate_at_city_level T/F whether to aggregate information at the city level. Staying at the location level may result in very large dataframe and double counting
 #' since the same weather station might be joined to several air quality stations.
 #' @param collect T/F Whether to collect results into local tibble (see \code{\link{dbplyr::collect}})
 #' @param radius_km Maximum distance to look for weather stations close to air quality ones
@@ -486,37 +507,32 @@ scales <- function(poll=NULL){
 #' @examples
 #' meas_w_weather <- creadb::join_weather_data(meas)
 #'
-join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_per_city=TRUE, collect=TRUE, radius_km=20, con=NULL){
+join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_at_city_level=TRUE, collect=TRUE, con=NULL){
 
   # Connecting
   con = if(!is.null(con)) con else connection()
 
+  cols <- colnames(meas)
+  group_by_cols <- cols
+
   # Check measurements have been fetched with metadata
-  if(!"geometry" %in% colnames(meas)){
-    stop("Station geometry missing. Use with_metadata=T when querying measurements.")
+  if(!"noaa_station_ids" %in% cols){
+    stop("NOAA station ids missing. Use add_noaa_station_ids=T when querying measurements")
   }
 
-  # Find NOAA stations close by
-  distinct_cols <- if (aggregate_per_city) c('noaa_station_id') else c('noaa_station_id', 'location_id')
-  noaa_stations <- meas %>% dplyr::distinct(location_id, geometry) %>%
-                       dplyr::left_join(tbl_safe(con,"noaa_ids_stations"),
-                               suffix=c("", "_noaa"),
-                               sql_on= sprintf("(st_dwithin(\"LHS\".geometry::geography, \"RHS\".geometry::geography, %f))",radius_km*1000.0)
-                               ) %>%
-                       dplyr::rename(noaa_station_id=id) %>%
-                       dplyr::distinct_at(distinct_cols) %>%
-                       dplyr::filter(!is.na(noaa_station_id))
 
-  dates <- meas %>% dplyr::distinct(date, .keep_all = FALSE)
+  # Adding observations
+  rhs_date <- ifelse(measurements_averaged_by!='hour',
+                     sprintf("DATE_TRUNC('%s',\"RHS\".date)", measurements_averaged_by),
+                     "\"RHS\".date")
+  result <- meas %>% dplyr::left_join(
+    tbl_safe(con,"noaa_ids_observations"),
+    suffix=c("", "_noaa"),
+    sql_on= sprintf("(\"RHS\".station_id=ANY(\"LHS\".noaa_station_ids) AND %s=\"LHS\".date)",rhs_date)
+  )
 
-
-  # Get averaged NOAA observations accordingly
-  obs_group_by_cols <- if (aggregate_per_city) c('date') else c('date', 'location_id', 'noaa_station_id')
-  obs_averaged  <- tbl_safe(con,"noaa_ids_observations") %>%
-    dplyr::right_join(noaa_stations, by=c("station_id"="noaa_station_id")) %>%
-    dplyr::mutate(date=DATE_TRUNC(measurements_averaged_by, date)) %>%
-    dplyr::rename(noaa_station_id=station_id) %>%
-    dplyr::group_by_at(obs_group_by_cols) %>%
+  # Averaging per AQ measurement date
+  result <- result %>% dplyr::group_by_at(group_by_cols) %>%
     dplyr::summarize(temp_c=mean(temp_c, na.rm=T),
                      slp_hp=mean(slp_hp, na.rm=T),
                      wind_deg=mean(wind_deg, na.rm=T),
@@ -524,20 +540,9 @@ join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_pe
                      sky_code=max(sky_code, na.rm=T),
                      prec_1h_mm=max(prec_1h_mm, na.rm=T),
                      prec_6h_mm=max(prec_6h_mm, na.rm=T),
-                     rh_percent=mean(rh_percent, na.rm=T),
-                     ) %>%
-    dplyr::ungroup()
+                     rh_percent=mean(rh_percent, na.rm=T)) %>%
+    ungroup()
 
-  # Joining noaa stations
-  group_by_cols <- if (aggregate_per_city) c('date','poll') else c('date', 'poll', 'city', 'location_id')
-  join_by_cols <- if (aggregate_per_city) c('date') else c('date', 'location_id')
-  result <- meas %>% dplyr::group_by_at(group_by_cols) %>%
-    dplyr::summarize(value=mean(value, na.rm=T)) %>%
-    dplyr::ungroup() %>%
-    dplyr::left_join(obs_averaged,
-                     suffix=c("", "_noaa"),
-                     by=join_by_cols
-    )
 
   # Whether to collect the query i.e. actually run the query
   if(collect){
@@ -546,3 +551,46 @@ join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_pe
 
   return(result)
 }
+
+#-------------------------------------
+# Get measurements with weather data
+#-------------------------------------
+#' Measurements with weather information attached
+#'
+#' @param city
+#' @param poll
+#' @param date_from
+#' @param average_by
+#' @param weather_radius_km Maximum distance between weather station and air quality
+#'
+#' @return tibble with hourly
+#' @export
+#'
+#' @examples
+measurements_with_weather <- function(city,
+                                      poll,
+                                      date_from='2015-01-01',
+                                      average_by='hour',
+                                      aggregate_at_city_level=T,
+                                      weather_radius_km=20,
+                                      collect=T){
+
+  # Get measurements
+  meas <- measurements(city=city,
+                       date_from=date_from,
+                       collect=F, #to save time (only do collection at last step)
+                       poll=poll,
+                       average_by=average_by,
+                       aggregate_at_city_level=aggregate_at_city_level,
+                       add_noaa_station_ids = T,
+                       noaa_station_radius_km = weather_radius_km,
+                       with_metadata = T)
+
+  # Attach weather observations and aggregate by date
+  meas_weather <- join_weather_data(meas,
+                                    measurements_averaged_by=average_by,
+                                    aggregate_at_city_level=aggregate_at_city_level,
+                                    collect=collect)
+  return(meas_weather)
+}
+

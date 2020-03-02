@@ -2,6 +2,10 @@
 
 
 
+## Bigger picture
+CREA Scraper is part of a larger ecosystem, as shown in the diagram below.
+![Alt text](./crea_architecture.svg)
+
 
 ## Getting started
 ### Install
@@ -15,8 +19,10 @@ devtools::install_github(url)
 
 ## Usage
 ### Shiny Application
-```buildoutcfg
-runShinyApp()
+An online version is available on <https://crea.shinyapps.io/shiny/>.
+Otherwise, you can run it locally using:
+```
+creadb::runShinyApp()
 ```
 ### R Code
 ```buildoutcfg

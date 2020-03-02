@@ -1,40 +1,74 @@
 source('R/setup.r')
 
 
-predict_aq_from_weather <- function(city,
-                     poll,
-                     training_prediction_cut,
-                     training_average_by='hour',
-                     training_average_by_width=3,
-                     weather_radius_km=20){
 
 
-  # Variables
+#---------------------
+# Prediction functions
+#---------------------
+model_glm <- function(training_data){
+  # Train model
+  gbm.fit <- gbm::gbm(
+    formula = value ~ temp_c + factor(wind_deg) + wind_ms + slp_hp + rh_percent, #+ prec_6h_mm, #+ factor(sky_code),
+    data = training_data,
+    cv.folds = 5,
+    verbose = FALSE
+  )
+  return(gbm.fit)
+}
+
+
+#---------------------
+# Run predictions
+#---------------------
+#' Predict Air Quality From Weather
+#'
+#' @param city
+#' @param poll
+#' @param training_prediction_cut
+#' @param training_average_by
+#' @param training_average_by_width
+#' @param weather_radius_km
+#'
+#' @return
+#' @export
+#'
+#' @examples
+predict_aq_from_weather <- function(
+  meas_weather,
+  training_prediction_cut,
+  training_average_by='hour',
+  training_average_by_width=3,
+  weather_radius_km=20,
+  models=c(model_glm)
+){
+
+  city_ <- city
+  poll_ <- poll
+  date_from_ <- date_from
+
+  #----------------
+  # Prepare data
+  #----------------
   weather_vars <- vars(temp_c, slp_hp, wind_deg, wind_ms, sky_code, prec_1h_mm, prec_6h_mm, rh_percent)
   id_vars <- vars(date)
 
-  # Get measurements
-  meas <- creadb::measurements(city=city,
-                               date_from = '2015-01-01',
-                               collect=F, #to save time (only do collection at last step)
-                               poll=poll,
-                               average_by=training_average_by,
-                               with_metadata = T)
+  res.data.raw <- meas_weather
 
-  # Attach weather observations and aggregate by date
-  meas_weather <- creadb::join_weather_data(meas,
-                                            measurements_averaged_by=training_average_by,
-                                            aggregate_per_city=T,
-                                            collect=T,
-                                            radius_km=weather_radius_km) #max distance between weather station and air quality stations
+  # Make date axis homogeneous i.e. a row for every day / month / year per city and pollutant
+  date_grid <- res.data.raw %>% dplyr::group_by(city, poll) %>%
+    dplyr::summarize(date_min=min(date), date_max = max(date)) %>%
+    dplyr::mutate(date=list(seq(date_min, date_max, by=training_average_by))) %>%
+    dplyr::select(-c(date_min, date_max)) %>%
+    tidyr::unnest(cols=c(date))
 
-  gbm.data.raw <- meas_weather
+  res.data.raw <- merge(res.data.raw, date_grid, all=TRUE)
 
-  # Make date axis homogeneous i.e. a row for every day / month / year
-  dates <- seq(min(gbm.data.raw$date), max(gbm.data.raw$date), by=training_average_by)
-  gbm.data.raw <- merge(gbm.data.raw, data.frame(date=dates), all=TRUE)
+  # Group & nest measurements by city and pollutant
+  # res.data.raw <- res.data.raw %>% dplyr::group_by(city,poll) %>% tidyr::nest()
 
-  # Apply rolling mean for num (and most common element for other types e.g. sky_code)
+
+  # Rolling mean for training
   mean_fn <- function(x){
     if(is.numeric(x)){
       return(mean(x, na.rm = T))
@@ -42,43 +76,61 @@ predict_aq_from_weather <- function(city,
       return(names(sort(table(x), decreasing = T, na.last = T)[1]))
     }
   }
-  train_roll_fn <- function(var) rollapply(var, width=training_average_by_width, FUN=mean_fn, align='right', fill=NA)
-  gbm.data.rolled <- gbm.data.raw %>% arrange(date) %>%
-    mutate_at(weather_vars, train_roll_fn) %>%
-    mutate(value=train_roll_fn(value))
+  train_roll_fn <- function(var) zoo::rollapply(var, width=training_average_by_width, FUN=mean_fn, align='right', fill=NA)
+  res.data.rolled <- res.data.raw %>% group_by(city, poll) %>% arrange(date) %>%
+    mutate_at(vars(-city, -poll, -date), train_roll_fn)
 
   # Remove rows with no weather observation
-  gbm.data.rolled <-
-    gbm.data.rolled %>% filter_at(c(vars("value"), weather_vars), any_vars(!is.na(.)))
+  res.data.rolled <-
+    res.data.rolled %>% filter_at(vars(-city, -poll, -date, -value), any_vars(!is.na(.)))
 
   # Separate in training and prediction data
-  training_data <- gbm.data.rolled %>% filter(date < training_prediction_cut)
-  predict_data <- gbm.data.rolled %>% filter(date >= training_prediction_cut)
+  res.data.final <- res.data.rolled %>% tidyr::nest() %>%
+    mutate(training = map(data, ~ filter(.x, date < training_prediction_cut))) %>%
+    mutate(predicting = map(data, ~ filter(.x, date >= training_prediction_cut)))
+  # assert("Check nesting is correct", colnames(res.data.final) == c('city','poll','data','training','predicting'))
 
-  # Train model
-  gbm.fit <- gbm::gbm(
-    formula = value ~ temp_c + factor(wind_deg) + wind_ms + slp_hp + rh_percent + prec_6h_mm, #+ factor(sky_code),
-    data = training_data,
-    cv.folds = 5,
-    verbose = FALSE
-  )
+
+  #----------------
+  # Train models
+  #----------------
+  res.data.final <- res.data.final %>% expand_grid(model=models)
+  res.data.final <- res.data.final %>% mutate(model_fitted=map(training, model))
+  res.data.final$trainin
 
   # Shape results
-  measured <- gbm.data.rolled %>% select(date,value) %>%
+  measured <- res.data.rolled %>% dplyr::select(date,value) %>%
     dplyr::mutate(measured=value) %>%
     tidyr::gather("type","value", measured)
 
-  predict_data$predicted <- predict.gbm(gbm.fit, predict_data)
+  predict_data$predicted <- gbm::predict.gbm(res.fit, predict_data)
   predicted <- predict_data %>%
-    select(date, predicted)%>%
+    dplyr::select(date, predicted)%>%
     tidyr::gather("type","value",predicted)
 
-  training_data$fitted <- predict.gbm(gbm.fit, training_data)
+  training_data$fitted <- predict.gbm(res.fit, training_data)
   fitted <- training_data %>%
-    select(date, fitted) %>%
+    dplyr::select(date, fitted) %>%
     tidyr::gather("type", "value", fitted)
 
-  result <- rdbind(measured, predicted, fitted)
+  result <- rbind(measured, predicted, fitted)
 
   return(result)
 }
+
+#-------------------
+# Plot results
+#-------------------
+roll_plot <- function(raw){
+  result <- raw %>% select(date,type,value) %>%
+  dplyr::mutate(date=lubridate::round_date(date, unit = plotting_average_by)) %>%
+  dplyr::group_by(date, type) %>%
+  dplyr::summarise(value=mean(value, na.rm = T)) %>% dplyr::ungroup() %>%
+  dplyr::arrange(date) %>% dplyr::group_by(type) %>%
+  dplyr::mutate(value=rollapply(value, width=plotting_average_by_roll,
+                                FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA)) %>%
+  dplyr::ungroup()
+
+  return(result)
+}
+

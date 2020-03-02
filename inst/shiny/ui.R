@@ -46,6 +46,7 @@ ui <- fluidPage(
                 ),
                 # Show a plot of the generated distribution
                 mainPanel(
+                   width=10,
                    plotOutput("meas_plot", height = 800)
                 )
             )
@@ -76,7 +77,6 @@ ui <- fluidPage(
                                                 `selected-text-format` = "count > 3"),
                                  multiple = T,
                                  selected = exc_status_labels),
-
 
                      pickerInput("exc_poll",
                                  "Pollutant",
