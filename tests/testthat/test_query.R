@@ -179,35 +179,22 @@ test_that("query return standard exceedances", {
   expect_equal(nrow(exc_delhi_china), 0)
 })
 
-test_that("Weather data is properly joined", {
+test_that("Querying measurements with weather works", {
+  t <- system.time({result <- measurements_with_weather(city='Delhi',
+                                                        poll=PM25,
+                                                        date_from='2020-01-01',
+                                                        average_by = 'hour',
+                                                        aggregate_at_city_level = T,
+                                                        weather_radius_km = 20,
+                                                        collect=T)})
 
-  city=c('Beijing','北京市')
-  poll <- creadb::PM25
-  training_average_by <- 'hour'
-
-  meas <- measurements(city=city,
-                       date_from = '2015-01-01',
-                       collect=F,
-                       poll=poll,
-                       average_by=training_average_by,
-                       add_noaa_station_ids = T,
-                       noaa_station_radius_km = 20,
-                       with_metadata = T)
-
-  for (aggregate_at_city_level in c(T,F)){
-    meas_weather <- join_weather_data(meas,
-                                      measurements_averaged_by=training_average_by,
-                                      aggregate_at_city_level=aggregate_at_city_level,
-                                      collect=F)
-
-    # Check city aggregation (or lack of)
-    expect_equal("city" %in% colnames(meas_weather), !aggregate_at_city_level)
-    expect_equal("noaa_station_id" %in% colnames(meas_weather), !aggregate_at_city_level)
-    expect_equal("location_id" %in% colnames(meas_weather), !aggregate_at_city_level)
-  }
+  expect_lt(t['elapsed'],30)
+  expect_gt(length(unique(result$wind_deg)), 1)
+  expect_gt(length(unique(result$rh_percent)), 1)
+  expect_gt(length(unique(result$prec_6h_mm)), 1)
+  expect_gt(length(unique(result$slp_hp)), 1)
+  expect_gt(length(unique(result$temp_c)), 1)
+  expect_gt(length(unique(result$sky_code)), 1)
 
 
-
-  nrow(meas_weather)
-  a<-meas %>% summarize(n())
 })
