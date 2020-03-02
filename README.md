@@ -4,13 +4,13 @@
 
 ## Bigger picture
 CREA Scraper is part of a larger ecosystem, as shown in the diagram below.
-![Alt text](./crea_architecture.svg)
+
+![CREA Architecture](./crea_architecture.svg)
 
 
 ## Getting started
 ### Install
-```buildoutcfg
-
+```
 install.packages('devtools')
 library(devtools)
 url <- "https://github.com/hubert-thieriot/crea_r_package"
@@ -24,7 +24,9 @@ Otherwise, you can run it locally using:
 ```
 creadb::runShinyApp()
 ```
-### R Code
+
+### Markdown examples
+Markdowns are available in the examples folder
 ```buildoutcfg
 df_locations <- creadb::locations(country='IN')
 df_measurements <- creadb::measurements(country='IN', poll=creadb::PM25, city='Delhi')

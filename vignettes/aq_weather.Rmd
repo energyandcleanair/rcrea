@@ -1,0 +1,87 @@
+---
+title: "Predicting Air Quality From Weather"
+output: html_notebook
+#rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Predicting Air Quality From Weather}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r message=FALSE, warning=FALSE}
+library(creadb)
+library(ggplot2)
+library(dplyr)
+library(gbm)
+library(tidyr)
+library(lubridate)
+library(zoo)
+```
+
+These are the high-level parameters:
+```{r}
+# Parameters
+city=c('Delhi','Beijing')
+poll <- creadb::PM25
+
+# When to separate training data & prediction data
+training_prediction_cut <- lubridate::as_date("2018-06-01")
+
+# On what rolling average do we want to train the model
+training_average_by='hour'
+training_average_by_width=3
+
+# On what rolling average do we want to plot results
+plotting_average_by='day'
+plotting_average_by_width=30
+```
+
+We first collect air quality measurements joined with weather observations from NOAA IDS dataset.
+```{r}
+# Get measurements
+meas_weather <- aq_weather.collect(city=city, poll=poll, average_by = 'hour')
+meas_weather
+```
+
+
+### Exploring data
+Let's see how many measurements we have:
+```{r}
+meas_weather %>% group_by(city, poll) %>% tally()
+```
+
+Let's look at a random month:
+```{r warning=FALSE}
+# Let's see the raw weather measurements we have on a random month (can be slow)
+weather_vars <- vars(temp_c, slp_hp, wind_deg, wind_ms, sky_code, prec_1h_mm, prec_6h_mm)
+weather.plot <- tidyr::gather(meas_weather, "indicator", "value", -c(poll, city, date, country, geometry, value, location, location_id, name, sky_code)) %>% tidyr::drop_na(value)
+ggplot(weather.plot, aes(x=date, y=value, colour=city)) +
+  geom_point(size=0.4) + facet_wrap(~indicator, scales="free_y") +
+  xlim(as.POSIXct("2019-08-01"), as.POSIXct("2019-08-31"))
+```
+
+
+Let's pick the models we want to apply. By default, there is a GBM and a RPART.
+```{r}
+models <- aq_weather.default_models()
+```
+
+
+Run (fit & predict) models:
+```{r message=FALSE, warning=FALSE}
+result <- aq_weather.predict(meas_weather = meas_weather,
+                                  training_prediction_cut = training_prediction_cut,
+                                  training_average_by = training_average_by,
+                                  training_average_by_width = training_average_by_width,
+                                  models = models)
+result
+```
+
+Plotting results:
+```{r warning=FALSE}
+aq_weather.plot(result,
+                plotting_average_by = plotting_average_by,
+                plotting_average_by_width = plotting_average_by_width,
+                training_prediction_cut = training_prediction_cut)
+```
+

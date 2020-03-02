@@ -113,7 +113,7 @@ server <- function(input, output, session) {
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
-        meas_plot <- creadb::plot_measurements(meas(), input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
+        meas_plot <- plot_measurements(meas(), input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
 
         # Adding target lines if any
         if(!is.null(input$target)){

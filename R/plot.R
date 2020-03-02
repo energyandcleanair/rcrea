@@ -226,7 +226,13 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   meas <- meas %>% mutate(value_plot_cat=cut_poll(poll, value))
 
   # Build plot
-  plt <- ggplot2::ggplot(meas, aes_string(x = 'date', y = 'value_plot', color = color_by)) +
+  if(!is.null(color_by)){
+    plt_aes <- aes_string(x='date', y='value_plot', color=color_by)
+  }else{
+    plt_aes <- aes_string(x='date', y='value_plot', color=shQuote("red"))
+  }
+
+  plt <- ggplot2::ggplot(meas, plt_aes) +
         labs(x='', y=expression('concentration [' * mu * 'g/m'^3*']'),
          title=paste(''),
          subtitle = '',
@@ -234,7 +240,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
         theme_minimal()
 
   plt <- switch(type,
-         "ts" = plt + geom_line(aes_string(color = color_by), size = 0.8) +
+         "ts" = plt + geom_line(size = 0.8) +
                 ylim(0, NA),
          "heatmap" = plt +
                     geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot_cat'), color='white') +

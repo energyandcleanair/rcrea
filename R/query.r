@@ -543,6 +543,8 @@ join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_at
                      rh_percent=mean(rh_percent, na.rm=T)) %>%
     ungroup()
 
+  # Removing unwanted columns (the less data, the faster the transfer betweeen DB and R)
+  result <- result %>% dplyr::select(c(-noaa_station_ids, geometry))
 
   # Whether to collect the query i.e. actually run the query
   if(collect){
@@ -552,45 +554,4 @@ join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_at
   return(result)
 }
 
-#-------------------------------------
-# Get measurements with weather data
-#-------------------------------------
-#' Measurements with weather information attached
-#'
-#' @param city
-#' @param poll
-#' @param date_from
-#' @param average_by
-#' @param weather_radius_km Maximum distance between weather station and air quality
-#'
-#' @return tibble with hourly
-#' @export
-#'
-#' @examples
-measurements_with_weather <- function(city,
-                                      poll,
-                                      date_from='2015-01-01',
-                                      average_by='hour',
-                                      aggregate_at_city_level=T,
-                                      weather_radius_km=20,
-                                      collect=T){
-
-  # Get measurements
-  meas <- measurements(city=city,
-                       date_from=date_from,
-                       collect=F, #to save time (only do collection at last step)
-                       poll=poll,
-                       average_by=average_by,
-                       aggregate_at_city_level=aggregate_at_city_level,
-                       add_noaa_station_ids = T,
-                       noaa_station_radius_km = weather_radius_km,
-                       with_metadata = T)
-
-  # Attach weather observations and aggregate by date
-  meas_weather <- join_weather_data(meas,
-                                    measurements_averaged_by=average_by,
-                                    aggregate_at_city_level=aggregate_at_city_level,
-                                    collect=collect)
-  return(meas_weather)
-}
 

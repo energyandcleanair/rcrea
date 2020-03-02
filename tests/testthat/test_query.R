@@ -180,7 +180,7 @@ test_that("query return standard exceedances", {
 })
 
 test_that("Querying measurements with weather works", {
-  t <- system.time({result <- measurements_with_weather(city='Delhi',
+  t <- system.time({result <- aq_weather.collect(city='Delhi',
                                                         poll=PM25,
                                                         date_from='2020-01-01',
                                                         average_by = 'hour',
