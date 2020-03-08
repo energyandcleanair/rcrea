@@ -7,6 +7,8 @@ require(dplyr)
 require(dbplyr)
 require(ggplot2)
 require(gbm)
+require(sf)
+require(memoise)
 
 # Constants for user: Pollutants
 CO = "co"
@@ -79,3 +81,7 @@ tbl_safe <- function(con, query_initial){
   })
   return(result)
 }
+
+# Caching
+fc <- memoise::cache_filesystem("./cache")
+

@@ -17,7 +17,8 @@ Imports:
     zoo,
     ggnewscale,
     shiny,
-    shinyWidgets
+    shinyWidgets,
+    memoise
 Depends:
     ggplot2,
     dplyr
@@ -25,6 +26,9 @@ Suggests:
     testthat (>= 2.1.0),
     purrrlyr,
     knitr,
-    rmarkdown
+    rmarkdown,
+    rnoaa,
+    e1701,
+    standardize
 VignetteBuilder:
     knitr

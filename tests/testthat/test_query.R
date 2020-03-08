@@ -179,22 +179,3 @@ test_that("query return standard exceedances", {
   expect_equal(nrow(exc_delhi_china), 0)
 })
 
-test_that("Querying measurements with weather works", {
-  t <- system.time({result <- aq_weather.collect(city='Delhi',
-                                                        poll=PM25,
-                                                        date_from='2020-01-01',
-                                                        average_by = 'hour',
-                                                        aggregate_at_city_level = T,
-                                                        weather_radius_km = 20,
-                                                        collect=T)})
-
-  expect_lt(t['elapsed'],30)
-  expect_gt(length(unique(result$wind_deg)), 1)
-  expect_gt(length(unique(result$rh_percent)), 1)
-  expect_gt(length(unique(result$prec_6h_mm)), 1)
-  expect_gt(length(unique(result$slp_hp)), 1)
-  expect_gt(length(unique(result$temp_c)), 1)
-  expect_gt(length(unique(result$sky_code)), 1)
-
-
-})

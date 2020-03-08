@@ -320,6 +320,9 @@ measurements <- function(country=NULL,
   return(result)
 }
 
+# Cached version
+m_measurements <- memoise(measurements, cache=fc)
+
 standards <- function(collect=TRUE){
   # Connecting
   con = connection()
