@@ -50,7 +50,10 @@ aq_weather.collect <- function(city,
   return(meas_weather)
 }
 
-aq_weather.m.collect <- memoise(aq_weather.collect)
+if(!exists("aq_weather.m.collect")){
+  aq_weather.m.collect <- memoise(aq_weather.collect, cache=fc)
+}
+
 
 #---------------------
 # Prediction functions
