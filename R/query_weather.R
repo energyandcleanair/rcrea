@@ -89,6 +89,7 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   if(!exists("ghcnd.m.ghcnd_stations")){
     ghcnd.m.ghcnd_stations <- memoise(rnoaa::ghcnd_stations, cache=fc)
   }
+
   ghcnd.stations <- ghcnd.m.ghcnd_stations()
   message("Done")
 
