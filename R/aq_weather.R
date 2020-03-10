@@ -53,7 +53,9 @@ aq_weather.collect <- function(city,
   return(meas_weather)
 }
 
-aq_weather.m.collect <- memoise(aq_weather.collect, cache=fc)
+if(!exists("aq_weather.m.collect")){
+  aq_weather.m.collect <- memoise(aq_weather.collect, cache=fc)
+}
 
 #---------------------
 # Prediction functions
@@ -65,7 +67,8 @@ aq_weather.default_models <- function(){
     gbm.fit <- gbm::gbm(
       formula = formula, #+ prec_6h_mm, #+ factor(sky_code),
       data = training_data,
-      #cv.folds = 5, #doesn;t work on Ubuntu compute engine
+      cv.folds = 5,
+      n.cores = 1, # parallel doesn't work on Ubuntu compute engine
       verbose = FALSE
     )
     print("Done")
@@ -128,16 +131,16 @@ aq_weather.predict <- function(
 
 
   # Make date axis homogeneous i.e. a row for every day / month / year per city and pollutant
-  date_grid <- result %>% dplyr::group_by(city, poll) %>%
-    dplyr::summarize(date_min=min(date), date_max = max(date)) %>%
-    dplyr::mutate(date=purrr::map2(date_min, date_max, ~seq(.x, .y, by=training_average_by))) %>%
-    dplyr::select(-c(date_min, date_max)) %>%
-    tidyr::unnest(cols=c(date))
-
-  result <- merge(result, date_grid, all=TRUE)
-
-  # Rolling mean for training
   if(training_average_by_width>1){
+    date_grid <- result %>% dplyr::group_by(city, poll) %>%
+      dplyr::summarize(date_min=min(date), date_max = max(date)) %>%
+      dplyr::mutate(date=purrr::map2(date_min, date_max, ~seq(.x, .y, by=training_average_by))) %>%
+      dplyr::select(-c(date_min, date_max)) %>%
+      tidyr::unnest(cols=c(date))
+
+    result <- merge(result, date_grid, by = c('city','poll', 'date'), all=TRUE)
+
+    # Rolling mean for training
     mean_fn <- function(x){
       if(is.numeric(x)){
         res <- mean(x, na.rm = T) # it sometimes returns NaN but models expect only NA
@@ -162,13 +165,15 @@ aq_weather.predict <- function(
     result <- result %>% dplyr::filter_at(c(weather_vars, vars(value)), any_vars(!is.na(.)))
   }
 
-  # Standardize data
-  #TODO standardize per pollutant
-  result_std <- standardize::standardize(formula, result)
-  result_std_data <- result_std$data
-  result_std_data$date <- result$date
-  result_std_data$city <- result$city
-  result_std_data$poll <- result$poll
+  # Standardize data (no need when no svr)
+  # result_std <- standardize::standardize(formula, result)
+  # result_std_data <- result_std$data
+  # result_std_data$date <- result$date
+  # result_std_data$city <- result$city
+  # result_std_data$poll <- result$poll
+
+  result_std_data <- result
+
 
 
   # Separate in training and prediction data and nest data by city and poll (still grouped by these two columns)
@@ -190,7 +195,7 @@ aq_weather.predict <- function(
   model_names <- if (!is.null(names(models))) names(models) else seq_along(models)
   models_df <- tibble(model_name=paste0("model_",names(models)), model=models)
   result_std_data <- result_std_data %>% tidyr::crossing(models_df)
-  result_std_data <- result_std_data %>% mutate(model_fitted=purrr::map2(training, model, possibly(~.y(.x, formula), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(model_fitted=purrr::map2(training, model, possibly(~.y(.x, formula), otherwise = NA, quiet = FALSE)))
 
   #----------------
   # Predict
@@ -202,9 +207,11 @@ aq_weather.predict <- function(
   #---------------
   # Post compute
   #---------------
+  rsq <- function(x,y) cor(x, y) ^ 2
   result_std_data <- result_std_data %>% mutate(training=purrr::map(training, possibly(~ .x %>% mutate(residuals=fitted-value), otherwise = NA)))
   result_std_data <- result_std_data %>% mutate(predicting=purrr::map(predicting,  possibly(~ .x %>% mutate(residuals=predicted-value), otherwise = NA)))
   result_std_data <- result_std_data %>% mutate(rmse=purrr::map_dbl(training, possibly(~ Metrics::rmse(.x$value, .x$fitted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(rsq=purrr::map_dbl(training, possibly(~ rsq(.x$value, .x$fitted), otherwise = NA)))
   return(result_std_data)
 }
 
@@ -250,6 +257,8 @@ aq_weather.plot <- function(result,
     geom_line(aes(colour=type)) +
     facet_grid(city + poll ~ model_name, scales="free_y")
 
+  ratio_h_w <- nrow(unique(result[,c("poll","city")]))/length(unique(result$model_name))
+
   if(!is.null(training_prediction_cut)){
     plot <- plot +
       geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", color="blue")
@@ -260,8 +269,11 @@ aq_weather.plot <- function(result,
   }
 
   # Adding rmse label
-  plot <- plot + geom_text(data=result %>% mutate(label=paste("RMSE:",sprintf("%.2f",rmse))),
-                          x=min(result$training[[1]]$date), y=0, aes(label=label))
+  plot <- plot + geom_text(data=result %>% mutate(label=paste("R2:",sprintf("%.2f",rsq))),
+                           aes(y = -Inf, label=label),
+                           hjust   = -0.1,
+                           vjust   = -1,
+                          x=min(result$training[[1]]$date),size=5)
 
 
   if(!is.null(filename)){
@@ -270,9 +282,9 @@ aq_weather.plot <- function(result,
       plot = plot,
       device = "pdf",
       # path = file.path(getwd(),"results"),
-      scale = 3,
+      scale = 2,
       width = 20,
-      height = 10,
+      height = ratio_h_w * 20 / 2,
       units = "cm",
       dpi = 320,
       limitsize = FALSE,

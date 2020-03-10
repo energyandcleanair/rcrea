@@ -60,7 +60,6 @@ weather.isd.join <- function(meas, measurements_averaged_by='day', aggregate_at_
   if(collect){
     message("Collecting results")
     result <- result %>% dplyr::collect()
-    result$sky_code <- factor(result$sky_code)
     message("Done")
   }
 
@@ -87,7 +86,9 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   # Get nearest GHCND station
   message("Collecting GHCND stations. May take a while if not in cache")
   # set up cache
-  ghcnd.m.ghcnd_stations <- memoise(rnoaa::ghcnd_stations, cache=fc)
+  if(!exists("ghcnd.m.ghcnd_stations")){
+    ghcnd.m.ghcnd_stations <- memoise(rnoaa::ghcnd_stations, cache=fc)
+  }
   ghcnd.stations <- ghcnd.m.ghcnd_stations()
   message("Done")
 
