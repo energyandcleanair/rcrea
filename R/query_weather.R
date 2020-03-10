@@ -91,8 +91,8 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   ghcnd.stations <- ghcnd.m.ghcnd_stations()
   message("Done")
 
-  locs <- locs %>% mutate(longitude = purrr::map_dbl(city_geometry, ~st_coordinates(.x)[[1]]),
-                  latitude =  map_dbl(city_geometry, ~st_coordinates(.x)[[2]]),
+  locs <- locs %>% mutate(longitude = purrr::map_dbl(city_geometry, ~sf::st_coordinates(.x)[[1]]),
+                  latitude =  map_dbl(city_geometry, ~sf::st_coordinates(.x)[[2]]),
                   id=row_number())
 
   # we take all stations within 50km and will average across them
