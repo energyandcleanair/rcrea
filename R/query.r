@@ -29,6 +29,7 @@ filter_sanity_raw <- function(result){
 locations <- function(country=NULL, city=NULL, id=NULL,
                       collect=TRUE,
                       with_geometry=TRUE,
+                      with_tz=FALSE,
                       con=NULL){
 
   # Variable names must be different to column names
@@ -60,7 +61,9 @@ locations <- function(country=NULL, city=NULL, id=NULL,
   )
 
   # Keeping only interesting columns
-  cols <- if(with_geometry) c("id", "name", "city", "country", "geometry") else c("id", "name", "city", "country")
+  cols <- c("id", "name", "city", "country")
+  cols <- if(with_geometry)  c(cols, "geometry") else cols
+  cols <- if(with_tz) c(cols, 'timezone') else cols
 
   result <- result %>% dplyr::select_at(cols)
 
@@ -191,7 +194,7 @@ measurements <- function(country=NULL,
   }else{
     if (aggregate_at_city_level) c() else c("location", "location_id")
   }
-  group_by_cols <- c('city', 'date', 'poll', meta_cols)
+  group_by_cols <- c('city', 'date', 'poll', 'timezone', meta_cols)
   if(add_noaa_station_ids){
     group_by_cols <- c(group_by_cols, 'noaa_station_ids')
   }
@@ -204,6 +207,7 @@ measurements <- function(country=NULL,
   locs <- locations(country=country,
                     city=city,
                     id=location_id,
+                    with_tz=T,
                     collect=F,
                     con = con)
 
@@ -213,7 +217,7 @@ measurements <- function(country=NULL,
   # Right now using ST_UNION (vs e.g. an enveloppe): it is better for the accurate look up of weather stations,
   # but not as good for beautiful maps (there will be several points per city)
   if(aggregate_at_city_level){
-    locs <- locs %>% left_join(locs %>% group_by(country, city) %>%
+    locs <- locs %>% left_join(locs %>% group_by(country, city, timezone) %>%
                                  summarise(city_geometry=st_union(geometry)) %>% ungroup()
     ) %>%
       dplyr::mutate(geometry=city_geometry) %>% dplyr::select(-c(city_geometry))
