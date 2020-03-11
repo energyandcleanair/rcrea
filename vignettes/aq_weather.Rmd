@@ -21,7 +21,7 @@ library(zoo)
 These are the high-level parameters:
 ```{r}
 # Parameters
-city=c('Delhi','Beijing')
+city=c('Delhi', 'Kolkata', 'Beijing')
 poll <- creadb::PM25
 
 # When to separate training data & prediction data

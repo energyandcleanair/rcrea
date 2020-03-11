@@ -245,6 +245,7 @@ aq_weather.plot <- function(result,
     plot <- plot + labs(subtitle=subtitle)
   }
 
+
   if(!is.null(filename)){
     ggsave(
       filename,
