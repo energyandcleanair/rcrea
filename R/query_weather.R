@@ -42,7 +42,9 @@ weather.isd.join <- function(meas, measurements_averaged_by='day', aggregate_at_
   )
 
   # Averaging per AQ measurement date
-  result <- result %>% dplyr::group_by_at(group_by_cols) %>%
+  result <- result %>%
+    dplyr::mutate(sky_code = as.numeric(sky_code)) %>%
+    dplyr::group_by_at(group_by_cols) %>%
     dplyr::summarize(temp_c=mean(temp_c, na.rm=T),
                      slp_hp=mean(slp_hp, na.rm=T),
                      wind_deg=mean(wind_deg, na.rm=T),
@@ -60,7 +62,6 @@ weather.isd.join <- function(meas, measurements_averaged_by='day', aggregate_at_
   if(collect){
     message("Collecting results")
     result <- result %>% dplyr::collect()
-    result$sky_code <- factor(result$sky_code)
     message("Done")
   }
 
@@ -87,15 +88,14 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   # Get nearest GHCND station
   message("Collecting GHCND stations. May take a while if not in cache")
   # set up cache
-  if(!exists("ghcnd.m.ghcnd_stations")){
-    ghcnd.m.ghcnd_stations <- memoise(rnoaa::ghcnd_stations, cache=fc)
-  }
+  # if(!exists("ghcnd.m.ghcnd_stations")){
+  # }
 
   ghcnd.stations <- ghcnd.m.ghcnd_stations()
   message("Done")
 
-  locs <- locs %>% mutate(longitude = purrr::map_dbl(city_geometry, ~st_coordinates(.x)[[1]]),
-                  latitude =  map_dbl(city_geometry, ~st_coordinates(.x)[[2]]),
+  locs <- locs %>% mutate(longitude = purrr::map_dbl(city_geometry, ~sf::st_coordinates(.x)[[1]]),
+                  latitude =  purrr::map_dbl(city_geometry, ~sf::st_coordinates(.x)[[2]]),
                   id=row_number())
 
   # we take all stations within 50km and will average across them

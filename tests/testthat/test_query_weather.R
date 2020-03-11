@@ -81,7 +81,7 @@ test_that("Various precipitation data sources", {
                                        date_max = '2019-12-31'
                                   )
 
-  delhi_gfs <- getPoint(c(28.7041, 77.1025), vars = "swflx", start = '2017-01-01', end='2019-12-31', service = 'gfs')
+  delhi_gfs <- meteoForecast::getPointDays(c(28.7041, 77.1025), vars = "swflx", start = '2017-01-01', end='2019-12-31', service = 'gfs')
 
   plot_data <- bind_rows(delhi_ids %>% select(date, prcp=precip_12) %>% mutate(source='ids'),
             delhi_ghcnd %>% select(date, prcp) %>% mutate(source='ghcnd') %>% mutate(date=lubridate::as_datetime(date))

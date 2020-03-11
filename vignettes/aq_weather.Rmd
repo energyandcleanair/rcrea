@@ -8,6 +8,12 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
+```{r setup}
+# Set working directory to enjoy memoise cache
+library(knitr)
+knitr::opts_knit$set(root.dir = file.path(getwd(),'../'))
+```
+
 ```{r message=FALSE, warning=FALSE}
 library(creadb)
 library(ggplot2)
@@ -16,6 +22,7 @@ library(gbm)
 library(tidyr)
 library(lubridate)
 library(zoo)
+getwd()
 ```
 
 These are the high-level parameters:
