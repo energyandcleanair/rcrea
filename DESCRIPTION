@@ -28,6 +28,7 @@ Suggests:
     knitr,
     rmarkdown,
     rnoaa,
+    worldmet,
     e1701,
     standardize
 VignetteBuilder:
