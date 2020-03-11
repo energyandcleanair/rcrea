@@ -48,14 +48,11 @@ aq_weather.collect <- function(city,
                                   collect=T)
 
   # Attach precipitation from GHCND (ISD precipitation data seems very sparse)
-  meas_weather <- weather.ghcnd.join(meas_weather, weather_radius_km=weather_radius_km)
+  # meas_weather <- weather.ghcnd.join(meas_weather, weather_radius_km=weather_radius_km)
 
   return(meas_weather)
 }
 
-if(!exists("aq_weather.m.collect")){
-  aq_weather.m.collect <- memoise(aq_weather.collect, cache=fc)
-}
 
 #---------------------
 # Prediction functions
@@ -65,9 +62,10 @@ aq_weather.default_models <- function(){
   model_gbm <- function(training_data, formula){
     print("Training gbm")
     gbm.fit <- gbm::gbm(
-      formula = formula, #+ prec_6h_mm, #+ factor(sky_code),
+      formula = formula,
       data = training_data,
-      cv.folds = 5,
+      # cv.folds = 5, #Is stuck
+      n.trees = 5000,
       n.cores = 1, # parallel doesn't work on Ubuntu compute engine
       verbose = FALSE
     )
@@ -78,7 +76,7 @@ aq_weather.default_models <- function(){
   model_rpart <- function(training_data, formula){
     print("Training rpart")
     rpart.fit <- rpart::rpart(
-      formula = formula, #+ prec_6h_mm, #+ factor(sky_code),
+      formula = formula,
       data = training_data
     )
     print("Done")
@@ -125,6 +123,7 @@ aq_weather.predict <- function(
   #----------------
   # Prepare data
   #----------------
+  formula_vars <- vars(all.vars(formula))
   weather_vars <- vars(all.vars(formula)[-1])
 
   result <- meas_weather
@@ -195,23 +194,23 @@ aq_weather.predict <- function(
   model_names <- if (!is.null(names(models))) names(models) else seq_along(models)
   models_df <- tibble(model_name=paste0("model_",names(models)), model=models)
   result_std_data <- result_std_data %>% tidyr::crossing(models_df)
-  result_std_data <- result_std_data %>% mutate(model_fitted=purrr::map2(training, model, possibly(~.y(.x, formula), otherwise = NA, quiet = FALSE)))
+  result_std_data <- result_std_data %>% mutate(model_fitted=purrr::map2(training, model, purrr::possibly(~.y(.x %>% select_at(formula_vars), formula), otherwise = NA, quiet = FALSE)))
 
   #----------------
   # Predict
   #----------------
   # need to add  %>% select_at(weather_vars) for svr
-  result_std_data <- result_std_data %>% mutate(training=purrr::map2(training, model_fitted, possibly(~ .x %>% mutate(fitted=predict(.y, .x)), otherwise = NA)))
-  result_std_data <- result_std_data %>% mutate(predicting=purrr::map2(predicting, model_fitted, possibly(~ .x %>% mutate(predicted=predict(.y, .x)), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(training=purrr::map2(training, model_fitted, purrr::possibly(~ .x %>% mutate(fitted=predict(.y, .x)), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(predicting=purrr::map2(predicting, model_fitted, purrr::possibly(~ .x %>% mutate(predicted=predict(.y, .x)), otherwise = NA)))
 
   #---------------
   # Post compute
   #---------------
   rsq <- function(x,y) cor(x, y) ^ 2
-  result_std_data <- result_std_data %>% mutate(training=purrr::map(training, possibly(~ .x %>% mutate(residuals=fitted-value), otherwise = NA)))
-  result_std_data <- result_std_data %>% mutate(predicting=purrr::map(predicting,  possibly(~ .x %>% mutate(residuals=predicted-value), otherwise = NA)))
-  result_std_data <- result_std_data %>% mutate(rmse=purrr::map_dbl(training, possibly(~ Metrics::rmse(.x$value, .x$fitted), otherwise = NA)))
-  result_std_data <- result_std_data %>% mutate(rsq=purrr::map_dbl(training, possibly(~ rsq(.x$value, .x$fitted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(training=purrr::map(training, purrr::possibly(~ .x %>% mutate(residuals=fitted-value), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(predicting=purrr::map(predicting,  purrr::possibly(~ .x %>% mutate(residuals=predicted-value), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(rmse=purrr::map_dbl(training, purrr::possibly(~ Metrics::rmse(.x$value, .x$fitted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(rsq=purrr::map_dbl(training, purrr::possibly(~ rsq(.x$value, .x$fitted), otherwise = NA)))
   return(result_std_data)
 }
 
@@ -270,11 +269,13 @@ aq_weather.plot <- function(result,
 
   # Adding rmse label
   plot <- plot + geom_text(data=result %>% mutate(label=paste("R2:",sprintf("%.2f",rsq))),
-                           aes(y = -Inf, label=label),
+                           aes(x = as.POSIXct('2015-01-01'), y = -Inf, label=label),
                            hjust   = -0.1,
                            vjust   = -1,
-                          x=min(result$training[[1]]$date),size=5)
+                          size=5)
 
+  plot <- plot + scale_color_tq() +
+    theme_tq()
 
   if(!is.null(filename)){
     ggsave(
