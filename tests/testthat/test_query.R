@@ -179,3 +179,90 @@ test_that("query return standard exceedances", {
   expect_equal(nrow(exc_delhi_china), 0)
 })
 
+
+test_that("measurements time aggregation", {
+
+  meas_hour_day <- measurements(
+    location_id='IN-82',
+    poll=PM25,
+    date_from='2019-08-01 00:00',
+    date_to='2019-08-01 23:00',
+    average_by = 'hour',
+    aggregate_at_city_level = F,
+    collect = T)
+
+  expect_gt(nrow(meas_hour_day), 20) #should be 24 but not every day is complete
+  expect_lte(nrow(meas_hour_day), 24) #should be 24 but not every day is complete
+
+  meas_day <- measurements(
+    location_id='IN-82',
+    poll=PM25,
+    date_from='2019-08-01',
+    date_to='2019-08-01',
+    average_by = 'day',
+    aggregate_at_city_level = F,
+    collect = T)
+
+  expect_equal(nrow(meas_day),1)
+
+})
+
+
+test_that("measurements have a properly set timezone", {
+
+  # AQ from CPCB directly: Date is local
+  # Station: North Campus, DU, Delhi - IMD
+  # Note: our meas df is averaged per city
+  # S.No	From Date	To Date	                  PM2.5 (ug/m3)	NO (ug/m3)	NO2 (ug/m3)	NOx (ppb)	PM10 (ug/m3)
+  # 1	01-Aug-2019 - 00:00	01-Aug-2019 - 01:00	30.95	6.88	7.68	14.56	78.86
+  # 2	01-Aug-2019 - 01:00	01-Aug-2019 - 02:00	38.81	7.03	7.53	14.57	39.78
+  # 3	01-Aug-2019 - 02:00	01-Aug-2019 - 03:00	39.12	8.13	7.96	16.09	62.34
+  # 4	01-Aug-2019 - 03:00	01-Aug-2019 - 04:00	41.7	8.85	8.27	17.13	59.1
+  # 5	01-Aug-2019 - 04:00	01-Aug-2019 - 05:00	27.58	9.48	8.66	18.14	52.85
+  # 6	01-Aug-2019 - 05:00	01-Aug-2019 - 06:00	25.1	8.44	8.39	16.83	92.77
+  # 7	01-Aug-2019 - 06:00	01-Aug-2019 - 07:00	20.54	8.58	8.52	17.09	86.89
+  # 8	01-Aug-2019 - 07:00	01-Aug-2019 - 08:00	25.04	7.96	8.4	16.35	83.66
+  # 9	01-Aug-2019 - 08:00	01-Aug-2019 - 09:00	36.66	6.62	7.61	14.22	92.78
+  # 10	01-Aug-2019 - 09:00	01-Aug-2019 - 10:00	36.1	5.09	6.81	11.9	17.14
+  # 11	01-Aug-2019 - 10:00	01-Aug-2019 - 11:00	49.68	4.37	6.46	10.83	43.72
+  # 12	01-Aug-2019 - 11:00	01-Aug-2019 - 12:00	46.49	4.05	6.38	10.42	51.29
+  # 13	01-Aug-2019 - 12:00	01-Aug-2019 - 13:00	40.86	4.02	6.53	10.54	37.03
+  # 14	01-Aug-2019 - 13:00	01-Aug-2019 - 14:00	33.5	4.17	6.8	10.97	80.62
+  # 15	01-Aug-2019 - 14:00	01-Aug-2019 - 15:00	32.02	4.25	7.03	11.29	95.34
+  # 16	01-Aug-2019 - 15:00	01-Aug-2019 - 16:00	30.71	6.1	8.12	14.22	95.74
+  # 17	01-Aug-2019 - 16:00	01-Aug-2019 - 17:00	5.59	5.78	7.51	13.29	47.5
+  # 18	01-Aug-2019 - 17:00	01-Aug-2019 - 18:00	26.65	5.23	6.92	12.15	34.57
+  # 19	01-Aug-2019 - 18:00	01-Aug-2019 - 19:00	21.39	5.42	7.12	12.54	15.65
+  # 20	01-Aug-2019 - 19:00	01-Aug-2019 - 20:00	26.94	6.22	7.62	13.84	34.86
+  # 21	01-Aug-2019 - 20:00	01-Aug-2019 - 21:00	25.2	6.8	8.01	14.81	46.3
+  # 22	01-Aug-2019 - 21:00	01-Aug-2019 - 22:00	22.06	7.49	8.47	15.96	64.45
+  # 23	01-Aug-2019 - 22:00	01-Aug-2019 - 23:00	19.26	8.6	8.85	17.45	103.95
+  # 24	01-Aug-2019 - 23:00	02-Aug-2019 - 00:00	19.9	10.49	9.48	19.96	93.02
+
+  official_dates <- tibble(lubridate::force_tz(lubridate::ymd_h(c("2019-08-01 00",
+                                                           "2019-08-01 01",
+                                                           "2019-08-01 02",
+                                                           "2019-08-01 03",
+                                                           "2019-08-01 04")),
+                                        tzone='Asia/Kolkata'))
+
+  official_pm25 <- c(30.95,38.81,39.12,41.7,27.58)
+
+
+  meas_test_location <- measurements(
+                            location_id='IN-82',
+                            poll=PM25,
+                            date_from='2019-08-01',
+                            date_to='2019-08-02',
+                            average_by = 'hour',
+                            aggregate_at_city_level = F,
+                            collect = T) %>% arrange(date)
+
+  meas_dates <- meas_test_location[1:5,'date']
+  meas_pm25 <- meas_test_location[1:5,'value']
+  expect_true(all(official_dates == meas_dates))
+  expect_true(all(abs((meas_pm25-official_pm25)/official_pm25)<0.04)) # max 4% error
+  expect_equal(nrow(meas_test_location), 24)
+
+})
+

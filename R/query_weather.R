@@ -15,7 +15,11 @@ require(worldmet)
 #' @examples
 #' meas_w_weather <- creadb::join_weather_data(meas)
 #'
-weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day', radius_km=20){
+weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day', aggregate_at_city_level=T, radius_km=20){
+
+  if(!aggregate_at_city_level){
+    stop("aggregate_at_city_level=F not yet supported")
+  }
 
   # Collect if not already collected
   if(is.na(nrow(meas))){
@@ -59,7 +63,7 @@ weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day'
   locs_weather <- locs_weather %>% select(city, timezone, weather) %>% filter(!is.na(weather)) %>% tidyr::unnest(weather)
 
   # Create local date time to merge with measurements that are in local time
-  locs_weather <- locs_weather %>% mutate(date_local=purrr::map2_chr(date, timezone, ~as.character(lubridate::with_tz(.x,.y))) %>% lubridate::ymd_hms())
+  locs_weather <- locs_weather %>% dplyr::mutate(date_local=purrr::map2_chr(date, timezone, ~as.character(lubridate::with_tz(.x,.y))) %>% lubridate::ymd_hms())
   locs_weather <- locs_weather %>% mutate(date_local=lubridate::floor_date(date_local,measurements_averaged_by))
 
   # Aggregate per city

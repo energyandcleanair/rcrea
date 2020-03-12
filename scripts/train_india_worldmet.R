@@ -6,10 +6,11 @@ library(tidyr)
 library(lubridate)
 library(zoo)
 library(memoise)
+library(worldmet)
 
 all_results <- NULL
 # Top 10 cities with the most measurements
-city <- c('Delhi', 'Bengaluru', 'Hyderabad', 'Lucknow', 'Chennai')# 'Mumbai', 'Jaipur', 'Chandrapur', 'Chandrapur', 'Kolkata')
+city <- c('Delhi') #, 'Bengaluru', 'Hyderabad', 'Lucknow', 'Chennai')# 'Mumbai', 'Jaipur', 'Chandrapur', 'Chandrapur', 'Kolkata')
 poll <- c(PM25, PM10, SO2, NO2, CO, O3, NO, NOX)
 
 training_prediction_cut <- lubridate::as_date("2020-01-01")
@@ -22,29 +23,34 @@ training_average_by_widths=c(1,3,8)
 plotting_average_by='day'
 plotting_average_by_width=30
 
-meas_weather <- readRDS('cache/meas_weather_top5_india.rds')
-#meas_weather <- aq_weather.m.collect(city=city,
-                                     # poll=poll,
-                                     # date_from='2015-01-01',
-                                     # average_by=training_average_by,
-                                     # weather_radius_km = 50)
+meas_weather <- aq_weather.m.collect(city=city,
+                                     poll=poll,
+                                     date_from='2015-01-01',
+                                     use_worldmet = T,
+                                     average_by=training_average_by,
+                                     weather_radius_km = 20)
 
-meas_weather$wind_deg_factor <- factor(meas_weather$wind_deg %/% 45)
-meas_weather$sky_code <- strtoi(meas_weather$sky_code) #old query function returned chr. Fixed now
-meas_weather$sky_code_factor <- factor(meas_weather$sky_code, ordered = TRUE)
-meas_weather$prec_6h_mm_coalesced <- coalesce(meas_weather$prec_6h_mm,0)
+# meas_weather <- readRDS('cache/meas_weather_top5_india_worldmet.rds')
+#saveRDS(meas_weather, 'cache/meas_weather_top5_india_worldmet.rds')
+
+meas_weather$wd <- coalesce(meas_weather$wd,-1)
+meas_weather$wd_factor <- factor(meas_weather$wd %/% 45)
+meas_weather$precip_coalesced <- coalesce(meas_weather$precip,0)
+meas_weather$ceil_hgt_coalesced <- coalesce(meas_weather$ceil_hgt_coalesced,0)
+meas_weather <- meas_weather %>% group_by(city, poll) %>% mutate(atmos_pres=na.approx(atmos_pres, date, na.rm=FALSE)) %>% ungroup()
 
 models <- aq_weather.default_models()[c('gbm','rpart')]
 
 for(training_average_by_width in training_average_by_widths){
   print(paste("Training average width:",training_average_by_width))
-  formulas <- c(value ~ temp_c + wind_deg_factor + wind_ms + slp_hp + rh_percent + sky_code,
-                value ~ temp_c + wind_deg_factor + wind_ms + slp_hp + rh_percent + sky_code + prec_6h_mm_coalesced,
-                value ~ temp_c + wind_deg_factor + wind_ms + slp_hp + rh_percent + sky_code_factor,
-                value ~ temp_c + wind_deg_factor + wind_ms + slp_hp + rh_percent + sky_code_factor + prec_6h_mm_coalesced,
-                # value ~ temp_c + wind_deg_factor + wind_ms + slp_hp + rh_percent + sky_code_factor + prcp,
-                value ~ temp_c + wind_deg_factor*wind_ms + slp_hp + rh_percent + sky_code_factor)
-  # value ~ temp_c + wind_deg_factor*wind_ms + slp_hp + rh_percent + sky_code_factor, + prcp)
+  formulas <- c(value ~ air_temp + wd + ws + atmos_pres + RH + precip_coalesced,
+                value ~ air_temp + wd + ws + atmos_pres + RH + ceil_hgt + precip_coalesced,
+                value ~ air_temp + wd + ws + atmos_pres + RH + ceil_hgt + precip_coalesced + visibility,
+                value ~ air_temp + wd_factor + ws + atmos_pres + RH + ceil_hgt + precip_coalesced,
+                value ~ air_temp + wd_factor + ws + atmos_pres + RH + ceil_hgt + precip_coalesced + visibility,
+                value ~ air_temp + wd_factor*ws + atmos_pres + RH + ceil_hgt + precip_coalesced,
+                value ~ air_temp + wd_factor*ws + atmos_pres + RH + ceil_hgt + precip_coalesced + visibility
+                )
 
   for(formula in formulas){
     print(paste("Formula:", paste(formula, collapse='')))

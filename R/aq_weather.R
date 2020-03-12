@@ -21,11 +21,12 @@ require(Metrics)
 #'
 #' @examples
 aq_weather.collect <- function(city,
-                                poll,
-                                date_from='2015-01-01',
-                                average_by='hour',
-                                aggregate_at_city_level=T,
-                                weather_radius_km=20){
+                               poll,
+                               date_from='2015-01-01',
+                               average_by='hour',
+                               use_worldmet=F,
+                               aggregate_at_city_level=T,
+                               weather_radius_km=20){
 
   con <- connection()
   # Get measurements
@@ -41,11 +42,19 @@ aq_weather.collect <- function(city,
                        con = con)
 
   # Attach weather observations from ISD and aggregate by time & city
-  meas_weather <- weather.isd.join(meas,
-                                  measurements_averaged_by=average_by,
-                                  aggregate_at_city_level=aggregate_at_city_level,
-                                  con = con,
-                                  collect=T)
+  if(use_worldmet){
+    meas_weather <- weather.isd.join.using_worldmet(meas,
+                                     measurements_averaged_by=average_by,
+                                     aggregate_at_city_level=aggregate_at_city_level,
+                                     radius_km=weather_radius_km)
+
+  }else{
+    meas_weather <- weather.isd.join(meas,
+                                     measurements_averaged_by=average_by,
+                                     con = con,
+                                     collect=T)
+
+  }
 
   # Attach precipitation from GHCND (ISD precipitation data seems very sparse)
   # meas_weather <- weather.ghcnd.join(meas_weather, weather_radius_km=weather_radius_km)
@@ -243,11 +252,11 @@ aq_weather.plot <- function(result,
     return(result)
   }
 
-  fitted <- result %>% dplyr::select(city, poll, model_name, rmse, training) %>%
+  fitted <- result %>% dplyr::select(city, poll, model_name, rmse, training) %>% filter(!is.na(training)) %>%
     tidyr::unnest(c(training)) %>% dplyr::select(city, poll, model_name, rmse, date, value, fitted) %>%
     tidyr::gather("type", "value", -c(city, poll, date, model_name, rmse)) %>% roll_plot()
 
-  predicted <- result %>% dplyr::select(city, poll, model_name, rmse, predicting) %>%
+  predicted <- result %>% dplyr::select(city, poll, model_name, rmse, predicting) %>% filter(!is.na(predicting)) %>%
     tidyr::unnest(c(predicting)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
     tidyr::gather("type", "value", -c(city,poll,date,model_name, rmse)) %>% roll_plot()
 
@@ -275,8 +284,7 @@ aq_weather.plot <- function(result,
                            vjust   = -1,
                           size=5)
 
-  plot <- plot + scale_color_tq() +
-    theme_tq()
+  plot <- plot + theme_light()
 
 
   if(!is.null(filename)){
