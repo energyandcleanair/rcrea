@@ -168,7 +168,7 @@ measurements <- function(country=NULL,
     value_col_name <- 'value'
     filter_fn <- filter_sanity_raw
     need_grouping_before_time_averaging <- FALSE
-    need_grouping <- if(aggregate_at_city_level) FALSE else FALSE
+    need_grouping <- TRUE #Need grouping to average by hour
     locs_meas_join_by <- if(aggregate_at_city_level) c("city", "country") else c("location_id"="id")
   }else if(average_by=='day'){
     table_name <- 'measurements_daily'
@@ -316,9 +316,15 @@ measurements <- function(country=NULL,
     }
   }
 
+
+
   # Whether to collect the query i.e. actually run the query
   if(collect){
     result <- result %>% dplyr::collect()
+    # Localize time
+    # We can't use purrr:map since it won't deal with datetime objects
+    # hence the rowwise
+    result <- result %>% rowwise() %>% mutate(date=lubridate::force_tz(date,tzone=timezone))
   }
 
   return(result)

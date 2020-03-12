@@ -31,7 +31,7 @@ meas_weather <- aq_weather.m.collect(city=city,
                                      weather_radius_km = 20)
 
 # meas_weather <- readRDS('cache/meas_weather_top5_india_worldmet.rds')
-#saveRDS(meas_weather, 'cache/meas_weather_top5_india_worldmet.rds')
+saveRDS(meas_weather, 'cache/meas_weather_top5_india_worldmet.rds')
 
 meas_weather$wd <- coalesce(meas_weather$wd,-1)
 meas_weather$wd_factor <- factor(meas_weather$wd %/% 45)

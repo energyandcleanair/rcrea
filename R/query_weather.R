@@ -25,6 +25,8 @@ weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day'
   if(is.na(nrow(meas))){
     message("Collecting measurements")
     meas <- meas %>% collect()
+    # Localize time
+    meas <- meas %>% rowwise() %>% mutate(date=lubridate::force_tz(date,tzone=timezone))
     message("Done")
   }
 
@@ -63,7 +65,7 @@ weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day'
   locs_weather <- locs_weather %>% select(city, timezone, weather) %>% filter(!is.na(weather)) %>% tidyr::unnest(weather)
 
   # Create local date time to merge with measurements that are in local time
-  locs_weather <- locs_weather %>% dplyr::mutate(date_local=purrr::map2_chr(date, timezone, ~as.character(lubridate::with_tz(.x,.y))) %>% lubridate::ymd_hms())
+  locs_weather <- locs_weather %>% rowwise() %>% mutate(date_local=lubridate::with_tz(date, tzone=timezone))
   locs_weather <- locs_weather %>% mutate(date_local=lubridate::floor_date(date_local,measurements_averaged_by))
 
   # Aggregate per city
@@ -72,7 +74,7 @@ weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day'
                      atmos_pres=mean(atmos_pres, na.rm=T),
                      wd=mean(wd, na.rm=T),
                      ws=mean(ws, na.rm=T),
-                     ceil_hgt=mean(ceil_hgt),
+                     ceil_hgt=mean(ceil_hgt, na.rm=T),
                      visibility=mean(visibility, na.rm=T),
                      precip=mean(precip, na.rm=T),
                      RH=mean(RH, na.rm=T)) %>%
@@ -99,9 +101,8 @@ weather.isd.join <- function(meas, measurements_averaged_by='day', collect=TRUE,
 
 
   # Adding observations
-  rhs_date <- ifelse(measurements_averaged_by!='hour',
-                     sprintf("DATE_TRUNC('%s',\"RHS\".date)", measurements_averaged_by),
-                     "\"RHS\".date")
+  # We bring noaa measurements to local timezone using measurements timezone
+  rhs_date <- sprintf("DATE_TRUNC('%s',timezone('UTC',\"RHS\".date_utc) AT TIME ZONE \"LHS\".timezone)", measurements_averaged_by)
   result <- meas %>% dplyr::left_join(
     tbl_safe(con,"noaa_ids_observations"),
     suffix=c("", "_noaa"),
@@ -123,12 +124,16 @@ weather.isd.join <- function(meas, measurements_averaged_by='day', collect=TRUE,
     ungroup()
 
   # Removing unwanted columns (the less data, the faster the transfer betweeen DB and R)
-  result <- result %>% dplyr::select(c(-noaa_station_ids, -geometry))
+  result <- result %>% dplyr::select(c(-noaa_station_ids))
+  if ('geometry' %in% colnames(result)){
+    result <- result %>% dplyr::select(c(-geometry))
+  }
 
   # Whether to collect the query i.e. actually run the query
   if(collect){
     message("Collecting results")
     result <- result %>% dplyr::collect()
+    result <- result %>% rowwise() %>% mutate(date=lubridate::force_tz(date,tzone=timezone))
     message("Done")
   }
 

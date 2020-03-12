@@ -101,7 +101,7 @@ aq_weather.default_models <- function(){
     return(tuneResult$best.model)
   }
 
-  models <- list(gbm=model_gbm, rpart=model_rpart, rpart=model_rpart, svr=model_svr)
+  models <- list(gbm=model_gbm, rpart=model_rpart, svr=model_svr)
   return(models)
 }
 
@@ -123,10 +123,10 @@ aq_weather.default_models <- function(){
 aq_weather.predict <- function(
   meas_weather,
   formula,
-  training_prediction_cut,
   training_average_by='hour',
   training_average_by_width=3,
-  models=aq_weather.default_models(formula)
+  models=aq_weather.default_models(),
+  test_frac=0.1 #10% for testing purposes
 ){
 
   #----------------
@@ -135,8 +135,7 @@ aq_weather.predict <- function(
   formula_vars <- vars(all.vars(formula))
   weather_vars <- vars(all.vars(formula)[-1])
 
-  result <- meas_weather
-
+  result <- meas_weather %>% select_at(c('city', 'poll', 'date', all.vars(formula)))
 
   # Make date axis homogeneous i.e. a row for every day / month / year per city and pollutant
   if(training_average_by_width>1){
@@ -158,8 +157,8 @@ aq_weather.predict <- function(
       }
     }
     train_roll_fn <- function(var) zoo::rollapply(var, width=training_average_by_width, FUN=mean_fn, align='right', fill=NA)
-    result <- result %>% group_by(city, poll) %>% arrange(date) %>%
-      mutate_at(vars(-city, -poll, -date), train_roll_fn)
+    result <- result %>% dplyr::group_by(city, poll) %>% dplyr::arrange(date) %>%
+      dplyr::mutate_at(vars(-city, -poll, -date), train_roll_fn)
     #TODO check sky_code value is preserved (and not mixed with levels)
   }else{
     result <- result %>% group_by(city, poll) %>% arrange(date)
@@ -183,11 +182,16 @@ aq_weather.predict <- function(
   result_std_data <- result
 
 
+  # Separate in training and testing data and nest data by city and poll (still grouped by these two columns)
+  # TODO
+  # result_std_data <- result_std_data %>% group_by(city, poll) %>% tidyr::nest() %>%
+  #   dplyr::mutate(training = purrr::map(data, ~ filter(.x, date < training_prediction_cut))) %>%
+  #   dplyr::mutate(testing = purrr::map(data, ~ filter(.x, date >= training_prediction_cut)))
+  result_std_data <- result_std_data %>% group_by(city, poll) %>% mutate(id = row_number()) %>%
+    tidyr::nest() %>%
+    dplyr::mutate(training = purrr::map(data, ~ dplyr::sample_frac(.x, 1-test_frac))) %>%
+    dplyr::mutate(testing = purrr::map2(data, training, ~ anti_join(.x, .y, by='id')))
 
-  # Separate in training and prediction data and nest data by city and poll (still grouped by these two columns)
-  result_std_data <- result_std_data %>% group_by(city, poll) %>% tidyr::nest() %>%
-    dplyr::mutate(training = purrr::map(data, ~ filter(.x, date < training_prediction_cut))) %>%
-    dplyr::mutate(predicting = purrr::map(data, ~ filter(.x, date >= training_prediction_cut)))
 
   # Remove those without training data
   no_training <- result_std_data %>% filter(purrr::map_int(training, nrow) == 0)
@@ -209,17 +213,18 @@ aq_weather.predict <- function(
   # Predict
   #----------------
   # need to add  %>% select_at(weather_vars) for svr
-  result_std_data <- result_std_data %>% mutate(training=purrr::map2(training, model_fitted, purrr::possibly(~ .x %>% mutate(fitted=predict(.y, .x)), otherwise = NA)))
-  result_std_data <- result_std_data %>% mutate(predicting=purrr::map2(predicting, model_fitted, purrr::possibly(~ .x %>% mutate(predicted=predict(.y, .x)), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(training=purrr::map2(training, model_fitted, purrr::possibly(~ .x %>% mutate(predicted=predict(.y, .x)), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(testing=purrr::map2(testing, model_fitted, purrr::possibly(~ .x %>% mutate(predicted=predict(.y, .x)), otherwise = NA)))
 
   #---------------
   # Post compute
   #---------------
   rsq <- function(x,y) cor(x, y) ^ 2
-  result_std_data <- result_std_data %>% mutate(training=purrr::map(training, purrr::possibly(~ .x %>% mutate(residuals=fitted-value), otherwise = NA)))
-  result_std_data <- result_std_data %>% mutate(predicting=purrr::map(predicting,  purrr::possibly(~ .x %>% mutate(residuals=predicted-value), otherwise = NA)))
-  result_std_data <- result_std_data %>% mutate(rmse=purrr::map_dbl(training, purrr::possibly(~ Metrics::rmse(.x$value, .x$fitted), otherwise = NA)))
-  result_std_data <- result_std_data %>% mutate(rsq=purrr::map_dbl(training, purrr::possibly(~ rsq(.x$value, .x$fitted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(training=purrr::map(training, purrr::possibly(~ .x %>% mutate(residuals=predicted-value), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(testing=purrr::map(testing,  purrr::possibly(~ .x %>% mutate(residuals=predicted-value), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(rmse=purrr::map_dbl(training, purrr::possibly(~ Metrics::rmse(.x$value, .x$predicted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(rsq=purrr::map_dbl(training, purrr::possibly(~ rsq(.x$value, .x$predicted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(rsq_test=purrr::map_dbl(testing, purrr::possibly(~ rsq(.x$value, .x$predicted), otherwise = NA)))
   return(result_std_data)
 }
 
@@ -229,7 +234,6 @@ aq_weather.predict <- function(
 aq_weather.plot <- function(result,
                             plotting_average_by='day',
                             plotting_average_by_width=30,
-                            training_prediction_cut=NULL,
                             subtitle=NULL,
                             filename=NULL
                             ){
@@ -252,25 +256,25 @@ aq_weather.plot <- function(result,
     return(result)
   }
 
-  fitted <- result %>% dplyr::select(city, poll, model_name, rmse, training) %>% filter(!is.na(training)) %>%
-    tidyr::unnest(c(training)) %>% dplyr::select(city, poll, model_name, rmse, date, value, fitted) %>%
+  trained <- result %>% dplyr::select(city, poll, model_name, rmse, training) %>% filter(!is.na(training)) %>%
+    tidyr::unnest(c(training)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
     tidyr::gather("type", "value", -c(city, poll, date, model_name, rmse)) %>% roll_plot()
 
-  predicted <- result %>% dplyr::select(city, poll, model_name, rmse, predicting) %>% filter(!is.na(predicting)) %>%
-    tidyr::unnest(c(predicting)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
+  tested <- result %>% dplyr::select(city, poll, model_name, rmse, testing) %>% filter(!is.na(testing)) %>%
+    tidyr::unnest(c(testing)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
     tidyr::gather("type", "value", -c(city,poll,date,model_name, rmse)) %>% roll_plot()
 
-  combined <- rbind(fitted, predicted)
+  combined <- rbind(trained, tested)
   plot <- ggplot(combined, aes(x=date, y=value)) +
     geom_line(aes(colour=type)) +
     facet_grid(city + poll ~ model_name, scales="free_y")
 
   ratio_h_w <- nrow(unique(result[,c("poll","city")]))/length(unique(result$model_name))
 
-  if(!is.null(training_prediction_cut)){
-    plot <- plot +
-      geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", color="blue")
-  }
+  # if(!is.null(training_prediction_cut)){
+  #   plot <- plot +
+  #     geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", color="blue")
+  # }
 
   if(!is.null(subtitle)){
     plot <- plot + labs(subtitle=subtitle)
@@ -278,11 +282,11 @@ aq_weather.plot <- function(result,
 
 
   # Adding rmse label
-  plot <- plot + geom_text(data=result %>% mutate(label=paste("R2:",sprintf("%.2f",rsq))),
-                           aes(x = as.POSIXct('2015-01-01'), y = -Inf, label=label),
-                           hjust   = -0.1,
-                           vjust   = -1,
-                          size=5)
+  plot <- plot + geom_text(data=result %>% mutate(label=paste0("R2: ",sprintf("%.2f",rsq),"\n","R2 (validation): ",sprintf("%.2f",rsq_test))),
+   aes(x = as.POSIXct('2015-01-01'), y = -Inf, label=label),
+   hjust   = 0,
+   vjust   = -1,
+  size=3)
 
   plot <- plot + theme_light()
 
@@ -307,21 +311,21 @@ aq_weather.plot <- function(result,
 }
 
 aq_weather.plot_residuals <- function(result){
-  fitted <- result %>% dplyr::select(city, poll, model_name, training) %>%
+  trained <- result %>% dplyr::select(city, poll, model_name, training) %>%
     tidyr::unnest(c(training)) %>% dplyr::select(city, poll, model_name, date, residuals) %>%
     tidyr::gather("type", "residuals", -c(city, poll, date, model_name))
 
-  predicted <- result %>% dplyr::select(city, poll, model_name, predicting) %>%
-    tidyr::unnest(c(predicting)) %>% dplyr::select(city,poll,model_name, date, residuals) %>%
+  tested <- result %>% dplyr::select(city, poll, model_name, testing) %>%
+    tidyr::unnest(c(testing)) %>% dplyr::select(city,poll,model_name, date, residuals) %>%
     tidyr::gather("type", "residuals", -c(city,poll,date,model_name))
 
-  combined <- rbind(fitted, predicted)
+  combined <- rbind(trained, tested)
   plot <- ggplot(combined, aes(x=date, y=residuals)) + geom_line(aes(colour=type)) + facet_wrap(~ city + poll + model_name )
 
-  if(!is.null(training_prediction_cut)){
-    plot <- plot +
-      geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", color="blue")
-  }
+  # if(!is.null(training_prediction_cut)){
+  #   plot <- plot +
+  #     geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", color="blue")
+  # }
   return(plot)
 }
 

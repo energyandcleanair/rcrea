@@ -51,7 +51,6 @@ for(training_average_by_width in training_average_by_widths){
     tryCatch({
       result <- aq_weather.predict(meas_weather = meas_weather,
                                    formula=formula,
-                                   training_prediction_cut = training_prediction_cut,
                                    training_average_by = training_average_by,
                                    training_average_by_width = training_average_by_width,
                                    models = models)
