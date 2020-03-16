@@ -266,10 +266,18 @@ aq_weather.plot <- function(result,
 
   combined <- rbind(trained, tested)
   plot <- ggplot(combined, aes(x=date, y=value)) +
-    geom_line(aes(colour=type)) +
-    facet_grid(city + poll ~ model_name, scales="free_y")
+    geom_line(aes(colour=type))
 
-  ratio_h_w <- nrow(unique(result[,c("poll","city")]))/length(unique(result$model_name))
+  if(length(unique(result$model_name))>1){
+    plot <- plot + facet_grid(city + poll ~ model_name, scales="free_y")
+    ratio_h_w <- nrow(unique(result[,c("poll","city")]))/length(unique(result$model_name))
+
+  }else{
+    plot <- plot + facet_grid(poll ~ city, scales="free_y")
+    ratio_h_w <- length(unique(result$poll))/length(unique(result$city))
+  }
+
+
 
   # if(!is.null(training_prediction_cut)){
   #   plot <- plot +
@@ -312,20 +320,30 @@ aq_weather.plot <- function(result,
 
 aq_weather.plot_residuals <- function(result){
   trained <- result %>% dplyr::select(city, poll, model_name, training) %>%
+    mutate(training=purrr::map(training, ~dplyr::select(.x, date, residuals))) %>%
     tidyr::unnest(c(training)) %>% dplyr::select(city, poll, model_name, date, residuals) %>%
     tidyr::gather("type", "residuals", -c(city, poll, date, model_name))
 
   tested <- result %>% dplyr::select(city, poll, model_name, testing) %>%
+    mutate(testing=purrr::map(testing, ~dplyr::select(.x, date, residuals))) %>%
     tidyr::unnest(c(testing)) %>% dplyr::select(city,poll,model_name, date, residuals) %>%
     tidyr::gather("type", "residuals", -c(city,poll,date,model_name))
 
   combined <- rbind(trained, tested)
-  plot <- ggplot(combined, aes(x=date, y=residuals)) + geom_line(aes(colour=type)) + facet_wrap(~ city + poll + model_name )
+  # Residuals as a function of the hour of the day
+  combined$hour <- factor(lubridate::hour(combined$date), ordered=T)
+  plot <- ggplot(combined, aes(x=hour, y=residuals)) + geom_boxplot() + facet_grid(poll ~ city, scales='free_y')
+  plot
+
+  # Residuals as a function of the day of the year
+  combined$doy <- factor(lubridate::yday(combined$date), ordered=T)
+  plot <- ggplot(combined, aes(x=doy, y=residuals)) + geom_boxplot(outlier.shape=NA) + facet_grid(poll ~ city, scales='free_y')
+  plot
+
 
   # if(!is.null(training_prediction_cut)){
   #   plot <- plot +
   #     geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", color="blue")
   # }
-  return(plot)
 }
 

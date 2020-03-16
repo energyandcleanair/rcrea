@@ -1,5 +1,7 @@
 source('R/setup.r')
 require(worldmet)
+require(sirad)
+require(solartime)
 
 #' Attach NOAA ISD weather information to air quality measurements
 #'
@@ -180,7 +182,7 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
                                  radius=weather_radius_km)[[1]]
   }
 
-  locs_ghcnd <- locs %>% mutate(ghcnd = pmap(list(id, latitude, longitude), ~find_station_(...))) %>%
+  locs_ghcnd <- locs %>% mutate(ghcnd = purrr::pmap(list(id, latitude, longitude), ~find_station_(...))) %>%
     select(-c(latitude, longitude, id)) %>%
     tidyr::unnest(cols=c(ghcnd)) %>% rename(ghcnd_id=id)
 
@@ -193,7 +195,7 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
     select(city, date, prcp) %>%
     rename(day=date)
 
-  locs_weather <- locs_weather %>% group_by(city, day) %>% summarize(prcp=mean(prcp, na.rm = T))
+  locs_weather <- locs_weather %>% group_by(city, day) %>% summarize(precip_ghcnd=mean(prcp, na.rm = T))
 
 
   # Merge measurements and weather
@@ -201,4 +203,73 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   meas_weather <- meas_weather %>% left_join(locs_weather, by=c('city', 'day')) %>% select(-c(day))
 
   return(meas_weather)
+}
+
+weather.sirad.join <- function(meas){
+
+  # Collect if not already collected
+  if(is.na(nrow(meas))){
+    message("Collecting measurements")
+    meas <- meas %>% collect()
+    message("Done")
+  }
+
+  # Check measurements are hourly ones
+  if(length(unique(lubridate::hour(meas$date)))!=24){
+    stop("Sunshine data only works with hourly measurements")
+  }
+
+  #TODO add countries
+  cities <- unique(meas$city)
+  locs <- locations(city=cities, with_tz = T) %>%
+    group_by(city, timezone) %>%
+    summarize(city_geometry=sf::st_centroid(sf::st_union(geometry))) %>%
+    ungroup()
+
+  # Get hourly solar radiation at each day and hour
+  locs_sunshine <- locs %>% tidyr::crossing(doy_mst=seq(1:365)) %>%
+    mutate(longitude=purrr::map_dbl(city_geometry, ~sf::st_coordinates(.x)[[1]])) %>%
+    mutate(latitude=purrr::map_dbl(city_geometry, ~sf::st_coordinates(.x)[[2]])) %>%
+    mutate(sunshine=purrr::map2(doy_mst, latitude, ~ tibble(hour_mst=seq(0:23), sunshine=sirad::extrat(.x, sirad::radians(.y))$ExtraTerrestrialSolarRadiationHourly))) %>%
+    tidyr::unnest(sunshine)
+
+
+  # Convert Mean Solar Time (MST) to local time
+  # sirad::extrat gives results in Mean Solar Time
+  # since local time never perfectly matches MST, we need to add an offset
+  mst_to_local_datetime <- function(doy_mst, hour_mst, timezone, longitude){
+
+    # solartime needs to get the timezone in number of hours offset
+    hour_local_vs_utc <- function(doy_mst, timezone){
+      td <- lubridate::force_tz(strptime(paste(doy_mst,10,sep="-"),"%j-%H"),tzone='UTC') -
+        lubridate::force_tz(strptime(paste(doy_mst,10,sep="-"),"%j-%H"),tzone=timezone)
+      return(as.double(td, units='hours'))
+    }
+    # solar_to_local_hour = time difference in hours to be added to local winter time to get solar time
+    solar_to_local_hour <- solartime::computeSolarToLocalTimeDifference(longitude,
+                                                 hour_local_vs_utc(doy_mst, timezone),
+                                                 doy_mst)
+    if(abs(solar_to_local_hour)>3){
+      warning("There seem to be some issue with the timezone. Difference between local and solar time is too high")
+    }
+
+    dttm_mst <- lubridate::force_tz(strptime(paste(doy_mst,hour_mst,sep="-"),"%j-%H"), tzone=timezone)
+    dttm_local <- dttm_mst - lubridate::dhours(solar_to_local_hour)
+    return(as.POSIXct(dttm_local))
+  }
+
+
+  locs_sunshine <- locs_sunshine %>% rowwise() %>%
+    mutate(dttm_local=mst_to_local_datetime(doy_mst, hour_mst, timezone, longitude)) %>%
+    mutate(doy=purrr::map_dbl(dttm_local,lubridate::yday),
+           hour=purrr::map_dbl(dttm_local,lubridate::hour))
+
+  # Merge with measurements
+  meas_sunshine <- meas %>%
+    mutate(doy=purrr::map_dbl(date,lubridate::yday),
+                  hour=purrr::map_dbl(date,lubridate::hour)) %>%
+    left_join(locs_sunshine %>% select(city, doy, hour, sunshine)) %>%
+    select(-c(doy, hour))
+
+  return(meas_sunshine)
 }
