@@ -91,8 +91,9 @@ server <- function(input, output, session) {
         running_width <- input$running_width
         city <- input$city
         country <- input$country
+        months <- input$months
 
-        req(poll, averaging, plot_type, city, country)
+        req(poll, averaging, plot_type, city, country, months)
 
         type <- switch(plot_type,
                "ts" = "ts",
@@ -112,7 +113,14 @@ server <- function(input, output, session) {
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
-        meas_plot <- plot_measurements(meas(), input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
+        meas_plot_data <- meas() %>% filter(lubridate::month(date)>=months[1], lubridate::month(date)<=months[2])
+        meas_plot <- plot_measurements(meas_plot_data, input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
+
+        if(plot_type=='ts_year'){
+            month_date <- meas_plot_data$date
+            lubridate::year(month_date) <- 0
+            meas_plot <- meas_plot + scale_x_datetime(limits=c(min(month_date),max(month_date)))
+        }
 
         # Adding target lines if any
         if(!is.null(input$target)){

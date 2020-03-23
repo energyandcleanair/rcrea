@@ -30,6 +30,8 @@ ui <- fluidPage(
                     ),
                     sliderInput("years", "Year", min=2015, max=2020, value=c(2018, 2020), step=1, sep = "", ticks = F
                     ),
+                    sliderInput("months", "Month", min=1, max=12, value=c(1, 12), step=1, sep = "", ticks = F
+                    ),
                     selectInput("plot_type",
                                 "Plot type",
                                 choices = plot_types,
