@@ -73,9 +73,9 @@ aq_weather.default_models <- function(){
     gbm.fit <- gbm::gbm(
       formula = formula,
       data = training_data,
-      # cv.folds = 5, #Is stuck
+      cv.folds = 3,
       n.trees = 5000,
-      n.cores = 1, # parallel doesn't work on Ubuntu compute engine
+      #n.cores = 1, # parallel doesn't work on Ubuntu compute engine
       verbose = FALSE
     )
     print("Done")
@@ -86,7 +86,8 @@ aq_weather.default_models <- function(){
     print("Training rpart")
     rpart.fit <- rpart::rpart(
       formula = formula,
-      data = training_data
+      data = training_data,
+      method = "anova"
     )
     print("Done")
     return(rpart.fit)
@@ -103,6 +104,24 @@ aq_weather.default_models <- function(){
 
   models <- list(gbm=model_gbm, rpart=model_rpart, svr=model_svr)
   return(models)
+}
+
+aq_weather.default_models_predict <- function(){
+
+  gbm_predict <- function(model_fitted, data){
+    return(predict(model_fitted, data))
+  }
+
+  rpart_predict <- function(model_fitted, data){
+    return(predict(model_fitted, data))
+  }
+
+  svr_predict <- function(model_fitted, data){
+    return(predict(model_fitted, data))
+  }
+
+  models_predict <- list(gbm=gbm_predict, rpart=rpart_predict, svr=svr_predict)
+  return(models_predict)
 }
 
 #---------------------
@@ -125,8 +144,10 @@ aq_weather.predict <- function(
   formula,
   training_average_by='hour',
   training_average_by_width=3,
+  training_average_value_only=F,
   models=aq_weather.default_models(),
-  test_frac=0.1 #10% for testing purposes
+  test_frac=0.1, #10% for testing purposes
+  do_standardize=F #Not required for GBM and rpart,
 ){
 
   #----------------
@@ -157,9 +178,14 @@ aq_weather.predict <- function(
       }
     }
     train_roll_fn <- function(var) zoo::rollapply(var, width=training_average_by_width, FUN=mean_fn, align='right', fill=NA)
-    result <- result %>% dplyr::group_by(city, poll) %>% dplyr::arrange(date) %>%
-      dplyr::mutate_at(vars(-city, -poll, -date), train_roll_fn)
-    #TODO check sky_code value is preserved (and not mixed with levels)
+    if(training_average_value_only){
+      result <- result %>% dplyr::group_by(city, poll) %>% dplyr::arrange(date) %>%
+        dplyr::mutate_at(vars(value), train_roll_fn)
+    }else{
+      result <- result %>% dplyr::group_by(city, poll) %>% dplyr::arrange(date) %>%
+        dplyr::mutate_at(vars(-city, -poll, -date), train_roll_fn)
+      #TODO check sky_code value is preserved (and not mixed with levels)
+    }
   }else{
     result <- result %>% group_by(city, poll) %>% arrange(date)
   }
@@ -173,13 +199,15 @@ aq_weather.predict <- function(
   }
 
   # Standardize data (no need when no svr)
-  # result_std <- standardize::standardize(formula, result)
-  # result_std_data <- result_std$data
-  # result_std_data$date <- result$date
-  # result_std_data$city <- result$city
-  # result_std_data$poll <- result$poll
-
-  result_std_data <- result
+  if(do_standardize){
+    result_std <- standardize::standardize(formula, result)
+    result_std_data <- result_std$data
+    result_std_data$date <- result$date
+    result_std_data$city <- result$city
+    result_std_data$poll <- result$poll
+  }else{
+    result_std_data <- result
+  }
 
 
   # Separate in training and testing data and nest data by city and poll (still grouped by these two columns)
@@ -197,7 +225,7 @@ aq_weather.predict <- function(
   no_training <- result_std_data %>% filter(purrr::map_int(training, nrow) == 0)
   if(nrow(no_training)>0){
     warning("Some combinations have no training data")
-    result <- result %>% filter(purrr::map_int(training, nrow) > 0)
+    result_std_data <- result_std_data %>% filter(purrr::map_int(training, nrow) > 0)
   }
 
   #----------------
@@ -205,7 +233,7 @@ aq_weather.predict <- function(
   #----------------
   # Adding models to tibble (each model is applied to each city, poll combination)
   model_names <- if (!is.null(names(models))) names(models) else seq_along(models)
-  models_df <- tibble(model_name=paste0("model_",names(models)), model=models)
+  models_df <- tibble(model_name=names(models), model=models)
   result_std_data <- result_std_data %>% tidyr::crossing(models_df)
   result_std_data <- result_std_data %>% mutate(model_fitted=purrr::map2(training, model, purrr::possibly(~.y(.x %>% select_at(formula_vars), formula), otherwise = NA, quiet = FALSE)))
 
@@ -216,6 +244,9 @@ aq_weather.predict <- function(
   result_std_data <- result_std_data %>% mutate(training=purrr::map2(training, model_fitted, purrr::possibly(~ .x %>% mutate(predicted=predict(.y, .x)), otherwise = NA)))
   result_std_data <- result_std_data %>% mutate(testing=purrr::map2(testing, model_fitted, purrr::possibly(~ .x %>% mutate(predicted=predict(.y, .x)), otherwise = NA)))
 
+  # Also predict on whole dataset for plotting purposes
+  result_std_data <- result_std_data %>% mutate(data=purrr::map2(data, model_fitted, purrr::possibly(~ .x %>% mutate(predicted=predict(.y, .x)), otherwise = NA)))
+
   #---------------
   # Post compute
   #---------------
@@ -223,6 +254,9 @@ aq_weather.predict <- function(
   result_std_data <- result_std_data %>% mutate(training=purrr::map(training, purrr::possibly(~ .x %>% mutate(residuals=predicted-value), otherwise = NA)))
   result_std_data <- result_std_data %>% mutate(testing=purrr::map(testing,  purrr::possibly(~ .x %>% mutate(residuals=predicted-value), otherwise = NA)))
   result_std_data <- result_std_data %>% mutate(rmse=purrr::map_dbl(training, purrr::possibly(~ Metrics::rmse(.x$value, .x$predicted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(rmse_test=purrr::map_dbl(testing, purrr::possibly(~ Metrics::rmse(.x$value, .x$predicted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(mae=purrr::map_dbl(training, purrr::possibly(~ Metrics::mae(.x$value, .x$predicted), otherwise = NA)))
+  result_std_data <- result_std_data %>% mutate(mae_test=purrr::map_dbl(testing, purrr::possibly(~ Metrics::mae(.x$value, .x$predicted), otherwise = NA)))
   result_std_data <- result_std_data %>% mutate(rsq=purrr::map_dbl(training, purrr::possibly(~ rsq(.x$value, .x$predicted), otherwise = NA)))
   result_std_data <- result_std_data %>% mutate(rsq_test=purrr::map_dbl(testing, purrr::possibly(~ rsq(.x$value, .x$predicted), otherwise = NA)))
   return(result_std_data)
@@ -234,6 +268,7 @@ aq_weather.predict <- function(
 aq_weather.plot <- function(result,
                             plotting_average_by='day',
                             plotting_average_by_width=30,
+                            title=NULL,
                             subtitle=NULL,
                             filename=NULL
                             ){
@@ -245,7 +280,7 @@ aq_weather.plot <- function(result,
   # 2-rolling average
   roll_plot <- function(raw){
     result <- raw %>% dplyr::select(city, poll, model_name, rmse, date, type, value) %>%
-      dplyr::mutate(date=lubridate::round_date(date, unit = plotting_average_by)) %>%
+      dplyr::mutate(date=lubridate::floor_date(date, unit = plotting_average_by)) %>%
       dplyr::group_by(city, poll, model_name, rmse, date, type) %>%
       dplyr::summarise(value=mean(value, na.rm = T)) %>% dplyr::ungroup() %>%
       dplyr::group_by(city, poll, model_name, rmse, type) %>% dplyr::arrange(date) %>%
@@ -256,16 +291,22 @@ aq_weather.plot <- function(result,
     return(result)
   }
 
-  trained <- result %>% dplyr::select(city, poll, model_name, rmse, training) %>% filter(!is.na(training)) %>%
-    tidyr::unnest(c(training)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
-    tidyr::gather("type", "value", -c(city, poll, date, model_name, rmse)) %>% roll_plot()
 
-  tested <- result %>% dplyr::select(city, poll, model_name, rmse, testing) %>% filter(!is.na(testing)) %>%
-    tidyr::unnest(c(testing)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
+#
+#   trained <- result %>% dplyr::select(city, poll, model_name, rmse, training) %>% filter(!is.na(training)) %>%
+#     tidyr::unnest(c(training)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
+#     tidyr::gather("type", "value", -c(city, poll, date, model_name, rmse)) %>% roll_plot()
+#
+#   tested <- result %>% dplyr::select(city, poll, model_name, rmse, testing) %>% filter(!is.na(testing)) %>%
+#     tidyr::unnest(c(testing)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
+#     tidyr::gather("type", "value", -c(city,poll,date,model_name, rmse)) %>% roll_plot()
+  # combined <- rbind(trained, tested)
+
+  plot_data <- result %>% dplyr::select(city, poll, model_name, rmse, data) %>% filter(!is.na(data)) %>%
+    tidyr::unnest(c(data)) %>% dplyr::select(city, poll, model_name, rmse, date, value, predicted) %>%
     tidyr::gather("type", "value", -c(city,poll,date,model_name, rmse)) %>% roll_plot()
 
-  combined <- rbind(trained, tested)
-  plot <- ggplot(combined, aes(x=date, y=value)) +
+  plot <- ggplot(plot_data, aes(x=date, y=value)) +
     geom_line(aes(colour=type))
 
   if(length(unique(result$model_name))>1){
@@ -277,12 +318,9 @@ aq_weather.plot <- function(result,
     ratio_h_w <- length(unique(result$poll))/length(unique(result$city))
   }
 
-
-
-  # if(!is.null(training_prediction_cut)){
-  #   plot <- plot +
-  #     geom_vline(xintercept=as.POSIXct(training_prediction_cut), linetype="dotted", color="blue")
-  # }
+  if(!is.null(title)){
+    plot <- plot + labs(title=title)
+  }
 
   if(!is.null(subtitle)){
     plot <- plot + labs(subtitle=subtitle)
@@ -290,14 +328,13 @@ aq_weather.plot <- function(result,
 
 
   # Adding rmse label
-  plot <- plot + geom_text(data=result %>% mutate(label=paste0("R2: ",sprintf("%.2f",rsq),"\n","R2 (validation): ",sprintf("%.2f",rsq_test))),
+  plot <- plot + geom_text(data=result %>% mutate(label=paste0("R2: ",sprintf("%.2f",rsq),"\n","R2 (test): ",sprintf("%.2f",rsq_test))),
    aes(x = as.POSIXct('2015-01-01'), y = -Inf, label=label),
    hjust   = 0,
    vjust   = -1,
   size=3)
 
   plot <- plot + theme_light()
-
 
   if(!is.null(filename)){
     ggsave(

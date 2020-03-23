@@ -1,12 +1,16 @@
 ---
-title: "Demonstration of CREA R package (WIP)"
-output: html_notebook
+title: "Querying and plotting air quality measurements"
+#output: html_notebook
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Querying and plotting air quality measurements}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
 
 ## Installing package
-
 ```{r results="hide"}
-install.packages('devtools')
+if(!require(devtools)) install.packages('devtools',repos = "http://cran.us.r-project.org")
 library(devtools)
 url <- "https://github.com/hubert-thieriot/crea_r_package"
 devtools::install_github(url)
@@ -17,24 +21,32 @@ library(dplyr)
 library(ggplot2)
 library(zoo)
 ```
-## Locations
-```{r}
-locs <- creadb::locations()
-ggplot(data = locs) + geom_sf()
-```
+
 ## Measurements
 ### Downloading measurements
-Getting data for Delhi and Mumbai. By default, data is averaged by day.
+Collecting measurements. By default, data is averaged by day and by city.
 ```{r}
-meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'), date_from='2015-01-01')
+meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'),
+                                    average_by = 'day', # [Default: 'day'] also available NULL (raw measurements), 'hour', 'week', 'month', 'year'
+                                    aggregate_at_city_level = T # [Default: TRUE] whether or not to aggregate stations data at the city level
+                                    )
 meas_cities
 ```
-Filtering values above a certain threshold
+If you want all India data (can take a lot of time if not averaged per month or year):
 ```{r}
-meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'), date_from='2015-01-01',
-                            user_filter=function(x){x %>% filter(avg_day<=1000 | poll==CO)})
-meas_cities
+meas_india <- creadb::measurements(country='IN', average_by = 'year')
+meas_india
 ```
+
+Getting data at the location level (i.e. more granular than city).
+```{r}
+meas_stations <- creadb::measurements(city=c('Jaipur','Mumbai'),
+                                    aggregate_at_city_level = F, # To keep it at 'location' (i.e. station) level
+                                    with_metadata = T # To also collect geometry
+                                    )
+meas_stations
+```
+
 
 Let's first see how many measurements we have, and whether there are holes in time.
 ```{r}
@@ -42,21 +54,17 @@ creadb::plot_measurements_count(meas_cities)
 ```
 Black regions correspond to periods of time without any measurement in this city. Either data is not available or scraping has missed some values.
 
-There are too many locations in Delhi to show in this notebook. We remove Delhi from the demo dataset.
-```{r}
-meas_cities <- meas_cities[meas_cities$city != 'Delhi', ]
-```
+
 ### Plotting measurements
 Plotting time series of PM 2.5 per location.
 
 Using location_id...
 ```{r}
-
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location_id')
+creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='city')
 ```
-... or location name
+... or location name (location refers to station in OpenAQ language)
 ```{r}
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='location')
+creadb::plot_measurements(meas_stations, subplot_by='location', color_by = 'poll')
 ```
 
 Plotting city-level values per pollutant
@@ -70,7 +78,7 @@ creadb::plot_measurements(meas_cities, average_by='day', running_width=365, subp
 
 Time series of PM2.5 per location (yearly running average)
 ```{r}
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_days=365, subplot_by='location')
+creadb::plot_measurements(meas_stations, poll=creadb::PM25, running_days=365, subplot_by='location')
 ```
 
 Time series of PM2.5 per city (yearly running average)
@@ -106,43 +114,4 @@ creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='h
 Heatmap per city weekly values
 ```{r}
 creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='city', type='heatmap', average_by='month')
-```
-
-## Standard exceedances
-
-### Downloading standard exceedances
-```{r}
-exc_cities<- creadb::exceedances(country=c('IN'), city=c('Delhi', 'Jaipur', 'Mumbai', 'Hyderabad'))
-exc_cities
-```
-
-### Plotting standard exceedances
-Plot all
-
-```{r}
-creadb::plot_exceedances(exc_cities, average_by='week')
-```
-
-Plot only exceedances of 8-hour standards
-```{r}
-creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='8-hour',], average_by='week')
-```
-
-Plot only exceedances of daily standards
-```{r}
-creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='24-hour',], average_by='week')
-```
-
-Plot only the year-based standards: in that case, the red indication mentions the day we know standard is going to bee breached this year, no mater how clean the air will be from then till the end of the year.
-
-```{r}
-creadb::plot_exceedances(exc_cities[exc_cities$aggregation_period=='year',], average_by='week')
-```
-Plot only exceedances of EU standards
-```{r}
-creadb::plot_exceedances(exc_cities[exc_cities$standard_org=='EU',], average_by='week')
-```
-Plot only exceedances happening last week
-```{r}
-creadb::plot_exceedances(exc_cities[exc_cities$date >= Sys.Date()-7 , ], average_by='day')
 ```
