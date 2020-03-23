@@ -100,7 +100,7 @@ locations <- function(country=NULL, city=NULL, id=NULL,
 #' @export
 #'
 #' @examples
-#' meas_bj <- creadb::measurements(city=c('Beijing'), date_from='2018-01-01',average_by='month',with_metadata=T)
+#' meas_bj <- creadb::measurements(city=c('Beijing'), date_from='2018-01-01', average_by='month', with_metadata=T)
 #'
 measurements <- function(country=NULL,
                          city=NULL,
@@ -194,7 +194,7 @@ measurements <- function(country=NULL,
   }else{
     if (aggregate_at_city_level) c() else c("location", "location_id")
   }
-  group_by_cols <- c('city', 'date', 'poll', 'timezone', meta_cols)
+  group_by_cols <- c('city', 'date', 'poll', 'unit', 'timezone', meta_cols)
   if(add_noaa_station_ids){
     group_by_cols <- c(group_by_cols, 'noaa_station_ids')
   }

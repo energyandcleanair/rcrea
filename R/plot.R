@@ -193,7 +193,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }
 
   # Take mean over relevant grouping (at least city, date and pollutant)
-  group_by_cols <- union(c('city', 'poll'), union(setdiff(color_by,c("year")), setdiff(subplot_by,c("year"))))
+  group_by_cols <- union(c('city', 'poll', 'unit'), union(setdiff(color_by,c("year")), setdiff(subplot_by,c("year"))))
   meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
   meas <- meas %>% dplyr::group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = mean(value))
 
@@ -223,7 +223,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }
 
   # Add categorical variable
-  meas <- meas %>% group_by(poll) %>% mutate(value_plot_cat=cut_poll(poll, value))
+  meas <- meas %>% group_by(poll, unit) %>% mutate(value_plot_cat=cut_poll(poll, value))
 
   # Build plot
   if(!is.null(color_by)){
@@ -263,7 +263,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
 
   if(!is.null(subplot_by) && (type=='ts')){
-    plt <- plt + facet_wrap(subplot_by, scales = ifelse(subplot_by=='city','fixed','free_y'))
+    plt <- plt + facet_wrap(c(subplot_by,'unit'), scales = ifelse(subplot_by=='city','fixed','free_y'))
 
     if(is.null(color_by) || (color_by==subplot_by)){
       plt <- plt + theme(legend.position = "none")
