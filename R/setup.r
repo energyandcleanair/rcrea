@@ -81,12 +81,12 @@ tbl_safe <- function(con, query_initial){
 }
 
 # Caching
-fc <- memoise::cache_filesystem("cache")
-.onLoad <- function(libname, pkgname){
-  print("Creating cached functions aq_weather.m.collect and ghcnd.m.ghcnd_stations")
-  aq_weather.m.collect <<- memoise::memoise(aq_weather.collect, cache=fc)
-  ghcnd.m.ghcnd_stations <<- memoise::memoise(rnoaa::ghcnd_stations, cache=fc)
-}
+# fc <- memoise::cache_filesystem("cache")
+# .onLoad <- function(libname, pkgname){
+#   print("Creating cached functions aq_weather.m.collect and ghcnd.m.ghcnd_stations")
+#   aq_weather.m.collect <<- memoise::memoise(aq_weather.collect, cache=fc)
+#   ghcnd.m.ghcnd_stations <<- memoise::memoise(rnoaa::ghcnd_stations, cache=fc)
+# }
 
 ## work around bug in gbm 2.1.1
 predict.gbm <- function (object, newdata, n.trees, type = "link", single.tree = FALSE, ...) {
