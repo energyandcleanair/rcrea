@@ -22,7 +22,7 @@ Depends:
     ggplot2,
     dplyr
 Suggests: 
-    memoise
+    memoise,
     testthat (>= 2.1.0),
     purrrlyr,
     knitr,
