@@ -17,16 +17,16 @@ Imports:
     zoo,
     ggnewscale,
     shiny,
-    shinyWidgets
+    shinyWidgets,
+    memoise,
+    knitr,
+    rmarkdown
 Depends:
     ggplot2,
     dplyr
 Suggests: 
-    memoise,
     testthat (>= 2.1.0),
     purrrlyr,
-    knitr,
-    rmarkdown,
     rnoaa,
     worldmet,
     e1701,
