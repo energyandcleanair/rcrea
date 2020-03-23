@@ -20,7 +20,10 @@ Imports:
     shinyWidgets,
     memoise,
     knitr,
-    rmarkdown
+    rmarkdown,
+    DT,
+    lubridate,
+    dotenv
 Depends:
     ggplot2,
     dplyr
@@ -29,7 +32,8 @@ Suggests:
     purrrlyr,
     rnoaa,
     worldmet,
-    e1701,
-    standardize
+    e1071,
+    standardize,
+    Metrics
 VignetteBuilder:
     knitr
