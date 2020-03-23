@@ -324,7 +324,9 @@ measurements <- function(country=NULL,
     # Localize time
     # We can't use purrr:map since it won't deal with datetime objects
     # hence the rowwise
-    result <- result %>% rowwise() %>% mutate(date=lubridate::force_tz(date,tzone=timezone))
+    if(nrow(result)>0){
+      result <- result %>% rowwise() %>% mutate(date=lubridate::force_tz(date,tzone=timezone))
+    }
   }
 
   return(result)
