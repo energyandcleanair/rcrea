@@ -10,7 +10,6 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     RPostgres,
-    rpostgis,
     dbplyr,
     dplyr,
     purrr,
@@ -21,23 +20,24 @@ Imports:
     shiny,
     shinyWidgets,
     memoise,
-    knitr,
-    rmarkdown,
     DT,
     lubridate,
     dotenv,
     gbm,
-    DBI
+    DBI,
+    rnoaa,
+    e1071,
+    standardize,
+    Metrics,
+    stats
 Depends:
     ggplot2,
     dplyr
 Suggests: 
     testthat (>= 2.1.0),
     purrrlyr,
-    rnoaa,
     worldmet,
-    e1071,
-    standardize,
-    Metrics
+    knitr,
+    rmarkdown
 VignetteBuilder:
     knitr
