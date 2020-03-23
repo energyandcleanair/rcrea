@@ -20,7 +20,7 @@ cut_poll <- function(poll, value){
   }else if(poll==creadb::O3){
     cut(value,c(0, 50, 100, 168, 208, 748, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
   }else{
-    cut(value,c(0, 0, 0, 0, 0, 0, 0))
+    cut(value,c(-2,-1), labels=c("Unknown"))
   }
   return(scale)
 }
@@ -182,7 +182,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }
 
   # Deprecated argument(s)
-  if(!is.null(running_days)){
+  if(exists('running_days') && !is.null(running_days)){
     warning("running_days argument is deprecated. Use running_width instead.")
     running_width = ifelse(is.null(running_width), running_days, running_width)
   }
@@ -223,7 +223,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }
 
   # Add categorical variable
-  meas <- meas %>% mutate(value_plot_cat=cut_poll(poll, value))
+  meas <- meas %>% group_by(poll) %>% mutate(value_plot_cat=cut_poll(poll, value))
 
   # Build plot
   if(!is.null(color_by)){
@@ -233,7 +233,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }
 
   plt <- ggplot2::ggplot(meas, plt_aes) +
-        labs(x='', y=expression('concentration [' * mu * 'g/m'^3*']'),
+        labs(x='', y='concentration',
          title=paste(''),
          subtitle = '',
          caption = '') +
