@@ -218,7 +218,7 @@ measurements <- function(country=NULL,
   # but not as good for beautiful maps (there will be several points per city)
   if(aggregate_at_city_level){
     locs <- locs %>% left_join(locs %>% group_by(country, city, timezone) %>%
-                                 summarise(city_geometry=st_union(geometry)) %>% ungroup()
+                                 summarise(city_geometry=sf::st_union(geometry)) %>% ungroup()
     ) %>%
       dplyr::mutate(geometry=city_geometry) %>% dplyr::select(-c(city_geometry))
   }
