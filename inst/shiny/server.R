@@ -1,6 +1,5 @@
 require(creadb)
 library(lubridate)
-library(raster)
 library(shinyWidgets)
 
 server <- function(input, output, session) {

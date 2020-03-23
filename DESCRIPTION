@@ -12,6 +12,8 @@ Imports:
     RPostgres,
     rpostgis,
     dbplyr,
+    dplyr,
+    purrr,
     sf,
     bit64,
     zoo,
@@ -23,7 +25,9 @@ Imports:
     rmarkdown,
     DT,
     lubridate,
-    dotenv
+    dotenv,
+    gbm,
+    DBI
 Depends:
     ggplot2,
     dplyr

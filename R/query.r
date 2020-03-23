@@ -317,7 +317,6 @@ measurements <- function(country=NULL,
   }
 
 
-
   # Whether to collect the query i.e. actually run the query
   if(collect){
     result <- result %>% dplyr::collect()

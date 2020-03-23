@@ -1,6 +1,4 @@
 require(RPostgres)
-# library(sp)
-# library(rgdal)
 require(DBI)
 require(purrr)
 require(dplyr)
