@@ -332,7 +332,7 @@ measurements <- function(country=NULL,
 }
 
 # Cached version
-m_measurements <- memoise(measurements, cache=fc)
+# m_measurements <- memoise(measurements, cache=fc)
 
 standards <- function(collect=TRUE){
   # Connecting
