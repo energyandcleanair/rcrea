@@ -29,7 +29,9 @@ Imports:
     e1071,
     standardize,
     Metrics,
-    stats
+    stats,
+    rmarkdown,
+    shinycssloaders
 Depends:
     ggplot2,
     dplyr
@@ -37,7 +39,6 @@ Suggests:
     testthat (>= 2.1.0),
     purrrlyr,
     worldmet,
-    knitr,
-    rmarkdown
+    knitr
 VignetteBuilder:
     knitr
