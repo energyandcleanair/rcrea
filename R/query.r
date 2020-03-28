@@ -217,7 +217,7 @@ measurements <- function(country=NULL,
   # Right now using ST_UNION (vs e.g. an enveloppe): it is better for the accurate look up of weather stations,
   # but not as good for beautiful maps (there will be several points per city)
   if(aggregate_at_city_level){
-    locs <- locs %>% left_join(locs %>% group_by(country, city, timezone) %>%
+    locs <- locs %>% mutate(city=lower(city)) %>% left_join(locs %>% group_by(country, city, timezone) %>%
                                  summarise(city_geometry=ST_Union(geometry)) %>% ungroup()
     ) %>%
       dplyr::mutate(geometry=city_geometry) %>% dplyr::select(-c(city_geometry))
