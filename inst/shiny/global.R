@@ -5,8 +5,9 @@ library(shinycssloaders)
 
 
 
-locations <- creadb::locations(country=c("IN","US"), with_geometry=F)
+locations <- creadb::locations(country=c("IN","US","PK"), with_geometry=F)
 standards <- creadb::standards(collect=T)
+sources <- c("cpcb", "openaq")
 polls <- c(creadb::PM25, creadb::PM10, creadb::NO2, creadb::O3, creadb::SO2, creadb::CO)
 averagings <- c("hour", "day", "week", "month", "year")
 

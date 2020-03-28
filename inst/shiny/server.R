@@ -92,8 +92,9 @@ server <- function(input, output, session) {
         city <- input$city
         country <- input$country
         months <- input$months
+        source_ <- input$source
 
-        req(poll, averaging, plot_type, city, country, months)
+        req(poll, averaging, plot_type, city, country, months, source_)
 
         type <- switch(plot_type,
                "ts" = "ts",
@@ -113,7 +114,8 @@ server <- function(input, output, session) {
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
-        meas_plot_data <- meas() %>% filter(lubridate::month(date)>=months[1], lubridate::month(date)<=months[2])
+        meas_plot_data <- meas() %>% filter(lubridate::month(date)>=months[1], lubridate::month(date)<=months[2]) %>%
+            filter(source==source_)
         meas_plot <- plot_measurements(meas_plot_data, input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
 
         if(plot_type=='ts_year'){

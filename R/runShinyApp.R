@@ -14,11 +14,12 @@ runShinyApp <- function() {
 }
 
 deployShinyApp <- function() {
-  require('rsconnect')
-  require('dotenv')
-  library(devtools)
+  if(!require(rsconnect)) install.packages('reconnect')
+  if(!require(dotenv)) install.packages('dotenv')
+  if(!require(devtools)) install.packages('devtools')
   url <- "https://github.com/hubert-thieriot/crea_r_package"
   devtools::install_github(url, force=T)
+  library(creadb)
 
   load_dot_env()
   appDir <- getAppDir()

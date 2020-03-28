@@ -9,6 +9,12 @@ ui <- fluidPage(
             sidebarLayout(
                 sidebarPanel(
                     width = 2,
+                    selectInput("source",
+                                "Source:",
+                                choices = unique(sources),
+                                multiple=F,
+                                selected = "cpcb"
+                    ),
                     selectInput("country",
                                 "Country:",
                                 choices = unique(locations$country),
@@ -49,7 +55,7 @@ ui <- fluidPage(
                 # Show a plot of the generated distribution
                 mainPanel(
                    width=10,
-                   plotOutput("meas_plot", height = 800)
+                   plotOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1")
                 )
             )
         ),

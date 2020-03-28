@@ -202,10 +202,10 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   dates <- seq(min(meas$date), max(meas$date), by=paste(average_by))
   group_by_uniques <- unique(meas[,group_by_cols])
   df_placeholder <- merge(group_by_uniques, data.frame(date=dates), by=NULL)
-  df_placeholder <- transform(df_placeholder, date_str=format(date, "%Y-%m-%d"))
+  # df_placeholder <- transform(df_placeholder, date_str=format(date, "%Y-%m-%d"))
 
-  meas <- transform(meas, date_str=format(date, "%Y-%m-%d"))
-  meas <- subset(meas, select = -c(date))
+  # meas <- transform(meas, date_str=format(date, "%Y-%m-%d"))
+  # meas <- subset(meas, select = -c(date))
   meas <- merge(meas, df_placeholder, all=TRUE)
 
   # Apply running average if need be
@@ -268,6 +268,8 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
     if(is.null(color_by) || (color_by==subplot_by)){
       plt <- plt + theme(legend.position = "none")
     }
+  }else{
+    plt <- plt + facet_wrap(~unit, scales = 'free_y')
   }
   return(plt)
 }
