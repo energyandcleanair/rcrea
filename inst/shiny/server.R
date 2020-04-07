@@ -56,7 +56,8 @@ server <- function(input, output, session) {
             paste("measurements.csv", sep = "")
         },
         content = function(file) {
-            write.csv(meas(), file, row.names = FALSE)
+            source_ <- input$source
+            write.csv(meas() %>% filter(source==source_), file, row.names = FALSE)
         }
     )
 
@@ -64,8 +65,9 @@ server <- function(input, output, session) {
         filename = function() {
             paste("measurement.rds", sep = "")
         },
-        content = function(file) {
-            saveRDS(meas(), file)
+        content = function(file){
+            source_ <- input$source
+            saveRDS(meas() %>% filter(source==source_), file)
         }
     )
 

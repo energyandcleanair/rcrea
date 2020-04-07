@@ -17,7 +17,7 @@ ui <- fluidPage(
                     ),
                     selectInput("country",
                                 "Country:",
-                                choices = unique(locations$country),
+                                choices = countries,
                                 multiple=T,
                                 selected = "IN"
                     ),

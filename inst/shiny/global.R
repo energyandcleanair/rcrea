@@ -2,10 +2,13 @@ require(creadb)
 require(DT)
 require(shinyWidgets)
 library(shinycssloaders)
+library(countrycode)
 
+locations <- creadb::locations(keep_only_for_dashboard=T, with_geometry=F)
 
+countries <- unique(locations$country)
+names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
 
-locations <- creadb::locations(country=c("IN","US","PK"), with_geometry=F)
 standards <- creadb::standards(collect=T)
 sources <- c("cpcb", "openaq")
 polls <- c(creadb::PM25, creadb::PM10, creadb::NO2, creadb::O3, creadb::SO2, creadb::CO)

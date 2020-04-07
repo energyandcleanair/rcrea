@@ -28,6 +28,7 @@ filter_sanity_raw <- function(result){
 
 locations <- function(country=NULL, city=NULL, id=NULL,
                       collect=TRUE,
+                      keep_only_for_dashboard=F,
                       with_geometry=TRUE,
                       with_tz=FALSE,
                       con=NULL){
@@ -59,6 +60,10 @@ locations <- function(country=NULL, city=NULL, id=NULL,
                    "1" = result %>% dplyr::filter(id == id_), # Single station id
                    result %>% dplyr::filter(id %in% id_) # Vector of station ids
   )
+
+  if(keep_only_for_dashboard){
+    result <- result %>% dplyr::filter(show_in_dashboard==TRUE)
+  }
 
   # Keeping only interesting columns
   cols <- c("id", "name", "city", "country")

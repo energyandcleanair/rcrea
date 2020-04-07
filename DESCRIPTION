@@ -31,7 +31,8 @@ Imports:
     Metrics,
     stats,
     rmarkdown,
-    shinycssloaders
+    shinycssloaders,
+    countrycode
 Depends:
     ggplot2,
     dplyr
