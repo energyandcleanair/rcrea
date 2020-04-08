@@ -34,7 +34,8 @@ Imports:
     shinycssloaders,
     countrycode,
     magrittr,
-    ggthemes
+    ggthemes,
+    scales
 Depends:
     ggplot2,
     dplyr

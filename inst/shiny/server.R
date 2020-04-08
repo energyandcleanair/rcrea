@@ -1,5 +1,6 @@
 require(creadb)
 library(lubridate)
+library(scales)
 library(shinyWidgets)
 
 server <- function(input, output, session) {
@@ -126,7 +127,7 @@ server <- function(input, output, session) {
             lubridate::year(month_date) <- 0
             meas_plot <- meas_plot + scale_x_datetime(limits=c(min(month_date),max(month_date)),
                                                       breaks = seq(min(month_date),max(month_date), "1 month"),
-                                                      labels=date_format("%b", tz=attr(min(month_date),"tz"))
+                                                      labels=scales::date_format("%b", tz=attr(min(month_date),"tz"))
                                                       )
         }
 
