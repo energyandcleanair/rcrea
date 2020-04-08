@@ -118,12 +118,16 @@ server <- function(input, output, session) {
 
         meas_plot_data <- meas() %>% filter(lubridate::month(date)>=months[1], lubridate::month(date)<=months[2]) %>%
             filter(source==source_)
+
         meas_plot <- plot_measurements(meas_plot_data, input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
 
         if(plot_type=='ts_year'){
             month_date <- meas_plot_data$date
             lubridate::year(month_date) <- 0
-            meas_plot <- meas_plot + scale_x_datetime(limits=c(min(month_date),max(month_date)))
+            meas_plot <- meas_plot + scale_x_datetime(limits=c(min(month_date),max(month_date)),
+                                                      breaks = seq(min(month_date),max(month_date), "1 month"),
+                                                      labels=date_format("%b", tz=attr(min(month_date),"tz"))
+                                                      )
         }
 
         # Adding target lines if any
