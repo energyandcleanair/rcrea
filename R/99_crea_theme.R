@@ -1,5 +1,5 @@
 require(magrittr)
-if(!require(ggthemes)) install.packages(c('ggthemes')); require(ggthemes)
+require(ggthemes)
 
 
 .CREAtheme <- new.env()
@@ -76,7 +76,7 @@ Yellow #fff2cc" %>% getpal
 }
 
 .CREAtheme$theme_crea <- function(base_size=11, ...) {
-  (theme_calc(base_size=base_size) +
+  (ggthemes::theme_calc(base_size=base_size) +
      theme(#title = element_text(family='SourceSansPro'),
            plot.title = element_text(size=rel(2), face='bold', color=unname(pal_crea['Dark.blue'])),
            plot.subtitle = element_text(face='italic', color='black'),
