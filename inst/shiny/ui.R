@@ -13,7 +13,7 @@ ui <- fluidPage(
                                 "Source:",
                                 choices = unique(sources),
                                 multiple=F,
-                                selected = "cpcb"
+                                selected = "openaaq"
                     ),
                     selectInput("country",
                                 "Country:",

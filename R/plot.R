@@ -1,7 +1,7 @@
 library(ggplot2)
 library(zoo)
 library(ggnewscale)
-
+source('R/99_crea_theme.R')
 
 # Utils -------------
 
@@ -237,7 +237,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
          title=paste(''),
          subtitle = '',
          caption = '') +
-        theme_minimal()
+        theme_crea()
 
   plt <- switch(type,
          "ts" = plt + geom_line(size = 0.8) +
@@ -252,10 +252,10 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
                     scale_y_discrete(expand=c(0,0)) +
                     scale_fill_poll(NULL, poll) +
                     geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'),
-                                          label="paste(sprintf('%.0f', value_plot))"), size=3, color='black') +
-                    theme(legend.position = "right") + theme(axis.text.x = element_text()) +
+                                          label="paste(sprintf('%.0f', value_plot))"), size=3, color='black') + theme(axis.text.x = element_text()) +
                       labs(x='', y='', subtitle=expression('[' * mu * 'g/m'^3*']'), title=paste(poll_str(poll), 'concentration'))
          )
+
 
   if('year' %in% color_by){
     plt <- plt + scale_x_datetime(date_labels = "%b")
