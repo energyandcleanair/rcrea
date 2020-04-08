@@ -237,7 +237,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
          title=paste(''),
          subtitle = '',
          caption = '') +
-        theme_crea()
+        .CREAtheme$theme_crea()
 
   plt <- switch(type,
          "ts" = plt + geom_line(size = 0.8) +
