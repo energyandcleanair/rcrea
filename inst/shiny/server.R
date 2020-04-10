@@ -93,11 +93,10 @@ server <- function(input, output, session) {
         plot_type <- input$plot_type
         running_width <- input$running_width
         city <- input$city
-        country <- input$country
         months <- input$months
         source_ <- input$source
 
-        req(poll, averaging, plot_type, city, country, months, source_)
+        req(poll, averaging, plot_type, city, months, source_)
 
         type <- switch(plot_type,
                "ts" = "ts",
@@ -135,7 +134,7 @@ server <- function(input, output, session) {
         if(!is.null(input$target)){
             for (i_target in 1:length(input$target)){
                 target <- targets() %>% filter(short_name == input$target[i_target])
-                target_line <- creadb::partial_plot_target(poll=poll, target=target, country=country, city=city, location_id=NULL,
+                target_line <- creadb::partial_plot_target(poll=poll, target=target, country=input$country, city=city, location_id=NULL,
                                                            average_by=averaging,
                                                            date_from = min(meas()$date), date_to = max(meas()$date),
                                                            type=type, color_by=color_by)
@@ -303,15 +302,16 @@ server <- function(input, output, session) {
                           autoWidth = TRUE,
                           rowCallback = JS(
                               "function(row, data) {",
-                              "var timezone = data[4];",
-                              "var datetime = new Date(Date.parse(data[1])); console.log(datetime);",
+                              "var timezone = data[5];",
+                              "var datetime = new Date(Date.parse(data[1]));",
                               "const options = {
                                   timeZone: timezone,
                               };",
                               "var str_datetime = datetime.toLocaleDateString('en-GB',options) +'  '+ datetime.toLocaleTimeString('en-US',options);",
                               "$('td:eq(1)', row).html(str_datetime);",
                               "}"
-                          )),
+                          )
+                          ),
                       rownames = FALSE
         ) # %>% formatDate(c(2), format_date_str)
     })
