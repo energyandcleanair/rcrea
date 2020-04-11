@@ -13,17 +13,25 @@ server <- function(input, output, session) {
     # Tab 1 -----------------------------------------------------
     # Reactive Values ---------------------------------------
     meas <- reactive({
+        country <- input$country
         city <- input$city
         poll <- input$poll
         averaging <-  input$averaging
         years <- input$years
-        req(city, poll, averaging, years)
+        req(country, city, poll, averaging, years)
+
+        if(city == wholecountry_name){
+            city = NULL
+            aggregate_at_country_level=T
+        }else{
+            aggregate_at_country_level=F
+        }
 
         date_from <- lubridate::ymd(years[1]*10000+101)
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        creadb::measurements(city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, with_metadata = F)
+        creadb::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_at_country_level=aggregate_at_country_level,  with_metadata = F)
     })
 
     targets <- reactive({
@@ -75,7 +83,8 @@ server <- function(input, output, session) {
 
     # Output Elements --------------------------------------
     output$selectInputCity <- renderUI({
-        selectInput("city", "City:", multiple=T, choices = (locations %>% filter(country==input$country))$city)
+        choices = c(wholecountry_name, (locations %>% filter(country==input$country))$city)
+        selectInput("city", "City:", multiple=T, choices = choices)
     })
 
     output$selectInputTarget <- renderUI({

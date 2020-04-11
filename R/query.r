@@ -119,9 +119,15 @@ measurements <- function(country=NULL,
                          with_metadata=FALSE,
                          user_filter=NULL,
                          aggregate_at_city_level=TRUE,
+                         aggregate_at_country_level=FALSE,
                          add_noaa_station_ids=FALSE,
                          noaa_station_radius_km=20,
                          con=NULL) {
+
+
+  if(aggregate_at_country_level && !aggregate_at_city_level){
+    stop("Cannot aggregate at country level without aggreating at city level first")
+  }
 
   # Accept both NA and NULL
   location_id <- if(!is.null(location_id) && is.na(location_id)) NULL else location_id
@@ -181,7 +187,7 @@ measurements <- function(country=NULL,
     value_col_name <- 'avg_day'
     filter_fn <- filter_sanity_daily
     need_grouping_before_time_averaging <- FALSE
-    need_grouping <- if(aggregate_at_city_level) TRUE else FALSE
+    need_grouping <- aggregate_at_city_level
     locs_meas_join_by <- c("location_id"="id")
   }else{
     table_name <- 'measurements_daily'
@@ -190,7 +196,7 @@ measurements <- function(country=NULL,
     filter_fn <- filter_sanity_daily
     # First average per day across locations then within period hence the two groupings
     need_grouping_before_time_averaging <- if(aggregate_at_city_level) TRUE else FALSE
-    need_grouping <- if(aggregate_at_city_level) TRUE else FALSE
+    need_grouping <- aggregate_at_city_level
     locs_meas_join_by <- c("location_id"="id")
   }
 
@@ -200,6 +206,13 @@ measurements <- function(country=NULL,
     if (aggregate_at_city_level) c() else c("location", "location_id")
   }
   group_by_cols <- c('city', 'date', 'poll', 'unit', 'source', 'timezone', meta_cols)
+
+  if(aggregate_at_country_level){
+    # TODO find way for countries with different timezones.
+    group_by_cols <- c('country',setdiff(group_by_cols,c('city','location','location_id','geometry')))
+  }
+
+
   if(add_noaa_station_ids){
     group_by_cols <- c(group_by_cols, 'noaa_station_ids')
   }
@@ -321,6 +334,9 @@ measurements <- function(country=NULL,
     }
   }
 
+  if(aggregate_at_country_level){
+    result <- result %>% dplyr::mutate(city=country)
+  }
 
   # Whether to collect the query i.e. actually run the query
   if(collect){
