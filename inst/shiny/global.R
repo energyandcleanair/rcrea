@@ -10,7 +10,7 @@ names(countries) = unlist(countrycode(countries, origin='iso2c', destination='co
 
 wholecountry_name <- '--- Whole Country ---'
 standards <- creadb::standards(collect=T)
-sources <- c("cpcb", "openaq")
+sources <- c("cpcb", "openaq", "eea")
 polls <- c(creadb::PM25, creadb::PM10, creadb::NO2, creadb::O3, creadb::SO2, creadb::CO)
 averagings <- c("hour", "day", "week", "month", "year")
 
