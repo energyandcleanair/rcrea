@@ -49,7 +49,7 @@ meas <- meas %>%
 # Join back
 # 1. add covid location name to measurements
 cor_buf_joined <- cor_buf_joined %>%
-  dplyr::select(name.cov, city) %>%
+  dplyr::distinct(name.cov, city) %>%
   dplyr::mutate(city=tolower(city)) %>%
   dplyr::right_join(meas %>% dplyr::select(date, city, poll, unit, timezone, value, source), by=c('city'))
 
