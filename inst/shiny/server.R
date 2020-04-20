@@ -22,16 +22,16 @@ server <- function(input, output, session) {
 
         if(city == wholecountry_name){
             city = NULL
-            aggregate_at_country_level=T
+            aggregate_level='country'
         }else{
-            aggregate_at_country_level=F
+            aggregate_level='city'
         }
 
         date_from <- lubridate::ymd(years[1]*10000+101)
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        creadb::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_at_country_level=aggregate_at_country_level,  with_metadata = F)
+        creadb::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level,  with_metadata = F)
     })
 
     targets <- reactive({

@@ -6,7 +6,9 @@ library(countrycode)
 
 locations <- creadb::locations(keep_only_for_dashboard=T, with_geometry=F)
 countries <- unique(locations$country)
+countries <- countries[!is.na(countries)]
 names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
+countries <- countries[!is.na(names(countries))]
 
 wholecountry_name <- '--- Whole Country ---'
 standards <- creadb::standards(collect=T)
