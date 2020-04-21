@@ -292,7 +292,9 @@ server <- function(input, output, session) {
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        creadb::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, with_metadata = F) %>% arrange(desc(date))
+        creadb::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, with_metadata = F) %>%
+            dplyr::select(country, city, date, poll, unit, source, timezone) %>%
+            dplyr::arrange(desc(date))
     })
 
 
@@ -311,13 +313,13 @@ server <- function(input, output, session) {
                           autoWidth = TRUE,
                           rowCallback = JS(
                               "function(row, data) {",
-                              "var timezone = data[5];",
-                              "var datetime = new Date(Date.parse(data[1]));",
+                              "var timezone = data[7];",
+                              "var datetime = new Date(Date.parse(data[2]));",
                               "const options = {
                                   timeZone: timezone,
                               };",
                               "var str_datetime = datetime.toLocaleDateString('en-GB',options) +'  '+ datetime.toLocaleTimeString('en-US',options);",
-                              "$('td:eq(1)', row).html(str_datetime);",
+                              "$('td:eq(2)', row).html(str_datetime);",
                               "}"
                           )
                           ),
