@@ -35,7 +35,7 @@ locations <- function(country=NULL, city=NULL, id=NULL,
                       con=NULL){
 
   if(!is.null(with_tz)){
-    with_meta = with_tzgadm
+    with_meta = with_tz
     warning('with_tz argument has been replaced by with_meta')
   }
 
@@ -250,7 +250,7 @@ measurements <- function(country=NULL,
   }
 
   geo_cols <- switch(aggregate_level,
-         "city" = c('country','city'),
+         "city" = c('country','city', 'gid_1','name_1', 'gid_2','name_2'),
          "gadm1" = c('country','gid_1','name_1'),
          "gadm2" = c('country','gid_2','name_2'),
          "country" = c('country'),
@@ -285,8 +285,8 @@ measurements <- function(country=NULL,
   # Right now using ST_UNION (vs e.g. an enveloppe): it is better for the accurate look up of weather stations,
   # but not as good for beautiful maps (there will be several points per city)
   if(aggregate_level=='city'){
-    locs <- locs %>% dplyr::mutate(city=lower(city)) %>% left_join(locs %>% group_by(country, city, timezone) %>%
-                                 summarise(city_geometry=ST_Union(geometry)) %>% ungroup()
+    locs <- locs %>% dplyr::mutate(city=lower(city)) %>% left_join(locs %>% group_by(country, city, timezone, gid_1, name_1, gid_2, name_2) %>%
+                                 dplyr::summarise(city_geometry=ST_Union(geometry)) %>% ungroup()
     ) %>%
       dplyr::mutate(geometry=city_geometry) %>% dplyr::select(-c(city_geometry))
   }

@@ -54,7 +54,7 @@ utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg){
   train_roll_fn <- function(var) zoo::rollapply(var, width=average_width, FUN=mean_fn, align='right', fill=NA)
   # first average per date
   meas <- meas %>% dplyr::group_by(city, poll, date) %>%
-    summarise_at(vars_to_avg, mean_fn)
+    dplyr::summarise_at(vars_to_avg, mean_fn)
 
   # then rolling average
   meas <- meas %>% dplyr::group_by(city, poll) %>% dplyr::arrange(date) %>%
