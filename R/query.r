@@ -285,7 +285,7 @@ measurements <- function(country=NULL,
   # Right now using ST_UNION (vs e.g. an enveloppe): it is better for the accurate look up of weather stations,
   # but not as good for beautiful maps (there will be several points per city)
   if(aggregate_level=='city'){
-    locs <- locs %>% mutate(city=lower(city)) %>% left_join(locs %>% group_by(country, city, timezone) %>%
+    locs <- locs %>% dplyr::mutate(city=lower(city)) %>% left_join(locs %>% group_by(country, city, timezone) %>%
                                  summarise(city_geometry=ST_Union(geometry)) %>% ungroup()
     ) %>%
       dplyr::mutate(geometry=city_geometry) %>% dplyr::select(-c(city_geometry))
@@ -406,7 +406,8 @@ measurements <- function(country=NULL,
     # We can't use purrr:map since it won't deal with datetime objects
     # hence the rowwise
     if(nrow(result)>0){
-      result <- result %>% rowwise() %>% mutate(date=lubridate::force_tz(date,tzone=ifelse(is.na(timezone),'UTC',timezone)))
+      result <- result %>% rowwise() %>% tidyr::replace_na(list('timezone'='UTC')) %>%
+        dplyr::mutate(date=lubridate::force_tz(date,tzone=timezone))
     }
   }
 
