@@ -36,7 +36,6 @@ Imports:
     magrittr,
     ggthemes,
     scales,
-    dplyr,
     tibble
 Depends:
     ggplot2
