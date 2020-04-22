@@ -1,7 +1,6 @@
 source('R/setup.r')
-require(worldmet)
-require(sirad)
-require(solartime)
+# require(worldmet)
+# require(sirad)
 
 #' Attach NOAA ISD weather information to air quality measurements
 #'
@@ -28,7 +27,7 @@ weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day'
     message("Collecting measurements")
     meas <- meas %>% collect()
     # Localize time
-    meas <- meas %>% rowwise() %>% mutate(date=lubridate::force_tz(date,tzone=timezone))
+    meas <- meas %>% dplyr::rowwise() %>% dplyr::mutate(date=lubridate::force_tz(date,tzone=timezone))
     message("Done")
   }
 
@@ -67,8 +66,11 @@ weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day'
   locs_weather <- locs_weather %>% select(city, timezone, weather) %>% filter(!is.na(weather)) %>% tidyr::unnest(weather)
 
   # Create local date time to merge with measurements that are in local time
-  locs_weather <- locs_weather %>% rowwise() %>% mutate(date_local=lubridate::with_tz(date, tzone=timezone))
-  locs_weather <- locs_weather %>% mutate(date_local=lubridate::floor_date(date_local,measurements_averaged_by))
+  locs_weather <- locs_weather %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(date_local=lubridate::with_tz(date, tzone=timezone))
+  locs_weather <- locs_weather %>%
+    dplyr::mutate(date_local=lubridate::floor_date(date_local,measurements_averaged_by))
 
   # Aggregate per city
   locs_weather <- locs_weather %>% dplyr::group_by(city, date_local) %>%
@@ -135,7 +137,7 @@ weather.isd.join <- function(meas, measurements_averaged_by='day', collect=TRUE,
   if(collect){
     message("Collecting results")
     result <- result %>% dplyr::collect()
-    result <- result %>% rowwise() %>% mutate(date=lubridate::force_tz(date,tzone=timezone))
+    result <- result %>% dplyr::rowwise() %>% dplyr::mutate(date=lubridate::force_tz(date,tzone=timezone))
     message("Done")
   }
 
@@ -155,8 +157,8 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   #TODO add countries
   cities <- unique(meas$city)
   locs <- locations(city=cities) %>%
-    group_by(city) %>%
-    summarize(city_geometry=sf::st_centroid(sf::st_union(geometry))) %>%
+    dplyr::group_by(city) %>%
+    dplyr::summarize(city_geometry=sf::st_centroid(sf::st_union(geometry))) %>%
     ungroup()
 
   # Get nearest GHCND station
@@ -168,7 +170,7 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   ghcnd.stations <- ghcnd.m.ghcnd_stations()
   message("Done")
 
-  locs <- locs %>% mutate(longitude = purrr::map_dbl(city_geometry, ~sf::st_coordinates(.x)[[1]]),
+  locs <- locs %>% dplyr::mutate(longitude = purrr::map_dbl(city_geometry, ~sf::st_coordinates(.x)[[1]]),
                   latitude =  purrr::map_dbl(city_geometry, ~sf::st_coordinates(.x)[[2]]),
                   id=row_number())
 
@@ -223,7 +225,7 @@ weather.sirad.join <- function(meas){
   cities <- unique(meas$city)
   locs <- locations(city=cities, with_tz = T) %>%
     group_by(city, timezone) %>%
-    summarize(city_geometry=sf::st_centroid(sf::st_union(geometry))) %>%
+    dplyr::summarize(city_geometry=sf::st_centroid(sf::st_union(geometry))) %>%
     ungroup()
 
   # Get hourly solar radiation at each day and hour
@@ -259,9 +261,9 @@ weather.sirad.join <- function(meas){
   }
 
 
-  locs_sunshine <- locs_sunshine %>% rowwise() %>%
-    mutate(dttm_local=mst_to_local_datetime(doy_mst, hour_mst, timezone, longitude)) %>%
-    mutate(doy=purrr::map_dbl(dttm_local,lubridate::yday),
+  locs_sunshine <- locs_sunshine %>% dplyr::rowwise() %>%
+    dplyr::mutate(dttm_local=mst_to_local_datetime(doy_mst, hour_mst, timezone, longitude)) %>%
+    dplyr::mutate(doy=purrr::map_dbl(dttm_local,lubridate::yday),
            hour=purrr::map_dbl(dttm_local,lubridate::hour))
 
   # Merge with measurements

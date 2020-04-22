@@ -35,14 +35,16 @@ Imports:
     countrycode,
     magrittr,
     ggthemes,
-    scales
+    scales,
+    dplyr,
+    tibble
 Depends:
-    ggplot2,
-    dplyr
+    ggplot2
 Suggests: 
     testthat (>= 2.1.0),
     purrrlyr,
     worldmet,
-    knitr
+    knitr,
+    sirad
 VignetteBuilder:
     knitr

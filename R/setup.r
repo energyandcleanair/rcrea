@@ -1,12 +1,12 @@
-require(RPostgres)
-require(DBI)
-require(purrr)
-require(dplyr)
-require(dbplyr)
-require(ggplot2)
-require(gbm)
-require(sf)
-require(memoise)
+# require(RPostgres)
+# require(DBI)
+# require(purrr)
+# require(dplyr)
+# require(dbplyr)
+# require(ggplot2)
+# require(gbm)
+# require(sf)
+# require(memoise)
 
 # Constants for user: Pollutants
 CO = "co"

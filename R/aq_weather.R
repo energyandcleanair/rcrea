@@ -1,10 +1,10 @@
 source('R/setup.r')
 
-require(rnoaa)
-require(e1071)
-require(memoise)
-require(standardize)
-require(Metrics)
+# require(rnoaa)
+# require(e1071)
+# require(memoise)
+# require(standardize)
+# require(Metrics)
 #-------------------------------------
 # Get measurements with weather data
 #-------------------------------------
@@ -55,6 +55,9 @@ aq_weather.collect <- function(city,
                                      collect=T)
 
   }
+
+  # Adding sunshine
+  meas_weather <- weather.sirad.join(meas_weather)
 
   # Attach precipitation from GHCND (ISD precipitation data seems very sparse)
   # meas_weather <- weather.ghcnd.join(meas_weather, weather_radius_km=weather_radius_km)

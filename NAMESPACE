@@ -1,1 +1,4 @@
+importFrom(magrittr,"%>%")
 exportPattern("^[[:alpha:]]+")
+
+

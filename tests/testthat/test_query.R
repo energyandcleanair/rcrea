@@ -1,6 +1,6 @@
 library(testthat)
-library(lubridate)
-library(DBI)
+# library(lubridate)
+# library(DBI)
 
 # Testing philosophy
 # To save time on regular testings, we use 'random' pollutants and rather late date_from
@@ -93,8 +93,8 @@ test_that("query return measurements", {
   meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2019-01-01')
   expect_gt(nrow(meas_delhi), 0)
   expect_equal(tolower(unique(meas_delhi$city)), 'delhi')
-  expect_gt(length(unique(meas_delhi$location)), 0)
-  expect_gt(length(unique(meas_delhi$poll)), 0)
+  # expect_gt(length(unique(meas_delhi$location)), 0)
+  expect_equal(length(unique(meas_delhi$poll)), 1)
 
   meas_delhi_lower <- measurements(city='delhi', poll=creadb::CO, date_from='2019-01-01')
   expect_equal(nrow(meas_delhi_lower), nrow(meas_delhi))
@@ -106,9 +106,9 @@ test_that("query return measurements", {
   expect_equal(nrow(meas_delhi_china), 0)
 
   # Location id
-  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', aggregate_at_city_level =  F)
+  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', aggregate_level='location')
   length(unique(meas_delhi$location_id)) >= 23 # 23 stations with CO data  in Delhi at the time of writing
-  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', aggregate_at_city_level =  F)
+  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', aggregate_level='location')
   length(unique(meas_delhi$location_id)) == 1
 
   # Time aggregation
@@ -121,26 +121,45 @@ test_that("query return measurements", {
   expect_equal(length(unique(lubridate::month(meas_delhi_month$date))), 12)
 
   meas_delhi_year <- measurements(city='Delhi', average_by='year', poll=creadb::PM10)
-  expect_equal(unique(day(meas_delhi_year$date)), 1)
-  expect_equal(unique(month(meas_delhi_year$date)), 1)
+  expect_equal(unique(lubridate::day(meas_delhi_year$date)), 1)
+  expect_equal(unique(lubridate::month(meas_delhi_year$date)), 1)
 
-  # Columns independent from time and spatial aggregation
+  # Different aggregations / averaging
   average_bys <- c("hour", "day", "week", "month", "year")
   with_metadatas <- c(F,T)
-  aggregate_at_city_levels <- c(F,T)
+  aggregate_levels <- c('location','city','gadm2','gadm2','country')
 
   for(with_metadata in with_metadatas){
     lengths <- c()
     for(average_by in average_bys){
-      for(aggregate_at_city_level in aggregate_at_city_levels){
-        lengths <- lengths %>% c(length(colnames(measurements(city='Delhi',
-                                                              average_by=average_by,
-                                                              with_metadata=with_metadata,
-                                                              aggregate_at_city_level=aggregate_at_city_level,
-                                                              collect=F))))
+      for(aggregate_level in aggregate_levels){
+        tryCatch({
+          meas <- measurements(city='Delhi',
+                               date_from='2020-04-10',
+                               average_by=average_by,
+                               with_metadata=with_metadata,
+                               aggregate_level=aggregate_level,
+                               collect=F)
+
+          new_col_names <- colnames(meas)
+
+          # Key columns not missing
+          expect_true('unit' %in% new_col_names)
+          expect_true('source' %in% new_col_names)
+
+          # some results (not yet with gadms...)
+          # expect_gt(nrow(meas), 0)
+
+        }, error=function(err){
+          testthat::fail(message=paste("Query failed",
+                     "average_by:", average_by,
+                     "aggregate_level:", aggregate_level,
+                     "with_metadata:", with_metadata,
+                     err
+                     ))
+        })
       }
     }
-    expect_equal(length(unique(lengths)), 1)
   }
 
 
@@ -188,7 +207,7 @@ test_that("measurements time aggregation", {
     date_from='2019-08-01 00:00',
     date_to='2019-08-01 23:00',
     average_by = 'hour',
-    aggregate_at_city_level = F,
+    aggregate_level = 'location',
     collect = T)
 
   expect_gt(nrow(meas_hour_day), 20) #should be 24 but not every day is complete
@@ -200,7 +219,7 @@ test_that("measurements time aggregation", {
     date_from='2019-08-01',
     date_to='2019-08-01',
     average_by = 'day',
-    aggregate_at_city_level = F,
+    aggregate_level =  'location',
     collect = T)
 
   expect_equal(nrow(meas_day),1)
@@ -239,7 +258,7 @@ test_that("measurements have a properly set timezone", {
   # 23	01-Aug-2019 - 22:00	01-Aug-2019 - 23:00	19.26	8.6	8.85	17.45	103.95
   # 24	01-Aug-2019 - 23:00	02-Aug-2019 - 00:00	19.9	10.49	9.48	19.96	93.02
 
-  official_dates <- tibble(lubridate::force_tz(lubridate::ymd_h(c("2019-08-01 00",
+  official_dates <- tibble::tibble(lubridate::force_tz(lubridate::ymd_h(c("2019-08-01 00",
                                                            "2019-08-01 01",
                                                            "2019-08-01 02",
                                                            "2019-08-01 03",
@@ -255,8 +274,8 @@ test_that("measurements have a properly set timezone", {
                             date_from='2019-08-01',
                             date_to='2019-08-02',
                             average_by = 'hour',
-                            aggregate_at_city_level = F,
-                            collect = T) %>% arrange(date)
+                            aggregate_level='location',
+                            collect = T) %>% dplyr::arrange(date)
 
   meas_dates <- meas_test_location[1:5,'date']
   meas_pm25 <- meas_test_location[1:5,'value']
@@ -265,4 +284,3 @@ test_that("measurements have a properly set timezone", {
   expect_equal(nrow(meas_test_location), 24)
 
 })
-

@@ -1,7 +1,7 @@
-library(ggplot2)
-library(zoo)
-library(ggnewscale)
-source('R/99_crea_theme.R')
+# library(ggplot2)
+# library(zoo)
+# library(ggnewscale)
+# source('R/99_crea_theme.R')
 
 # Utils -------------
 
@@ -56,13 +56,13 @@ partial_plot_target <- function(poll, target, country, city, location_id, date_f
     }
 
     # Prepare plot
-    plot_data <- tibble(year=years, value=values, target=target$short_name)
-    plot_data <- plot_data %>% mutate(date = lubridate::as_datetime(lubridate::ymd(year*10000 + 101)))
+    plot_data <- tibble::tibble(year=years, value=values, target=target$short_name)
+    plot_data <- plot_data %>% dplyr::mutate(date = lubridate::as_datetime(lubridate::ymd(year*10000 + 101)))
 
     # Flat segments if not averaged by years
     if(average_by!='year' | 'year' %in% color_by){
-      plot_data_yearend <- tibble(year=years, value=values, target=target$short_name)
-      plot_data_yearend <- plot_data_yearend %>% mutate(date = pmin(date_to, lubridate::as_datetime(lubridate::ymd(year*10000 + 1231))))
+      plot_data_yearend <- tibble::tibble(year=years, value=values, target=target$short_name)
+      plot_data_yearend <- plot_data_yearend %>% dplyr::mutate(date = pmin(date_to, lubridate::as_datetime(lubridate::ymd(year*10000 + 1231))))
       plot_data <- bind_rows(plot_data, plot_data_yearend)
     }
 
@@ -128,7 +128,7 @@ plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by
   if(is.null(running_days)){
     meas <- dplyr::arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
   }else{
-    meas <- meas %>% dplyr::arrange(date) %>% group_by_at(group_by_cols)  %>%
+    meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
       dplyr::mutate(value_plot=zoo::rollapply(value, width=running_days, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
 
@@ -223,7 +223,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }
 
   # Add categorical variable
-  meas <- meas %>% group_by(poll, unit) %>% mutate(value_plot_cat=cut_poll(poll, value))
+  meas <- meas %>% dplyr::group_by(poll, unit) %>% dplyr::mutate(value_plot_cat=cut_poll(poll, value))
 
   # Build plot
   if(!is.null(color_by)){

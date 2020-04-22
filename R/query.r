@@ -105,7 +105,7 @@ locations <- function(country=NULL, city=NULL, id=NULL,
 #' @param with_metadata T/F Whether to add additional information columnes (e.g. city, country, location name, geometry). If True, query takes significantly more time
 #' @param user_filter Additional filtering function for measurements applied before time aggregation
 #' @param aggregate_at_city_level T/F Whether or not to keep measurements at the station level (otherwise, aggregate at city level)
-#' #' @param add_noaa_station_ids T/F Whether or not to add an array of noaa_station_ids located within @param noaa_station_radius_km
+#' @param add_noaa_station_ids T/F Whether or not to add an array of noaa_station_ids located within @param noaa_station_radius_km
 #'
 #' @return a tibble (locally collected or not) of measurements matching search criteria.
 #' @export
@@ -135,7 +135,9 @@ measurements <- function(country=NULL,
   city <- if(!is.null(city) && length(city)==1 && is.na(city)) NULL else city
   country <- if(!is.null(country) && is.na(country)) NULL else country
 
-
+  if(!aggregate_level %in% c('location','city','gadm1','gadm2','country')){
+    stop("'aggregate_level' should be either location','city','gadm1','gadm2' or 'country'")
+  }
   # If location_id specified, we have to keep it
   # aggregate_at_city_level <- aggregate_at_city_level & is.null(location_id)
 
@@ -172,19 +174,31 @@ measurements <- function(country=NULL,
     value_col_name <- 'value'
     filter_fn <- filter_sanity_raw
     need_grouping_before_time_averaging <- FALSE
-    need_grouping <- !is.null(aggregate_level)
-    locs_meas_join_by <- c("location_id"="id")
+    need_grouping <- (aggregate_level!='location')
+    locs_meas_join_by <- c("location_id")
   }else if(average_by=='hour'){
-    table_name <- if(!is.null(aggregate_level)) 'measurements_city_hourly' else 'measurements'
-    need_time_averaging <- if(!is.null(aggregate_level)) FALSE else TRUE
+    table_name <- switch(aggregate_level,
+                         "location" = "measurements",
+                         "measurements_city_hourly")
+
+    need_time_averaging <- switch(aggregate_level,
+                                  "location" = TRUE,
+                                  FALSE)
     value_col_name <- 'value'
     filter_fn <- filter_sanity_raw
     need_grouping_before_time_averaging <- FALSE
     need_grouping <- TRUE #Need grouping to average by hour
-    locs_meas_join_by <- if(!is.null(aggregate_level)) c("city", "country") else c("location_id"="id")
+    locs_meas_join_by <- switch(aggregate_level,
+                                "location" = c("location_id"),
+                                "city" = c("city", "country"),
+                                "gadm1" = c("city", "country"), # Not supported I think
+                                "gadm2" = c("city", "country"), # Not supported I think
+                                "country" = c("city", "country"),
+                                c("location_id"))
   }else if(average_by=='day'){
 
     table_name <- switch(aggregate_level,
+                   "location" = "measurements_daily",
                    "city" = 'measurements_daily',
                    "gadm1" = 'measurements_gadm_daily',
                    "gadm2" = 'measurements_gadm_daily',
@@ -192,20 +206,23 @@ measurements <- function(country=NULL,
                    'measurements_daily'
     )
     locs_meas_join_by <-  switch(aggregate_level,
-                                 "city" = c("location_id"="id"),
-                                 "gadm1" = c("gid_1"="id"),
-                                 "gadm2" = c("gid_2"="id"),
-                                 "country" = c("location_id"="id"),
-                                 c("location_id"="id"))
+                                 "location" = c("location_id"),
+                                 "city" = c("location_id"),
+                                 "gadm1" = c("gid_1"="location_id"),
+                                 "gadm2" = c("gid_2"="location_id"),
+                                 "country" = c("location_id"),
+                                 c("location_id"))
 
     need_time_averaging <- FALSE
     value_col_name <-  switch(aggregate_level,
-                                  "city" = 'avg_day',
-                                  "gadm1" = 'value',
-                                  "gadm2" = 'value',
-                                  "country" = 'avg_day',
-                                  'avg_day')
+                              "location" = "avg_day",
+                              "city" = 'avg_day',
+                              "gadm1" = 'value',
+                              "gadm2" = 'value',
+                              "country" = 'avg_day',
+                              'avg_day')
     filter_fn <- switch(aggregate_level,
+                        "location" = filter_sanity_daily,
                         "city" = filter_sanity_daily,
                         "gadm1" = NULL,
                         "gadm2" = NULL,
@@ -214,6 +231,7 @@ measurements <- function(country=NULL,
     need_grouping_before_time_averaging <- FALSE
 
     need_grouping <-  switch(aggregate_level,
+                             "location" = FALSE,
                              "city" = TRUE,
                              "gadm1" = TRUE,
                              "gadm2" = FALSE,
@@ -228,13 +246,14 @@ measurements <- function(country=NULL,
     value_col_name <- 'avg_day'
     filter_fn <- filter_sanity_daily
     # First average per day across locations then within period hence the two groupings
-    need_grouping_before_time_averaging <- if(!is.null(aggregate_level)) TRUE else FALSE
-    need_grouping <- !is.null(aggregate_level)
-    locs_meas_join_by <- c("location_id"="id")
+    need_grouping_before_time_averaging <- (aggregate_level!='location')
+    need_grouping <- (aggregate_level!='location')
+    locs_meas_join_by <- c("location_id")
   }
 
   meta_cols <- if(with_metadata){
     switch(aggregate_level,
+           "location" = c("location", "geometry"),
            "city" = c('geometry'),
            "gadm1" = c('geometry','gid_1', 'name_1'),
            "gadm2" = c('geometry','gid_2', 'name_2'),
@@ -242,6 +261,7 @@ measurements <- function(country=NULL,
            c("name", "geometry"))
   }else{
     switch(aggregate_level,
+           "location" = c(),
            "city" = c(),
            "gadm1" = c(),
            "gadm2" = c(),
@@ -250,6 +270,7 @@ measurements <- function(country=NULL,
   }
 
   geo_cols <- switch(aggregate_level,
+         "location" = c("country","city","location","location_id"),
          "city" = c('country','city', 'gid_1','name_1', 'gid_2','name_2'),
          "gadm1" = c('country','gid_1','name_1'),
          "gadm2" = c('country','gid_2','name_2'),
@@ -257,7 +278,7 @@ measurements <- function(country=NULL,
          c("country","city","location","location_id"))
 
   group_by_cols <- c(geo_cols,'date', 'poll', 'unit', 'source', 'timezone', meta_cols)
-#
+
 #   if(aggregate_at_country_level){
 #     # TODO find way for countries with different timezones.
 #     group_by_cols <- c('country',setdiff(group_by_cols,c('city','location','location_id','geometry')))
@@ -277,7 +298,8 @@ measurements <- function(country=NULL,
                     id=location_id,
                     with_meta=T,
                     collect=F,
-                    con = con)
+                    con = con) %>%
+    dplyr::rename(location_id=id, location=name)
 
   # If we aggregate at city level, we replace stations geometries with 'city' geometry
   # This is significantly faster than doing it on measurements (with lots of duplicated geometries)
@@ -285,8 +307,9 @@ measurements <- function(country=NULL,
   # Right now using ST_UNION (vs e.g. an enveloppe): it is better for the accurate look up of weather stations,
   # but not as good for beautiful maps (there will be several points per city)
   if(aggregate_level=='city'){
-    locs <- locs %>% dplyr::mutate(city=lower(city)) %>% left_join(locs %>% group_by(country, city, timezone, gid_1, name_1, gid_2, name_2) %>%
-                                 dplyr::summarise(city_geometry=ST_Union(geometry)) %>% ungroup()
+    locs <- locs %>% dplyr::mutate(city=lower(city)) %>%
+      dplyr::left_join(locs %>% dplyr::group_by(country, city, timezone, gid_1, name_1, gid_2, name_2) %>%
+                                 dplyr::summarise(city_geometry=ST_Union(geometry)) %>% dplyr::ungroup()
     ) %>%
       dplyr::mutate(geometry=city_geometry) %>% dplyr::select(-c(city_geometry))
   }
@@ -296,7 +319,7 @@ measurements <- function(country=NULL,
     locs <- locs %>% dplyr::left_join(
       tbl_safe(con,"noaa_ids_stations") %>% dplyr::select(noaa_station_id=id, noaa_geometry=geometry),
       sql_on= sprintf("(st_dwithin(\"LHS\".geometry::geography, \"RHS\".noaa_geometry::geography, %f))",noaa_station_radius_km*1000.0)
-    ) %>% group_by_at(locs_group_by) %>%
+    ) %>% dplyr::group_by_at(locs_group_by) %>%
       # Need to order for further group_by with noaa_station_ids not to be impacted
       dplyr::summarise(noaa_station_ids=array_agg(sql('noaa_station_id order by noaa_station_id'))) %>%
       dplyr::ungroup()
@@ -406,7 +429,7 @@ measurements <- function(country=NULL,
     # We can't use purrr:map since it won't deal with datetime objects
     # hence the rowwise
     if(nrow(result)>0){
-      result <- result %>% rowwise() %>% tidyr::replace_na(list('timezone'='UTC')) %>%
+      result <- result %>% dplyr::rowwise() %>% tidyr::replace_na(list('timezone'='UTC')) %>%
         dplyr::mutate(date=lubridate::force_tz(date,tzone=timezone))
     }
   }
@@ -422,7 +445,7 @@ standards <- function(collect=TRUE){
   con = connection()
   standards  <- tbl_safe(con,"standards")
   if(collect){
-    standards <- standards %>% collect()
+    standards <- standards %>% dplyr::collect()
   }
   return(standards)
 }
@@ -481,7 +504,7 @@ targets <- function(country=NULL,
   )
 
   if(collect){
-    result <- result %>% collect()
+    result <- result %>% dplyr::collect()
   }
   return(result)
 }
@@ -491,7 +514,7 @@ exceedances <- function(country=NULL,
                         city=NULL,
                         poll=NULL,
                         standard_org=NULL,
-                        year=lubridate::year(now()),
+                        year=lubridate::year(lubridate::now()),
                         collect=TRUE) {
 
   # Variable names must be different to column names
@@ -571,7 +594,7 @@ scales <- function(poll=NULL){
                    result %>% dplyr::filter(tolower(poll) %in% poll_ | is.na(poll) ) # Vector
   )
 
-  result <- result %>% collect()
+  result <- result %>% dplyr::collect()
 
   pgarray_to_list <- function(column, as_type){
     column = gsub(fixed=T, "{", "", column)
@@ -638,7 +661,7 @@ join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_at
                      prec_1h_mm=max(prec_1h_mm, na.rm=T),
                      prec_6h_mm=max(prec_6h_mm, na.rm=T),
                      rh_percent=mean(rh_percent, na.rm=T)) %>%
-    ungroup()
+    dplyr::ungroup()
 
   # Removing unwanted columns (the less data, the faster the transfer betweeen DB and R)
   result <- result %>% dplyr::select(c(-noaa_station_ids, geometry))
