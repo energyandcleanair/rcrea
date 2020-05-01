@@ -153,7 +153,7 @@ server <- function(input, output, session) {
                             "heatmap_w_text" = NULL)
 
         meas_plot_data <- meas() %>% dplyr::filter(lubridate::month(date)>=months[1], lubridate::month(date)<=months[2]) %>%
-            dplyr::filter(source==source_)
+            dplyr::filter(strsplit(source,"-")[[1]][1]==strsplit(source_,"-")[[1]][1])
 
         meas_plot <- plot_measurements(meas_plot_data, input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
 
