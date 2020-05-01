@@ -89,7 +89,7 @@ server <- function(input, output, session) {
                             "cpcb"= locations %>% dplyr::filter(source %in% c("cpcb-api","cpcb-archive")),
                             "eea"= locations %>% dplyr::filter(source==input$source),
                             "earthengine"= locations %>% dplyr::filter(source==input$source),
-                            "openaq"= locations %>% dplyr::filter(source=="openaq-api"),
+                            "openaq"= locations %>% dplyr::filter(source=="openaq"),
                             locations)
 
         countries <- unique(filtered_locations$country)
@@ -106,7 +106,7 @@ server <- function(input, output, session) {
                                      "cpcb"= locations %>% dplyr::filter(source %in% c("cpcb-api","cpcb-archive")),
                                      "eea"= locations %>% dplyr::filter(source==input$source),
                                      "earthengine"= locations %>% dplyr::filter(source==input$source),
-                                     "openaq"= locations %>% dplyr::filter(source=="openaq-api"),
+                                     "openaq"= locations %>% dplyr::filter(source=="openaq"),
                                      locations)
 
         choices = c(wholecountry_name, (filtered_locations %>%
