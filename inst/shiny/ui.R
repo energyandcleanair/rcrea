@@ -15,12 +15,13 @@ ui <- fluidPage(
                                 multiple=F,
                                 selected = "openaaq"
                     ),
-                    selectInput("country",
-                                "Country:",
-                                choices = countries,
-                                multiple=T,
-                                selected = "IN"
-                    ),
+                    # selectInput("country",
+                    #             "Country:",
+                    #             choices = countries,
+                    #             multiple=T,
+                    #             selected = "IN"
+                    # ),
+                    uiOutput("selectInputCountry"),
                     uiOutput("selectInputCity"),
                     selectInput("poll",
                                 "Pollutant:",

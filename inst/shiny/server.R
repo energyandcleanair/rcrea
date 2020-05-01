@@ -66,7 +66,7 @@ server <- function(input, output, session) {
         },
         content = function(file) {
             source_ <- input$source
-            write.csv(meas() %>% filter(source==source_), file, row.names = FALSE)
+            write.csv(meas() %>% dplyr::filter(source==source_), file, row.names = FALSE)
         }
     )
 
@@ -76,15 +76,42 @@ server <- function(input, output, session) {
         },
         content = function(file){
             source_ <- input$source
-            saveRDS(meas() %>% filter(source==source_), file)
+            saveRDS(meas() %>% dplyr::filter(source==source_), file)
         }
     )
 
 
     # Output Elements --------------------------------------
+
+    output$selectInputCountry <- renderUI({
+        req(input$source)
+        filtered_locations <- switch(input$source,
+                            "cpcb"= locations %>% dplyr::filter(source %in% c("cpcb-api","cpcb-archive")),
+                            "eea"= locations %>% dplyr::filter(source==input$source),
+                            "earthengine"= locations %>% dplyr::filter(source==input$source),
+                            "openaq"= locations %>% dplyr::filter(source=="openaq-api"),
+                            locations)
+
+        countries <- unique(filtered_locations$country)
+        countries <- countries[!is.na(countries)]
+        names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
+        countries <- countries[!is.na(names(countries))]
+
+        selectInput("country", "Country:", multiple=T, choices = countries)
+    })
+
     output$selectInputCity <- renderUI({
-        choices = c(wholecountry_name, (locations %>% filter(country==input$country))$city)
-        selectInput("city", "City:", multiple=T, choices = choices)
+        req(input$country)
+        filtered_locations <- switch(input$source,
+                                     "cpcb"= locations %>% dplyr::filter(source %in% c("cpcb-api","cpcb-archive")),
+                                     "eea"= locations %>% dplyr::filter(source==input$source),
+                                     "earthengine"= locations %>% dplyr::filter(source==input$source),
+                                     "openaq"= locations %>% dplyr::filter(source=="openaq-api"),
+                                     locations)
+
+        choices = c(wholecountry_name, (filtered_locations %>%
+                                            dplyr::filter(country==input$country))$city)
+        selectInput("city", "City/Region:", multiple=T, choices = choices)
     })
 
     output$selectInputTarget <- renderUI({
@@ -125,8 +152,8 @@ server <- function(input, output, session) {
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
-        meas_plot_data <- meas() %>% filter(lubridate::month(date)>=months[1], lubridate::month(date)<=months[2]) %>%
-            filter(source==source_)
+        meas_plot_data <- meas() %>% dplyr::filter(lubridate::month(date)>=months[1], lubridate::month(date)<=months[2]) %>%
+            dplyr::filter(source==source_)
 
         meas_plot <- plot_measurements(meas_plot_data, input$poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
 
@@ -142,7 +169,7 @@ server <- function(input, output, session) {
         # Adding target lines if any
         if(!is.null(input$target)){
             for (i_target in 1:length(input$target)){
-                target <- targets() %>% filter(short_name == input$target[i_target])
+                target <- targets() %>% dplyr::filter(short_name == input$target[i_target])
                 target_line <- rcrea::partial_plot_target(poll=poll, target=target, country=input$country, city=city, location_id=NULL,
                                                            average_by=averaging,
                                                            date_from = min(meas()$date), date_to = max(meas()$date),
@@ -158,7 +185,7 @@ server <- function(input, output, session) {
         if(type=='ts'){
             if(!is.null(input$scale)){
                 for (i_scale in 1:length(input$scale)){
-                    scale <- scales() %>% filter(name == input$scale[i_scale]) %>% filter(poll == poll)
+                    scale <- scales() %>% dplyr::filter(name == input$scale[i_scale]) %>% dplyr::filter(poll == poll)
 
                     if(plot_type=='ts_year'){
                         date_from <- as.POSIXct("0000-01-01")
@@ -220,7 +247,7 @@ server <- function(input, output, session) {
 
     # Output Elements --------------------------------------
     output$selectInputExcCity <- renderUI({
-        cities <- unique((locations %>% filter(country==input$country))$city)
+        cities <- unique((locations %>% dplyr::filter(country==input$country))$city)
         pickerInput("exc_city","City", choices=cities, options = list(`actions-box` = TRUE),multiple = T)
         # selectInput("exc_city", "City:", multiple=T, selected = cities, choices = cities)
     })
@@ -299,7 +326,7 @@ server <- function(input, output, session) {
 
 
     output$selectInputDownCity <- renderUI({
-        cities <- unique((locations %>% filter(country==input$country))$city)
+        cities <- unique((locations %>% dplyr::filter(country==input$country))$city)
         pickerInput("down_city","City", choices=cities, options = list(`actions-box` = TRUE), multiple = T)
         # selectInput("exc_city", "City:", multiple=T, selected = cities, choices = cities)
     })

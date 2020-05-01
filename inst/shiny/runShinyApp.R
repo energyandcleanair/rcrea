@@ -17,7 +17,7 @@ deployShinyApp <- function() {
   if(!require(rsconnect)) install.packages('reconnect')
   if(!require(dotenv)) install.packages('dotenv')
   if(!require(devtools)) install.packages('devtools')
-  url <- "https://github.com/hubert-thieriot/crea_r_package"
+  url <- "https://github.com/energyandcleanair/rcrea"
   devtools::install_github(url, force=T)
   library(rcrea)
 

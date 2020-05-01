@@ -4,7 +4,8 @@ require(shinyWidgets)
 library(shinycssloaders)
 library(countrycode)
 
-locations <- rcrea::locations(keep_only_for_dashboard=T, with_geometry=F)
+locations <- rcrea::locations(keep_only_for_dashboard=T, with_meta=T, with_geometry=F, collect=F) %>%
+  dplyr::distinct(city, country, source) %>% dplyr::collect()
 countries <- unique(locations$country)
 countries <- countries[!is.na(countries)]
 names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))

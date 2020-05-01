@@ -74,7 +74,7 @@ locations <- function(country=NULL, city=NULL, id=NULL,
   # Keeping only interesting columns
   cols <- c("id", "name", "city", "country", "gid_1", "name_1", "gid_2", "name_2")
   cols <- if(with_geometry)  c(cols, "geometry") else cols
-  cols <- if(with_meta) c(cols, 'timezone', "last_scraped_data", "source_name", "last_updated") else cols
+  cols <- if(with_meta) c(cols, 'timezone', "last_scraped_data", "source", "last_updated") else cols
 
   result <- result %>% dplyr::select_at(cols)
 

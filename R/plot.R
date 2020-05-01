@@ -1,8 +1,3 @@
-# library(ggplot2)
-# library(zoo)
-# library(ggnewscale)
-# source('R/99_crea_theme.R')
-
 # Utils -------------
 
 cut_poll <- function(poll, value){
@@ -96,7 +91,6 @@ add_plot_scale <- function(plot, scale, date_from, date_to){
            scale_fill_manual(values=colour_scale_values, breaks=rev(label))
          )
 }
-
 
 plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='heatmap'){
 
@@ -237,7 +231,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
          title=paste(''),
          subtitle = '',
          caption = '') +
-        .CREAtheme$theme_crea()
+        theme_crea()
 
   plt <- switch(type,
          "ts" = plt + geom_line(size = 0.8) +
