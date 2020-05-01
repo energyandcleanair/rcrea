@@ -1,19 +1,19 @@
-require(creadb)
+require(rcrea)
 require(DT)
 require(shinyWidgets)
 library(shinycssloaders)
 library(countrycode)
 
-locations <- creadb::locations(keep_only_for_dashboard=T, with_geometry=F)
+locations <- rcrea::locations(keep_only_for_dashboard=T, with_geometry=F)
 countries <- unique(locations$country)
 countries <- countries[!is.na(countries)]
 names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
 countries <- countries[!is.na(names(countries))]
 
 wholecountry_name <- '--- Whole Country ---'
-standards <- creadb::standards(collect=T)
-sources <- c("cpcb", "openaq", "eea")
-polls <- c(creadb::PM25, creadb::PM10, creadb::NO2, creadb::O3, creadb::SO2, creadb::CO)
+standards <- rcrea::standards(collect=T)
+sources <- c("cpcb", "openaq", "eea", "earthengine")
+polls <- c(rcrea::PM25, rcrea::PM10, rcrea::NO2, rcrea::O3, rcrea::SO2, rcrea::CO)
 averagings <- c("hour", "day", "week", "month", "year")
 
 plot_types <- list("Time Series" = "ts",

@@ -15,7 +15,7 @@ knitr::opts_knit$set(root.dir = file.path(getwd(),'../'))
 ```
 
 ```{r message=FALSE, warning=FALSE}
-library(creadb)
+library(rcrea)
 library(ggplot2)
 library(dplyr)
 library(gbm)
@@ -29,7 +29,7 @@ These are the high-level parameters:
 ```{r}
 # Parameters
 city=c('Delhi', 'Kolkata', 'Beijing')
-poll <- creadb::PM25
+poll <- rcrea::PM25
 
 # When to separate training data & prediction data
 training_prediction_cut <- lubridate::as_date("2020-01-01")

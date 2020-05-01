@@ -6,11 +6,11 @@ output: html_notebook
 
 
 ```{r}
-library(creadb)
+library(rcrea)
 ```
 
 ```{r}
-exc_cities<- creadb::exceedances(country=c('IN'), city=c('Delhi', 'Jaipur', 'Mumbai', 'Hyderabad'))
+exc_cities<- rcrea::exceedances(country=c('IN'), city=c('Delhi', 'Jaipur', 'Mumbai', 'Hyderabad'))
 exc_cities
 ```
 ```{r}

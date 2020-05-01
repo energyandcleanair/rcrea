@@ -1,4 +1,4 @@
 library(testthat)
-library(creadb)
+library(rcrea)
 
-test_check("creadb")
+test_check("rcrea")

@@ -1,4 +1,4 @@
-require(creadb)
+require(rcrea)
 library(lubridate)
 library(scales)
 library(shinyWidgets)
@@ -31,7 +31,7 @@ server <- function(input, output, session) {
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        creadb::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level,  with_metadata = F)
+        rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level,  with_metadata = F)
     })
 
     targets <- reactive({
@@ -41,7 +41,7 @@ server <- function(input, output, session) {
         req(country, city, poll)
 
         # Get measurements
-        creadb::targets(country=country, city=city, poll=poll)
+        rcrea::targets(country=country, city=city, poll=poll)
     })
 
     scales <- reactive({
@@ -49,7 +49,7 @@ server <- function(input, output, session) {
         req(poll)
 
         # Get scales
-        creadb::scales(poll=poll)
+        rcrea::scales(poll=poll)
     })
 
     # Event Observers --------------------------------------
@@ -143,7 +143,7 @@ server <- function(input, output, session) {
         if(!is.null(input$target)){
             for (i_target in 1:length(input$target)){
                 target <- targets() %>% filter(short_name == input$target[i_target])
-                target_line <- creadb::partial_plot_target(poll=poll, target=target, country=input$country, city=city, location_id=NULL,
+                target_line <- rcrea::partial_plot_target(poll=poll, target=target, country=input$country, city=city, location_id=NULL,
                                                            average_by=averaging,
                                                            date_from = min(meas()$date), date_to = max(meas()$date),
                                                            type=type, color_by=color_by)
@@ -272,7 +272,7 @@ server <- function(input, output, session) {
 
 
     # output$exc_status_map <- renderPlot({
-    #     creadb::map_exceedance_status(exc_status()) + geom_sf(data=sf::st_as_sf(countries_map()), fill = NA)
+    #     rcrea::map_exceedance_status(exc_status()) + geom_sf(data=sf::st_as_sf(countries_map()), fill = NA)
     # })
 
     # Tab 3 : Download -----------------------------------------------------
@@ -292,7 +292,7 @@ server <- function(input, output, session) {
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        creadb::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, with_metadata = F) %>%
+        rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, with_metadata = F) %>%
             dplyr::select(country, city, date, poll, unit, source, timezone) %>%
             dplyr::arrange(desc(date))
     })

@@ -7,17 +7,17 @@
 
 cut_poll <- function(poll, value){
   # Transforms continuous to category value
-  scale <- if(poll==creadb::PM25){
+  scale <- if(poll==rcrea::PM25){
     cut(value,c(0, 30, 60, 90, 120, 250, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
-  }else if(poll==creadb::PM10){
+  }else if(poll==rcrea::PM10){
     cut(value,c(0, 50, 100, 250, 350, 430, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
-  }else if(poll==creadb::CO){
+  }else if(poll==rcrea::CO){
     cut(value,c(0, 1000, 2000, 10000, 17000, 34000, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
-  }else if(poll==creadb::NO2){
+  }else if(poll==rcrea::NO2){
     cut(value,c(0, 40, 80, 180, 280, 400, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
-  }else if(poll==creadb::SO2){
+  }else if(poll==rcrea::SO2){
     cut(value,c(0, 40, 80, 380, 800, 1600, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
-  }else if(poll==creadb::O3){
+  }else if(poll==rcrea::O3){
     cut(value,c(0, 50, 100, 168, 208, 748, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
   }else{
     cut(value,c(-2,-1), labels=c("Unknown"))
@@ -43,7 +43,7 @@ partial_plot_target <- function(poll, target, country, city, location_id, date_f
   if(type=='ts'){
 
     # Get target values per year
-    value_baseline <- creadb::measurements(country=country, city=city, poll=poll, average_by='year', collect=F,
+    value_baseline <- rcrea::measurements(country=country, city=city, poll=poll, average_by='year', collect=F,
                                        date_from = lubridate::ymd(target$year_baseline*10000 + 101),
                                        date_to = lubridate::ymd(target$year_baseline*10000 + 1231)) %>%
                       dplyr::summarize(value=mean(value)) %>% collect()

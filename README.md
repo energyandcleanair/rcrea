@@ -22,12 +22,12 @@ devtools::install_github(url)
 An online version is available on <https://crea.shinyapps.io/shiny/>.
 Otherwise, you can run it locally using:
 ```
-creadb::runShinyApp()
+rcrea::runShinyApp()
 ```
 
 ### Markdown examples
 Markdowns are available in the examples folder
 ```buildoutcfg
-df_locations <- creadb::locations(country='IN')
-df_measurements <- creadb::measurements(country='IN', poll=creadb::PM25, city='Delhi')
+df_locations <- rcrea::locations(country='IN')
+df_measurements <- rcrea::measurements(country='IN', poll=rcrea::PM25, city='Delhi')
 ``` 

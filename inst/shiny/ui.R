@@ -25,7 +25,7 @@ ui <- fluidPage(
                     selectInput("poll",
                                 "Pollutant:",
                                 choices = polls,
-                                selected = creadb::PM25
+                                selected = rcrea::PM25
                     ),
                     selectInput("averaging",
                                 "Time averaging:",

@@ -15,7 +15,7 @@ test_that("reconnection works", {
   # Test whether reconnection works automatically and is shared across queries
   DBI::dbDisconnect(con)
   expect_false(DBI::dbIsValid(con), "Connection should be invalid")
-  meas2 <- measurements(location_id='IN-107', poll=creadb::CO, date_from="2020-01-01", collect=T) # Queries first locations and then measurements
+  meas2 <- measurements(location_id='IN-107', poll=rcrea::CO, date_from="2020-01-01", collect=T) # Queries first locations and then measurements
   expect_gt(nrow(meas2),0)
 })
 #
@@ -30,7 +30,7 @@ test_that("reconnection works", {
 #                                     user = CONN_USER,
 #                                     password = CONN_PASSWORD)
 #
-#   time_postgres <- system.time(measurements(con=con_postgres, date_from='2019-01-01', city='Delhi', poll=creadb::CO, collect=T))
+#   time_postgres <- system.time(measurements(con=con_postgres, date_from='2019-01-01', city='Delhi', poll=rcrea::CO, collect=T))
 #   DBI::dbDisconnect(con_postgres)
 #
 #   con_postgresql <- DBI::dbConnect(RPostgres::Postgres(), dbname = CONN_DBNAME,
@@ -39,7 +39,7 @@ test_that("reconnection works", {
 #                                  user = CONN_USER,
 #                                  password = CONN_PASSWORD)
 #
-#   time_postgresql <- system.time(measurements(con=con_postgresql, date_from='2019-01-01', city='Delhi', poll=creadb::CO, collect=T))
+#   time_postgresql <- system.time(measurements(con=con_postgresql, date_from='2019-01-01', city='Delhi', poll=rcrea::CO, collect=T))
 #   DBI::dbDisconnect(con_postgresql)
 #
 #   expect_lt(time_postgres['elapsed'], time_postgresql['elapsed'])
@@ -90,37 +90,37 @@ test_that("query return measurements", {
 
   meas_unkown <- measurements(city='Mumbai', user_filter=function(x){x %>% dplyr::filter(avg_day<=1000 | poll==CO)})
 
-  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2019-01-01')
+  meas_delhi <- measurements(city='Delhi', poll=rcrea::CO, date_from='2019-01-01')
   expect_gt(nrow(meas_delhi), 0)
   expect_equal(tolower(unique(meas_delhi$city)), 'delhi')
   # expect_gt(length(unique(meas_delhi$location)), 0)
   expect_equal(length(unique(meas_delhi$poll)), 1)
 
-  meas_delhi_lower <- measurements(city='delhi', poll=creadb::CO, date_from='2019-01-01')
+  meas_delhi_lower <- measurements(city='delhi', poll=rcrea::CO, date_from='2019-01-01')
   expect_equal(nrow(meas_delhi_lower), nrow(meas_delhi))
 
-  meas_delhi_jaipur <- measurements(city=c('Delhi','Jaipur'), poll=creadb::CO, date_from='2019-01-01')
+  meas_delhi_jaipur <- measurements(city=c('Delhi','Jaipur'), poll=rcrea::CO, date_from='2019-01-01')
   expect_gt(nrow(meas_delhi_jaipur), nrow(meas_delhi))
 
   meas_delhi_china <- measurements(country='CN', city='Delhi')
   expect_equal(nrow(meas_delhi_china), 0)
 
   # Location id
-  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', aggregate_level='location')
+  meas_delhi <- measurements(city='Delhi', poll=rcrea::CO, date_from='2020-01-01', average_by='year', aggregate_level='location')
   length(unique(meas_delhi$location_id)) >= 23 # 23 stations with CO data  in Delhi at the time of writing
-  meas_delhi <- measurements(city='Delhi', poll=creadb::CO, date_from='2020-01-01', average_by='year', aggregate_level='location')
+  meas_delhi <- measurements(city='Delhi', poll=rcrea::CO, date_from='2020-01-01', average_by='year', aggregate_level='location')
   length(unique(meas_delhi$location_id)) == 1
 
   # Time aggregation
-  meas_delhi_day <- measurements(city='Delhi', average_by='day', poll=creadb::PM10, collect=T)
+  meas_delhi_day <- measurements(city='Delhi', average_by='day', poll=rcrea::PM10, collect=T)
   expect_equal(length(unique(lubridate::day(meas_delhi_day$date))), 31)
   expect_equal(length(unique(lubridate::month(meas_delhi_day$date))), 12)
 
-  meas_delhi_month <- measurements(city='Delhi', average_by='month', poll=creadb::PM10)
+  meas_delhi_month <- measurements(city='Delhi', average_by='month', poll=rcrea::PM10)
   expect_equal(unique(lubridate::day(meas_delhi_month$date)), 1)
   expect_equal(length(unique(lubridate::month(meas_delhi_month$date))), 12)
 
-  meas_delhi_year <- measurements(city='Delhi', average_by='year', poll=creadb::PM10)
+  meas_delhi_year <- measurements(city='Delhi', average_by='year', poll=rcrea::PM10)
   expect_equal(unique(lubridate::day(meas_delhi_year$date)), 1)
   expect_equal(unique(lubridate::month(meas_delhi_year$date)), 1)
 
@@ -183,15 +183,15 @@ test_that("query return standard exceedances", {
   exc_unknown <- exceedances(city='XXX')
   expect_equal(nrow(exc_unknown), 0)
 
-  exc_delhi <- exceedances(city='Delhi', year=2020, poll=creadb::PM25)
+  exc_delhi <- exceedances(city='Delhi', year=2020, poll=rcrea::PM25)
   expect_gt(nrow(exc_delhi), 0)
   expect_equal(tolower(unique(exc_delhi$city)), 'delhi')
   expect_gt(length(unique(exc_delhi$poll)), 0)
 
-  exc_delhi_lower <- exceedances(city='delhi', year=2020, poll=creadb::PM25)
+  exc_delhi_lower <- exceedances(city='delhi', year=2020, poll=rcrea::PM25)
   expect_equal(nrow(exc_delhi_lower), nrow(exc_delhi))
 
-  exc_delhi_jaipur <- exceedances(city=c('Delhi','Jaipur'), year=2020, poll=creadb::PM25)
+  exc_delhi_jaipur <- exceedances(city=c('Delhi','Jaipur'), year=2020, poll=rcrea::PM25)
   expect_gt(nrow(exc_delhi_jaipur), nrow(exc_delhi))
 
   exc_delhi_china <- exceedances(country='CN', city='Delhi')

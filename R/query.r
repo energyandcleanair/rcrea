@@ -96,7 +96,7 @@ locations <- function(country=NULL, city=NULL, id=NULL,
 #' @param country ISO2 code of the country of interest [optional]
 #' @param city City as indicated in OpenAQ location
 #' @param location_id Identifier of the air quality measurement station (referring to \code{id} in \code{\link{stations}})
-#' @param poll Pollutant name (e.g. creadb::CO, "co", creadb::PM25, "pm25")
+#' @param poll Pollutant name (e.g. rcrea::CO, "co", rcrea::PM25, "pm25")
 #' @param date_from Beginning date of queried measurements ('yyyy-mm-dd')
 #' @param date_to End date of queried measurements ('yyyy-mm-dd')
 #' @param source Source of the data. e.g. cpcb, openaq, openaq-archive
@@ -111,7 +111,7 @@ locations <- function(country=NULL, city=NULL, id=NULL,
 #' @export
 #'
 #' @examples
-#' meas_bj <- creadb::measurements(city=c('Beijing'), date_from='2018-01-01', average_by='month', with_metadata=T)
+#' meas_bj <- rcrea::measurements(city=c('Beijing'), date_from='2018-01-01', average_by='month', with_metadata=T)
 #'
 measurements <- function(country=NULL,
                          city=NULL,
@@ -625,7 +625,7 @@ scales <- function(poll=NULL){
 #' @return a tibble (locally collected or not) of measurements left joined to weather data
 #'
 #' @examples
-#' meas_w_weather <- creadb::join_weather_data(meas)
+#' meas_w_weather <- rcrea::join_weather_data(meas)
 #'
 join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_at_city_level=TRUE, collect=TRUE, con=NULL){
 

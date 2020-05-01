@@ -14,7 +14,7 @@ source('R/setup.r')
 #' @return a tibble (locally collected or not) of measurements left joined to weather data
 #'
 #' @examples
-#' meas_w_weather <- creadb::join_weather_data(meas)
+#' meas_w_weather <- rcrea::join_weather_data(meas)
 #'
 weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day', aggregate_at_city_level=T, radius_km=20){
 

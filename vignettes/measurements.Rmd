@@ -13,10 +13,10 @@ vignette: >
 if(!require(devtools)) install.packages('devtools',repos = "http://cran.us.r-project.org")
 library(devtools)
 url <- "https://github.com/hubert-thieriot/crea_r_package"
-devtools::install_github(url)
+# devtools::install_github(url)
 ```
 ```{r results="hide"}
-library(creadb)
+library(rcrea)
 library(dplyr)
 library(ggplot2)
 library(zoo)
@@ -26,21 +26,22 @@ library(zoo)
 ### Downloading measurements
 Collecting measurements. By default, data is averaged by day and by city.
 ```{r}
-meas_cities <- creadb::measurements(city=c('Jaipur','Mumbai', 'Delhi'),
+meas_cities <- rcrea::measurements(city=c('Jaipur','Mumbai', 'Delhi'),
                                     average_by = 'day', # [Default: 'day'] also available NULL (raw measurements), 'hour', 'week', 'month', 'year'
                                     aggregate_at_city_level = T # [Default: TRUE] whether or not to aggregate stations data at the city level
                                     )
 meas_cities
 ```
+
 If you want all India data (can take a lot of time if not averaged per month or year):
 ```{r}
-meas_india <- creadb::measurements(country='IN', average_by = 'year')
+meas_india <- rcrea::measurements(country='IN', average_by = 'year')
 meas_india
 ```
 
 Getting data at the location level (i.e. more granular than city).
 ```{r}
-meas_stations <- creadb::measurements(city=c('Jaipur','Mumbai'),
+meas_stations <- rcrea::measurements(city=c('Jaipur','Mumbai'),
                                     aggregate_at_city_level = F, # To keep it at 'location' (i.e. station) level
                                     with_metadata = T # To also collect geometry
                                     )
@@ -50,7 +51,7 @@ meas_stations
 
 Let's first see how many measurements we have, and whether there are holes in time.
 ```{r}
-creadb::plot_measurements_count(meas_cities)
+rcrea::plot_measurements_count(meas_cities)
 ```
 Black regions correspond to periods of time without any measurement in this city. Either data is not available or scraping has missed some values.
 
@@ -60,58 +61,58 @@ Plotting time series of PM 2.5 per location.
 
 Using location_id...
 ```{r}
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, subplot_by='city')
+rcrea::plot_measurements(meas_cities, poll=rcrea::PM25, subplot_by='city')
 ```
 ... or location name (location refers to station in OpenAQ language)
 ```{r}
-creadb::plot_measurements(meas_stations, subplot_by='location', color_by = 'poll')
+rcrea::plot_measurements(meas_stations, subplot_by='location', color_by = 'poll')
 ```
 
 Plotting city-level values per pollutant
 ```{r}
-creadb::plot_measurements(meas_cities, subplot_by='poll')
+rcrea::plot_measurements(meas_cities, subplot_by='poll')
 ```
 Using a 1-year rolling mean
 ```{r}
-creadb::plot_measurements(meas_cities, average_by='day', running_width=365, subplot_by='poll')
+rcrea::plot_measurements(meas_cities, average_by='day', running_width=365, subplot_by='poll')
 ```
 
 Time series of PM2.5 per location (yearly running average)
 ```{r}
-creadb::plot_measurements(meas_stations, poll=creadb::PM25, running_days=365, subplot_by='location')
+rcrea::plot_measurements(meas_stations, poll=rcrea::PM25, running_days=365, subplot_by='location')
 ```
 
 Time series of PM2.5 per city (yearly running average)
 ```{r}
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, running_days=365, color_by='city')
+rcrea::plot_measurements(meas_cities, poll=rcrea::PM25, running_days=365, color_by='city')
 ```
 
 Monthly average
 ```{r}
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, average_by='month', subplot_by='city')
+rcrea::plot_measurements(meas_cities, poll=rcrea::PM25, average_by='month', subplot_by='city')
 ```
 
 Yearly average
 ```{r}
-creadb::plot_measurements(meas_cities, poll=creadb::PM25, average_by='year', subplot_by='city')
+rcrea::plot_measurements(meas_cities, poll=rcrea::PM25, average_by='year', subplot_by='city')
 ```
 
 Evolution over years of monthly data
 ```{r}
-creadb::plot_measurements(meas_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
+rcrea::plot_measurements(meas_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
 ```
 
 Doing the same with all cities for PM10
 ```{r}
-meas_month_all_cities <- creadb::measurements(country='IN', average_by='month', date_from='2014-01-01', poll=PM25)
-creadb::plot_measurements(meas_month_all_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
+meas_month_all_cities <- rcrea::measurements(country='IN', average_by='month', date_from='2014-01-01', poll=PM25)
+rcrea::plot_measurements(meas_month_all_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
 ```
 Heatmap per location with monthly data
 ```{r}
-creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='heatmap', average_by='month')
+rcrea::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='heatmap', average_by='month')
 ```
 
 Heatmap per city weekly values
 ```{r}
-creadb::plot_measurements(meas_cities, poll=PM25, subplot_by='city', type='heatmap', average_by='month')
+rcrea::plot_measurements(meas_cities, poll=PM25, subplot_by='city', type='heatmap', average_by='month')
 ```
