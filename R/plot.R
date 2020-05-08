@@ -264,13 +264,13 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
   if(!is.null(subplot_by) && (type=='ts')){
     facets <- ifelse(length(units)==1, subplot_by, c(subplot_by,'unit'))
-    plt <- plt + facet_wrap(facets, scales = ifelse(subplot_by=='city','fixed','free_y'))
+    plt <- plt + facet_wrap(facets, scales = ifelse(subplot_by=='city','fixed','free'))
 
     if(is.null(color_by) || (color_by==subplot_by)){
       plt <- plt + theme(legend.position = "none")
     }
   }else{
-    plt <- plt + facet_wrap(~unit, scales = 'free_y')
+    plt <- plt + facet_wrap(~unit, scales = 'free')
   }
   return(plt)
 }
