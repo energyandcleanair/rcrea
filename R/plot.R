@@ -226,16 +226,22 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
     plt_aes <- aes_string(x='date', y='value_plot', color=shQuote("red"))
   }
 
+  units <- unique(meas$unit)
+
+  ylabel <- ifelse(length(units)==1, units, "Concentration")
+
   plt <- ggplot2::ggplot(meas, plt_aes) +
-        labs(x='', y='concentration',
+        labs(x='', y=ylabel,
          title=paste(''),
          subtitle = '',
          caption = '') +
         theme_crea()
 
   plt <- switch(type,
-         "ts" = plt + geom_line(size = 0.8) +
-                ylim(0, NA),
+         "ts" = plt + geom_line(aes(size="1")) +
+                ylim(0, NA) +
+           scale_size_manual(values=c(0.8), guide = FALSE)+
+           CREAtheme.scale_color_crea_d("heatmap"),
          "heatmap" = plt +
                     geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot_cat'), color='white') +
                     scale_y_discrete() +
@@ -257,7 +263,8 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
 
   if(!is.null(subplot_by) && (type=='ts')){
-    plt <- plt + facet_wrap(c(subplot_by,'unit'), scales = ifelse(subplot_by=='city','fixed','free_y'))
+    facets <- ifelse(length(units)==1, subplot_by, c(subplot_by,'unit'))
+    plt <- plt + facet_wrap(facets, scales = ifelse(subplot_by=='city','fixed','free_y'))
 
     if(is.null(color_by) || (color_by==subplot_by)){
       plt <- plt + theme(legend.position = "none")
