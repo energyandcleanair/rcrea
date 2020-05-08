@@ -4,7 +4,7 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
   width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
-  sources <- list("eea"="European Environment Agency", "openaq"="OpenAQ")
+  sources <- list("eea"="European Environment Agency", "openaq"="OpenAQ", "earthengine"="Sentinel-5P TROPOMI OFFL NO2")
 
   meas <- rcrea::measurements(country=countries, poll=polls, aggregate_level='country', source=source)
   countries <- unique(meas$country)
@@ -22,7 +22,7 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
 
       # Prettying it
       (plt_dl <- directlabels::direct.label(plt + theme_classic(),method = list(directlabels::dl.trans(y = y + .1), "top.bumptwice")) + theme_crea() + scale_size_manual(values=c(1), guide=F) +
-          scale_color_brewer(palette="Spectral", type='div') + theme(legend.position="right") +
+          scale_color_brewer(palette="Paired") + theme(legend.position="right") +
           labs(
             title=paste("Air pollutant concentrations in",country_name),
             subtitle="30-day running average",
