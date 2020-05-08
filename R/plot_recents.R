@@ -20,7 +20,7 @@ plot_recents <- function(folder, source, countries){
     plt <- plot_measurements(meas%>% dplyr::filter(country==country_), running_width=30, color_by = 'year', subplot_by = c("poll"))
 
     # Prettying it
-    (plt_dl <- directlabels::direct.label(plt + theme_classic(),method = list(dl.trans(y = y + .1), "top.bumptwice")) + theme_crea() + scale_size_manual(values=c(1), guide=F) +
+    (plt_dl <- directlabels::direct.label(plt + theme_classic(),method = list(directlabels::dl.trans(y = y + .1), "top.bumptwice")) + theme_crea() + scale_size_manual(values=c(1), guide=F) +
       scale_color_brewer(palette="Spectral", type='qual') + theme(legend.position="right") +
       labs(
         title=paste("Average pollutant concentrations in",country_name,"per year"),
