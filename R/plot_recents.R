@@ -1,7 +1,7 @@
 
 plot_recents <- function(folder, source, countries=NULL, polls=NULL){
 
-  width <- list("s"=10,"m"=15,"l"=20)
+  width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
   sources <- list("eea"="European Environment Agency", "openaq"="OpenAQ")
