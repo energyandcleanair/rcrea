@@ -26,11 +26,20 @@ plot_recents <- function(folder, source, countries){
         title=paste("Average pollutant concentrations in",country_name,"per year"),
         subtitle="30-day running average",
         caption=paste("Source: CREA based on", sources[[source]]))
-      +scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct('0000-06-01')))
       )
 
   for(size in names(width)){
-    ggsave(file.path(folder, paste0(country_,"_",source,"_",size,".png")), width=width[[size]], height=height[[size]], plot=plt_dl)
+
+    # Full version
+    ggsave(file.path(folder, paste0(country_,"_",source,"_full_",size,".png")),
+           width=width[[size]], height=height[[size]],
+           plot=plt_dl)
+
+    # Version cut at current month end
+    cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
+    ggsave(file.path(folder, paste0(country_,"_",source,"_cut_",size,".png")),
+           width=width[[size]], height=height[[size]],
+           plot=plt_dl +scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))))
 
   }
 
