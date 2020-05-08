@@ -175,6 +175,9 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
     meas = meas[meas$poll == poll, ]
   }
 
+  # Capitalize pollutants for display
+  meas$poll <- toupper(meas$poll)
+
   # Deprecated argument(s)
   if(exists('running_days') && !is.null(running_days)){
     warning("running_days argument is deprecated. Use running_width instead.")

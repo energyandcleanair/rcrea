@@ -1,12 +1,12 @@
 
-plot_recents <- function(folder, source, countries){
+plot_recents <- function(folder, source, countries=NULL, polls=NULL){
 
   width <- list("s"=10,"m"=15,"l"=20)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
   sources <- list("eea"="European Environment Agency", "openaq"="OpenAQ")
 
-  meas <- rcrea::measurements(country=countries, aggregate_level='country', source=source)
+  meas <- rcrea::measurements(country=countries, poll=polls, aggregate_level='country', source=source)
   countries <- unique(meas$country)
 
   meas[meas$unit=='mg/m3',]$value <- meas[meas$unit=='mg/m3',]$value*1000
@@ -35,7 +35,7 @@ plot_recents <- function(folder, source, countries){
         ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_full30_",size,".png")),
                width=width[[size]], height=height[[size]],
                plot=plt_dl +
-                 scale_y_continuous(expand = expansion(mult = c(0, expand[[size]]))))
+                 scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
 
         # Version cut at current month end
         cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
