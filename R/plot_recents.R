@@ -1,8 +1,8 @@
 
 plot_recents <- function(folder, source, countries){
 
-  width <- 10
-  height <- 6
+  width <- list("s"=10,"m"=15,"l"=20)
+  height <- list("s"=6,"m"=9,"l"=12)
 
 
   sources <- list("eea"="European Environment Agency", "openaq"="OpenAQ")
@@ -29,7 +29,10 @@ plot_recents <- function(folder, source, countries){
       +scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct('0000-06-01')))
       )
 
-    ggsave(file.path(folder, paste0(country_,"_",source,".png")), width=width, height=height, plot=plt_dl)
+  for(size in names(width)){
+    ggsave(file.path(folder, paste0(country_,"_",source,"_",size,".png")), width=width[[size]], height=height[[size]], plot=plt_dl)
+
+  }
 
   }
 }
