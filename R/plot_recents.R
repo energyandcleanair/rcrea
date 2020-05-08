@@ -3,7 +3,7 @@ plot_recents <- function(folder, source, countries){
 
   width <- list("s"=10,"m"=15,"l"=20)
   height <- list("s"=6,"m"=9,"l"=12)
-
+  expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
   sources <- list("eea"="European Environment Agency", "openaq"="OpenAQ")
 
   meas <- rcrea::measurements(country=countries, aggregate_level='country', source=source)
@@ -34,13 +34,15 @@ plot_recents <- function(folder, source, countries){
         # Full version
         ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_full30_",size,".png")),
                width=width[[size]], height=height[[size]],
-               plot=plt_dl)
+               plot=plt_dl +
+                 scale_y_continuous(expand = expand_scale(mult = c(0, expand[[size]]))))
 
         # Version cut at current month end
         cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
         ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_cut30_",size,".png")),
                width=width[[size]], height=height[[size]],
-               plot=plt_dl +scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))))
+               plot=plt_dl + scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))) +
+                 scale_y_continuous(expand = expand_scale(mult = c(0, expand[[size]]))))
 
       }
     }, error=function(err){
