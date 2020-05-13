@@ -1,4 +1,5 @@
 ui <- fluidPage(
+    theme = "theme.css",
 
     # Application title
     titlePanel(windowTitle="CREA - Air Quality Monitoring", title=div(img(src="crea_logo.svg", width=220))),
@@ -9,6 +10,7 @@ ui <- fluidPage(
             sidebarLayout(
                 sidebarPanel(
                     width = 2,
+                    h4("Data selection"),
                     selectInput("source",
                                 "Source:",
                                 choices = unique(sources),
@@ -33,6 +35,8 @@ ui <- fluidPage(
                                 choices = averagings,
                                 selected = "day"
                     ),
+                    actionButton("meas_refresh", "Refresh Measurements"),
+                    h4("Display Options"),
                     sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=1, step=1, sep = ""
                     ),
                     sliderInput("years", "Year", min=2015, max=2020, value=c(2018, 2020), step=1, sep = "", ticks = F
