@@ -155,7 +155,7 @@ plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by
   return(plt)
 }
 
-plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=NULL, color_by='city', average_by='day', subplot_by=NULL, type='ts'){
+plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=NULL, color_by='region_id', average_by='day', subplot_by=NULL, type='ts'){
 
   # Testing the charts make sense (i.e. not averaging different pollutants)
   if(is.null(poll) && (!'poll' %in% color_by) && (!'poll' %in% subplot_by)){
@@ -190,7 +190,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }
 
   # Take mean over relevant grouping (at least city, date and pollutant)
-  group_by_cols <- union(c('city', 'poll', 'unit'), union(setdiff(color_by,c("year")), setdiff(subplot_by,c("year"))))
+  group_by_cols <- union(c('region_id', 'poll', 'unit'), union(setdiff(color_by,c("year")), setdiff(subplot_by,c("year"))))
   meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
   meas <- meas %>% dplyr::group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = mean(value))
 
@@ -216,6 +216,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   # Remove year for time series to overlap
   if('year' %in% color_by){
     meas <- meas %>% dplyr::mutate(year=factor(lubridate::year(date)))
+    meas <- meas %>% dplyr::mutate(year=reorder(year, dplyr::desc(year)))
     lubridate::year(meas$date) <- 0
   }
 
@@ -243,18 +244,18 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   plt <- switch(type,
          "ts" = plt + geom_line(aes(size="1")) +
                 ylim(0, NA) +
-           scale_size_manual(values=c(0.8), guide = FALSE)+
-           CREAtheme.scale_color_crea_d("heatmap"),
+           scale_size_manual(values=c(0.8), guide = FALSE) +
+           CREAtheme.scale_color_crea_d("change"),
          "heatmap" = plt +
-                    geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot_cat'), color='white') +
+                    geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'), fill='value_plot_cat'), color='white') +
                     scale_y_discrete() +
                     scale_fill_poll(NULL, poll) +
                     theme(legend.position = "right"),
          "heatmap_w_text" = plt +
-                    geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'), fill='value_plot_cat'), color='white') +
+                    geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'), fill='value_plot_cat'), color='white') +
                     scale_y_discrete(expand=c(0,0)) +
                     scale_fill_poll(NULL, poll) +
-                    geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'city'),
+                    geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'),
                                           label="paste(sprintf('%.0f', value_plot))"), size=3, color='black') + theme(axis.text.x = element_text()) +
                       labs(x='', y='', subtitle=expression('[' * mu * 'g/m'^3*']'), title=paste(poll_str(poll), 'concentration'))
          )
@@ -267,7 +268,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
   if(!is.null(subplot_by) && (type=='ts')){
     facets <- ifelse(length(units)==1, subplot_by, c(subplot_by,'unit'))
-    plt <- plt + facet_wrap(facets, scales = ifelse(subplot_by=='city','fixed','free'))
+    plt <- plt + facet_wrap(facets, scales = ifelse(subplot_by=='region_id','fixed','free'))
 
     if(is.null(color_by) || (color_by==subplot_by)){
       plt <- plt + theme(legend.position = "none")

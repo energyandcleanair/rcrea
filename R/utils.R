@@ -62,3 +62,15 @@ utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg){
   #TODO check sky_code value is preserved (and not mixed with levels)
   return(meas)
 }
+
+utils.unnest_json <-function(.data,.json_col, ...){
+  # build character vector whose names are cols to be created and values columns
+  # to be extracted
+  dots <- sapply(as.list(substitute(list(...)))[-1], as.character)
+  .json_col <- as.character(substitute(.json_col))
+  query0  <- sprintf("%s::json ->>'%s' as %s", .json_col, dots, names(dots))
+  query <- sprintf("SELECT *, %s FROM (%s) AS PREV",
+                   paste(query0, collapse = ", "),
+                   dbplyr::sql_render(.data))
+  dplyr::tbl(.data$src$con, dbplyr::sql(query))
+}
