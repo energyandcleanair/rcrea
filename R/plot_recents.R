@@ -7,7 +7,7 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
   sources <- list("eea"="European Environment Agency", "openaq"="OpenAQ", "earthengine"="Sentinel-5P TROPOMI OFFL NO2")
 
   meas <- rcrea::measurements(country=countries, poll=polls, aggregate_level='country', source=source)
-  countries <- unique(meas$country)
+  countries <- unique(meas$region_id)
 
   meas[meas$unit=='mg/m3',]$value <- meas[meas$unit=='mg/m3',]$value*1000
   meas[meas$unit=='mg/m3',]$unit <- "µg/m3"
@@ -18,7 +18,7 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
       country_name <- countrycode::countrycode(country_, origin="iso2c", destination = "country.name")
 
       # Getting standard plot
-      plt <- rcrea::plot_measurements(meas%>% dplyr::filter(country==country_), running_width=30, color_by = 'year', subplot_by = c("poll"))
+      plt <- rcrea::plot_measurements(meas%>% dplyr::filter(region_id==country_), running_width=30, color_by = 'year', subplot_by = c("poll"))
 
       # Prettying it
       (plt_dl <- directlabels::direct.label(plt + theme_classic(),method = list(directlabels::dl.trans(y = y + .1), "top.bumptwice")) + theme_crea() + scale_size_manual(values=c(1), guide=F) +
