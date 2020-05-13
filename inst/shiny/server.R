@@ -13,6 +13,12 @@ server <- function(input, output, session) {
     # Tab 1 -----------------------------------------------------
     # Reactive Values ---------------------------------------
     meas <- reactive({
+
+        # To trigger refresh
+        input$meas_refresh
+
+        print("Fetching measurements")
+
         source <- isolate(input$source)
         country <- isolate(input$country)
         city <- isolate(input$city)
@@ -37,8 +43,8 @@ server <- function(input, output, session) {
 
     targets <- reactive({
 
-        # Trigger when clicking refresh button
-        input$meas_refresh
+        # Make it reactive to meas
+        meas()
 
         country <- isolate(input$country)
         city <- isolate(input$city)
@@ -50,8 +56,9 @@ server <- function(input, output, session) {
     })
 
     scales <- reactive({
-        # Trigger when clicking refresh button
-        input$meas_refresh
+
+        # Make it reactive to meas
+        meas()
 
         poll <- isolate(input$poll)
         req(poll)
@@ -132,8 +139,6 @@ server <- function(input, output, session) {
 
 
     output$meas_plot <- renderPlot({
-
-        input$meas_refresh
 
         poll <- isolate(input$poll)
         averaging <- isolate(input$averaging)

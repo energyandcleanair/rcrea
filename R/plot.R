@@ -245,7 +245,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
          "ts" = plt + geom_line(aes(size="1")) +
                 ylim(0, NA) +
            scale_size_manual(values=c(0.8), guide = FALSE) +
-           CREAtheme.scale_color_crea_d("change"),
+           CREAtheme.scale_color_crea_d("dramatic"),
          "heatmap" = plt +
                     geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'), fill='value_plot_cat'), color='white') +
                     scale_y_discrete() +
