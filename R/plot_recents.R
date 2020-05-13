@@ -4,7 +4,10 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
   width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
-  sources <- list("eea"="European Environment Agency", "openaq"="OpenAQ", "earthengine"="Sentinel-5P TROPOMI OFFL NO2")
+  sources <- list("eea"="European Environment Agency",
+                  "openaq"="OpenAQ",
+                  "earthengine"="Sentinel-5P TROPOMI OFFL NO2",
+                  "cpcb"="Central Pollution Control Board")
 
   meas <- rcrea::measurements(country=countries, poll=polls, aggregate_level='country', source=source)
   countries <- unique(meas$region_id)
