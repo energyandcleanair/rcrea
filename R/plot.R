@@ -216,13 +216,18 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
   # Apply running average if need be
   if(is.null(running_width) || (running_width==1)){
-    meas <- dplyr::arrange(meas, date)  %>% dplyr::mutate(value_plot=value)
+    meas <- dplyr::arrange(meas, date)
   }else{
-    meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
-      dplyr::mutate(value_plot=zoo::rollapply(value, width=running_width, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
+    meas <- meas %>% utils.rolling_average(average_by=average_by,
+                            average_width=running_width,
+                            vars_to_avg=c("value"),
+                            group_by_cols = setdiff(colnames(meas), c("value","date")))
+
+    # meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
+    #   dplyr::mutate(value_plot=zoo::rollapply(value, width=running_width, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
 
-  if(nrow(meas %>% dplyr::filter(!is.na(value_plot)))==0){
+  if(nrow(meas %>% dplyr::filter(!is.na(value)))==0){
     stop("No measurement to plot after applying running average. Try reducing running average width.")
   }
 
@@ -234,13 +239,13 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }
 
   # Add categorical variable
-  meas <- meas %>% dplyr::group_by(poll, unit) %>% dplyr::mutate(value_plot_cat=cut_poll(poll, value))
+  meas <- meas %>% dplyr::group_by(poll, unit) %>% dplyr::mutate(value_cat=cut_poll(poll, value))
 
   # Build plot
   if(!is.null(color_by)){
-    plt_aes <- aes_string(x='date', y='value_plot', color=color_by)
+    plt_aes <- aes_string(x='date', y='value', color=color_by)
   }else{
-    plt_aes <- aes_string(x='date', y='value_plot', color=shQuote("red"))
+    plt_aes <- aes_string(x='date', y='value', color=shQuote("red"))
   }
 
   units <- unique(meas$unit)
@@ -258,7 +263,8 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
          "ts" = plt + geom_line(aes(size="1")) +
                 ylim(0, NA) +
            scale_size_manual(values=c(0.8), guide = FALSE) +
-           CREAtheme.scale_color_crea_d("dramatic"),
+           scale_color_brewer(palette="Paired"),
+           # CREAtheme.scale_color_crea_d("dramatic"),
          "heatmap" = plt +
                     geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'), fill='value_plot_cat'), color='white') +
                     scale_y_discrete() +

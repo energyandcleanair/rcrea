@@ -17,7 +17,6 @@ server <- function(input, output, session) {
         # To trigger refresh
         input$meas_refresh
 
-        print("Fetching measurements")
 
         source <- isolate(input$source)
         country <- isolate(input$country)
@@ -26,6 +25,8 @@ server <- function(input, output, session) {
         averaging <-  isolate(input$averaging)
         years <- isolate(input$years)
         req(country, city, poll, averaging, years)
+
+        print("Fetching measurements")
 
         if(city == wholecountry_name){
             city = NULL
@@ -139,6 +140,9 @@ server <- function(input, output, session) {
 
 
     output$meas_plot <- renderPlot({
+
+        # To trigger refresh
+        input$meas_refresh
 
         poll <- isolate(input$poll)
         averaging <- isolate(input$averaging)

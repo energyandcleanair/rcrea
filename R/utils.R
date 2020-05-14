@@ -30,19 +30,18 @@ utils.add_lag <- function(meas, cols, hour_lags){
   return(result)
 }
 
-utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg){
+utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg, group_by_cols){
 
-  meas <- meas %>% mutate(date=lubridate::floor_date(date,average_by))
-  date_grid <- meas %>% dplyr::group_by(city, poll) %>%
+  meas <- meas %>% dplyr::mutate(date=lubridate::floor_date(date,average_by))
+  date_grid <- meas %>% dplyr::group_by_at(group_by_cols) %>%
     dplyr::summarize(date_min=min(date), date_max = max(date)) %>%
     dplyr::mutate(date=purrr::map2(date_min, date_max, ~seq(.x, .y, by=average_by))) %>%
     dplyr::select(-c(date_min, date_max)) %>%
     tidyr::unnest(cols=c(date))
 
-  meas <- merge(meas, date_grid, by = c('city','poll', 'date'), all=TRUE)
+  meas <- merge(meas, date_grid, by = c(group_by_cols, "date"), all=TRUE)
 
-
-  # Rolling mean for training
+  # Rolling mean
   mean_fn <- function(x){
     if(is.numeric(x)){
       res <- mean(x, na.rm = T) # it sometimes returns NaN but models expect only NA
@@ -51,15 +50,15 @@ utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg){
       return(utils.most_frequent_value(x))
     }
   }
+
   train_roll_fn <- function(var) zoo::rollapply(var, width=average_width, FUN=mean_fn, align='right', fill=NA)
   # first average per date
-  meas <- meas %>% dplyr::group_by(city, poll, date) %>%
+  meas <- meas %>% dplyr::group_by_at(c(group_by_cols, "date")) %>%
     dplyr::summarise_at(vars_to_avg, mean_fn)
 
   # then rolling average
-  meas <- meas %>% dplyr::group_by(city, poll) %>% dplyr::arrange(date) %>%
+  meas <- meas %>% dplyr::group_by_at(group_by_cols) %>% dplyr::arrange(date) %>%
     dplyr::mutate_at(vars_to_avg, train_roll_fn)
-  #TODO check sky_code value is preserved (and not mixed with levels)
   return(meas)
 }
 
