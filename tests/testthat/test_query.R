@@ -88,7 +88,7 @@ test_that("query return measurements", {
   meas_unknown <- measurements(city='XXX')
   expect_equal(nrow(meas_unknown), 0)
 
-  meas_unkown <- measurements(city='Mumbai', user_filter=function(x){x %>% dplyr::filter(avg_day<=1000 | poll==CO)})
+  meas_unkown <- measurements(city='Mumbai', user_filter=function(x){x %>% dplyr::filter(value<=1000 | poll==CO)})
 
   meas_delhi <- measurements(city='Delhi', poll=rcrea::CO, date_from='2019-01-01')
   expect_gt(nrow(meas_delhi), 0)
