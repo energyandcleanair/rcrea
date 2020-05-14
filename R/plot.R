@@ -170,6 +170,15 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
     warning("location information missing. Run measurements query with keep_location_id=T")
   }
 
+  if(!is.null(subplot_by) && !(subplot_by %in% c("region_id","poll"))){
+    stop("subplot_by can only be 'NULL', 'region_id' or 'poll'")
+  }
+
+  if(!is.null(color_by) && !(color_by %in% c("region_id","year"))){
+    stop("color_by can only be 'NULL', 'region_id' or 'year'")
+  }
+
+
   # Select pollutants
   if(!is.null(poll)){
     meas = meas[meas$poll == poll, ]
@@ -186,7 +195,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
   # Check not empty
   if(nrow(meas)==0){
-    stop("No measurement")
+    stop("No measurement to plot")
   }
 
   # Take mean over relevant grouping (at least city, date and pollutant)
@@ -211,6 +220,10 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   }else{
     meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
       dplyr::mutate(value_plot=zoo::rollapply(value, width=running_width, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
+  }
+
+  if(nrow(meas %>% dplyr::filter(!is.na(value_plot)))==0){
+    stop("No measurement to plot after applying running average. Try reducing running average width.")
   }
 
   # Remove year for time series to overlap

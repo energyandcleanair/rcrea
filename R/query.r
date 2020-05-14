@@ -94,7 +94,7 @@ locations <- function(country=NULL, city=NULL, id=NULL,
   if(collect){
     result <- result %>% dplyr::collect()
     if(with_geometry){
-      result <- result %>% dplyr::mutate(geometry=sf::sf_as_sfc.pq_geometry(geometry))
+      result <- result %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
     }
   }
 
@@ -133,6 +133,7 @@ measurements <- function(country=NULL,
                          source=NULL,
                          average_by='day',
                          collect=TRUE,
+                         user_filter=NULL,
                          with_metadata=FALSE,
                          aggregate_level='city',
                          con=NULL) {
@@ -268,6 +269,10 @@ measurements <- function(country=NULL,
                    "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
   )
+
+  if(!is.null(user_filter)){
+    result <- user_filter(result)
+  }
 
   # Whether to collect the query i.e. actually run the query
   if(collect){
