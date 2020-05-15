@@ -205,7 +205,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
   # Make date axis homogeneous i.e. a row for every day / month / year
   # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
-  dates <- seq(min(meas$date), max(meas$date), by=paste(average_by))
+  dates <- seq(min(meas$date), max(meas$date), by=paste(average_by)) %>% trunc(units=average_by)
   group_by_uniques <- unique(meas[,group_by_cols])
   df_placeholder <- merge(group_by_uniques, data.frame(date=dates), by=NULL)
   # df_placeholder <- transform(df_placeholder, date_str=format(date, "%Y-%m-%d"))
