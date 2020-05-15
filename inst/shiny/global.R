@@ -15,7 +15,7 @@ wholecountry_name <- '--- Whole Country ---'
 standards <- rcrea::standards(collect=T)
 sources <- c("cpcb", "openaq", "eea", "earthengine")
 polls <- c(rcrea::PM25, rcrea::PM10, rcrea::NO2, rcrea::O3, rcrea::SO2, rcrea::CO)
-averagings <- c("hour", "day", "week", "month", "year")
+averagings <- c("hour", "day")
 
 plot_types <- list("Time Series" = "ts",
                    "Time Series (overlaid years)" = "ts_year",

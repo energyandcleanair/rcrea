@@ -344,13 +344,13 @@ server <- function(input, output, session) {
 
         # Get measurements
         rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, source=source, with_metadata = F) %>%
-            dplyr::select(country, city, date, poll, unit, source, timezone) %>%
+            dplyr::select(region_id, date, poll, unit, source, timezone) %>%
             dplyr::arrange(desc(date))
     })
 
 
     output$selectInputDownCity <- renderUI({
-        cities <- unique((locations %>% dplyr::filter(country==input$country))$city)
+        cities <- unique((locations %>% dplyr::filter(country==input$down_country))$city)
         pickerInput("down_city","City", choices=cities, options = list(`actions-box` = TRUE), multiple = T)
         # selectInput("exc_city", "City:", multiple=T, selected = cities, choices = cities)
     })
@@ -364,13 +364,13 @@ server <- function(input, output, session) {
                           autoWidth = TRUE,
                           rowCallback = JS(
                               "function(row, data) {",
-                              "var timezone = data[7];",
-                              "var datetime = new Date(Date.parse(data[2]));",
+                              "var timezone = data[5];",
+                              "var datetime = new Date(Date.parse(data[1]));",
                               "const options = {
                                   timeZone: timezone,
                               };",
                               "var str_datetime = datetime.toLocaleDateString('en-GB',options) +'  '+ datetime.toLocaleTimeString('en-US',options);",
-                              "$('td:eq(2)', row).html(str_datetime);",
+                              "$('td:eq(1)', row).html(str_datetime);",
                               "}"
                           )
                           ),
