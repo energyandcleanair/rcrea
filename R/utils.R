@@ -35,7 +35,7 @@ utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg, 
   meas <- meas %>% dplyr::mutate(date=lubridate::floor_date(date,average_by))
   date_grid <- meas %>% dplyr::group_by_at(group_by_cols) %>%
     dplyr::summarize(date_min=min(date), date_max = max(date)) %>%
-    dplyr::mutate(date=purrr::map2(date_min, date_max, ~seq(.x, .y, by=average_by))) %>%
+    dplyr::mutate(date=purrr::map2(date_min, date_max, ~seq(.x, .y, by=average_by) %>% trunc(units=average_by))) %>%
     dplyr::select(-c(date_min, date_max)) %>%
     tidyr::unnest(cols=c(date))
 
