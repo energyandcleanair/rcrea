@@ -29,7 +29,7 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
           labs(
             title=paste("Air pollutant concentrations in",country_name),
             subtitle="30-day running average",
-            caption=paste("Source: CREA based on", sources[[source]]))
+            caption=paste("Source: CREA based on ", sources[[source]],"."))
       )
 
       for(size in names(width)){
