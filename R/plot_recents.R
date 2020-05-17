@@ -29,14 +29,14 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
             scale_color_brewer(palette="Spectral") + theme(legend.position="right") +
             labs(
               title=paste("Air pollutant concentrations in",country_name),
-              subtitle=if(is.null(running)) NULL else {paste0(running,"-day running average")},
+              subtitle=if(running==0) NULL else {paste0(running,"-day running average")},
               caption=paste("Source: CREA based on ", sources[[source]],". Updated on",format(Sys.Date(), format="%d %B %Y")))
         )
 
         for(size in names(width)){
 
           # Full version
-          ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_full",running,"_",size,".png")),
+          ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_full",ifelse(running==0,"",running),"_",size,".png")),
                  width=width[[size]], height=height[[size]],
                  plot=plt_dl +
                    scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
