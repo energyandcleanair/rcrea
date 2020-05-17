@@ -1,6 +1,7 @@
 
 plot_recents <- function(folder, source, countries=NULL, polls=NULL){
 
+  runnings <- c(NULL, 14, 30)
   width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
@@ -16,41 +17,41 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
   meas[meas$unit=='mg/m3',]$unit <- "µg/m3"
 
   for(country_ in countries){
+    for(running in runnings){
+      tryCatch({
+        country_name <- countrycode::countrycode(country_, origin="iso2c", destination = "country.name")
 
-    tryCatch({
-      country_name <- countrycode::countrycode(country_, origin="iso2c", destination = "country.name")
+        # Getting standard plot
+        plt <- rcrea::plot_measurements(meas%>% dplyr::filter(region_id==country_), running_width=running, color_by = 'year', subplot_by = c("poll"))
 
-      # Getting standard plot
-      plt <- rcrea::plot_measurements(meas%>% dplyr::filter(region_id==country_), running_width=30, color_by = 'year', subplot_by = c("poll"))
+        # Prettying it
+        (plt_dl <- directlabels::direct.label(plt + theme_classic(),method = list(directlabels::dl.trans(y = y + .1), "top.bumptwice")) + theme_crea() + scale_size_manual(values=c(1), guide=F) +
+            scale_color_brewer(palette="Spectral") + theme(legend.position="right") +
+            labs(
+              title=paste("Air pollutant concentrations in",country_name),
+              subtitle=ifelse(isnull(running),NULL,paste0(running,"-day running average")),
+              caption=paste("Source: CREA based on ", sources[[source]],"."))
+        )
 
-      # Prettying it
-      (plt_dl <- directlabels::direct.label(plt + theme_classic(),method = list(directlabels::dl.trans(y = y + .1), "top.bumptwice")) + theme_crea() + scale_size_manual(values=c(1), guide=F) +
-          scale_color_brewer(palette="Spectral") + theme(legend.position="right") +
-          labs(
-            title=paste("Air pollutant concentrations in",country_name),
-            subtitle="30-day running average",
-            caption=paste("Source: CREA based on ", sources[[source]],"."))
-      )
+        for(size in names(width)){
 
-      for(size in names(width)){
+          # Full version
+          ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_full",running,"_",size,".png")),
+                 width=width[[size]], height=height[[size]],
+                 plot=plt_dl +
+                   scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
 
-        # Full version
-        ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_full30_",size,".png")),
-               width=width[[size]], height=height[[size]],
-               plot=plt_dl +
-                 scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
+          # Version cut at current month end
+          cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
+          ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_cut",running,"_",size,".png")),
+                 width=width[[size]], height=height[[size]],
+                 plot=plt_dl + scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))) +
+                   scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
 
-        # Version cut at current month end
-        cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
-        ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_cut30_",size,".png")),
-               width=width[[size]], height=height[[size]],
-               plot=plt_dl + scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))) +
-                 scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
-
-      }
-    }, error=function(err){
-      warning(paste("Failed for country",country_,"-",err))
-    })
-
+        }
+      }, error=function(err){
+        warning(paste("Failed for country",country_,"-",err))
+      })
+    }
   }
 }
