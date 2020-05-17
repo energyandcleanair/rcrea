@@ -204,10 +204,12 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   meas <- meas %>% dplyr::group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = mean(value))
 
   # Make date axis homogeneous i.e. a row for every day / month / year
-  # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
-  dates <- seq(min(meas$date), max(meas$date), by=paste(average_by)) %>% trunc(units=average_by)
-  group_by_uniques <- unique(meas[,group_by_cols])
-  df_placeholder <- merge(group_by_uniques, data.frame(date=dates), by=NULL)
+  df_placeholder <- meas %>%
+    dplyr::group_by_at(group_by_cols) %>%
+    dplyr::select(c(group_by_cols, "date")) %>%
+    dplyr::summarize(date=list(seq(min(date), max(date), by=paste(average_by)) %>%
+                                 trunc(units=average_by))) %>%
+    tidyr::unnest(cols=c(date))
   # df_placeholder <- transform(df_placeholder, date_str=format(date, "%Y-%m-%d"))
 
   # meas <- transform(meas, date_str=format(date, "%Y-%m-%d"))
