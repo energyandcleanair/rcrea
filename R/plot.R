@@ -236,7 +236,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   # Remove year for time series to overlap
   if('year' %in% color_by){
     meas <- meas %>% dplyr::mutate(year=factor(lubridate::year(date)))
-    meas <- meas %>% dplyr::mutate(year=reorder(year, dplyr::desc(year)))
+    # meas <- meas %>% dplyr::mutate(year=reorder(year, dplyr::desc(year)))
     lubridate::year(meas$date) <- 0
   }
 
@@ -319,7 +319,7 @@ plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city'
   # Take mean over relevant grouping (at least city, date and pollutant)
   group_by_cols <- union(c('city', 'poll'), subplot_by)
   excs <- dplyr::mutate(excs, date=lubridate::floor_date(date, average_by))
-  excs <- excs %>% group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = n(), status=max(status))
+  excs <- excs %>% group_by_at(all_of(union(group_by_cols, 'date')))  %>% dplyr::summarise(value = n(), status=max(status))
 
   # Make date axis homogeneous i.e. a row for every day / month / year
   # https://stackoverflow.com/questions/14821064/line-break-when-no-data-in-ggplot2
