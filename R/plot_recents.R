@@ -1,7 +1,7 @@
 
 plot_recents <- function(folder, source, countries=NULL, polls=NULL){
 
-  runnings <- c(NULL, 14, 30)
+  runnings <- c(0, 14, 30)
   width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
@@ -29,7 +29,7 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
             scale_color_brewer(palette="Spectral") + theme(legend.position="right") +
             labs(
               title=paste("Air pollutant concentrations in",country_name),
-              subtitle=ifelse(is.null(running),NULL,paste0(running,"-day running average")),
+              subtitle=ifelse(running==0, NULL, paste0(running,"-day running average")),
               caption=paste("Source: CREA based on ", sources[[source]],". Updated on",format(Sys.Date(), format="%d %B %Y")))
         )
 
@@ -43,7 +43,7 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
 
           # Version cut at current month end
           cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
-          ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_cut",running,"_",size,".png")),
+          ggsave(file.path(folder, paste0(tolower(country_),"_",source,"_cut",ifelse(running==0,NULL,running),"_",size,".png")),
                  width=width[[size]], height=height[[size]],
                  plot=plt_dl + scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))) +
                    scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))

@@ -217,7 +217,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   meas <- merge(meas, df_placeholder, all=TRUE)
 
   # Apply running average if need be
-  if(is.null(running_width) || (running_width==1)){
+  if(is.null(running_width) || (running_width<=1)){
     meas <- dplyr::arrange(meas, date) %>% dplyr::filter(!is.na(value))
   }else{
     meas <- meas %>% utils.rolling_average(average_by=average_by,
