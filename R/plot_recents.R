@@ -26,7 +26,7 @@ plot_recents <- function(folder, source, countries=NULL, polls=NULL){
 
         # Prettying it
         (plt_dl <- directlabels::direct.label(plt + theme_classic(),method = list(directlabels::dl.trans(y = y + .1), "top.bumptwice")) + theme_crea() + scale_size_manual(values=c(1), guide=F) +
-            scale_color_brewer(palette="Spectral") + theme(legend.position="right") +
+            scale_color_brewer(limits=factor(seq(2020,min(2017,min(lubridate::year(meas$date))))), palette="Spectral") + theme(legend.position="right") +
             labs(
               title=paste("Air pollutant concentrations in",country_name),
               subtitle=if(running==0) NULL else {paste0(running,"-day running average")},
