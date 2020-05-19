@@ -157,6 +157,8 @@ plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by
 
 plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=NULL, color_by='region_id', average_by='day', subplot_by=NULL, type='ts'){
 
+  poll_ <- tolower(poll)
+
   # Testing the charts make sense (i.e. not averaging different pollutants)
   if(is.null(poll) && (!'poll' %in% color_by) && (!'poll' %in% subplot_by)){
     stop("You need to specify pollutant to display")
@@ -180,9 +182,12 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
 
   # Select pollutants
-  if(!is.null(poll)){
-    meas = meas[meas$poll == poll, ]
-  }
+  meas <- switch(toString(length(poll_)),
+                   "0" = meas, # NULL
+                   "1" = meas %>% dplyr::filter(poll==poll_),
+                    meas %>% dplyr::filter(poll %in% poll_)
+  )
+
 
   # Capitalize pollutants for display
   meas$poll <- toupper(meas$poll)
