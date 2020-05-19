@@ -37,7 +37,10 @@ processes <- function(con=NULL){
                       period = "period")
 }
 
-locations <- function(country=NULL, city=NULL, id=NULL,
+locations <- function(country=NULL,
+                      city=NULL,
+                      id=NULL,
+                      source=NULL,
                       collect=TRUE,
                       keep_only_for_dashboard=F,
                       with_geometry=TRUE,
@@ -53,6 +56,7 @@ locations <- function(country=NULL, city=NULL, id=NULL,
   # Variable names must be different to column names
   country_ <- tolower(country)
   city_ <- tolower(city)
+  source_ <- tolower(source)
   id_ <- id
 
   # Connecting
@@ -70,6 +74,12 @@ locations <- function(country=NULL, city=NULL, id=NULL,
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(tolower(city) == city_), # Single city name
                    result %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
+  )
+
+  result <- switch(toString(length(source_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(source) == source_),
+                   result %>% dplyr::filter(tolower(source) %in% source_)
   )
 
   result <- switch(toString(length(id_)),
@@ -196,6 +206,7 @@ measurements <- function(country=NULL,
                     id=location_id,
                     with_meta=T,
                     collect=F,
+                    source=source,
                     con = con) %>%
     dplyr::rename(location_id=id, location=name)
 

@@ -62,6 +62,9 @@ test_that("query return locations", {
   locs_delhi_china <- locations(country='CN', city='Delhi')
   expect_equal(nrow(locs_delhi_china), 0)
 
+  locs_delhi_cpcb <- locations(city='Delhi', source='cpcb', with_meta = T)
+  expect_equal(unique(locs_delhi_cpcb$source), 'cpcb')
+
 })
 
 test_that("query return targets", {
