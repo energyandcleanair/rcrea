@@ -145,6 +145,7 @@ measurements <- function(country=NULL,
                          collect=TRUE,
                          user_filter=NULL,
                          with_metadata=FALSE,
+                         with_geometry=FALSE,
                          aggregate_level='city',
                          con=NULL) {
 
@@ -189,13 +190,17 @@ measurements <- function(country=NULL,
   value_cols <- c("date","poll","unit","region_id","process_id","source","timezone","value")
   meta_cols <- if(with_metadata){
     switch(aggregate_level,
-           "station" = c("region_name", "geometry"),
-           "city" = c("region_name", "geometry"),
-           "gadm1" = c("region_name", 'geometry'),
-           "gadm2" = c("region_name", 'geometry','gid_1', 'name_1'),
-           "country" = c("region_name", 'geometry'),
-           c("region_name", "geometry"))
+           "station" = c("region_name","country"),
+           "city" = c("region_name","country"),
+           "gadm1" = c("region_name","country"),
+           "gadm2" = c("region_name","country",'gid_1', 'name_1'),
+           "country" = c("region_name","country"),
+           c("region_name","country"))
   }else{c()}
+
+  if(with_geometry){
+    meta_cols <- c(meta_cols, "geometry")
+  }
 
   # ----------------------
   # Perform actions
@@ -213,10 +218,10 @@ measurements <- function(country=NULL,
   # Group locations by aggregation_level
   locs_group_by <- switch(aggregate_level,
                           "station" = NULL,
-                          "city" = c("country", "city"),
-                          "gadm1" = c("country", "gid_1", "name_1"),
-                          "gadm2" = c("country", "gid_1", "name_1", "gid_2", "name_2"),
-                          "country" = c("country"),
+                          "city" = c("country", "city","source"),
+                          "gadm1" = c("country", "gid_1", "name_1","source"),
+                          "gadm2" = c("country", "gid_1", "name_1", "gid_2", "name_2","source"),
+                          "country" = c("country","source"),
                           NULL
                           )
 
@@ -250,7 +255,8 @@ measurements <- function(country=NULL,
   result <- tbl_safe(con, "measurements_new")
   result <- result %>%
     dplyr::mutate(region_id=tolower(region_id)) %>%
-    dplyr::right_join(locs %>% dplyr::mutate(region_id=tolower(region_id)), by="region_id", suffix = c("_remove", ""))
+    dplyr::right_join(locs %>% dplyr::mutate(region_id=tolower(region_id)),
+                      by=c("region_id","source"), suffix = c("_remove", ""))
 
   # R package uses 'poll' whilst db is using 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)

@@ -170,8 +170,8 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
     warning("location information missing. Run measurements query with keep_location_id=T")
   }
 
-  if(!is.null(subplot_by) && !(subplot_by %in% c("region_id","poll"))){
-    stop("subplot_by can only be 'NULL', 'region_id' or 'poll'")
+  if(!is.null(subplot_by) && !(subplot_by %in% c("region_id","region_name","poll"))){
+    stop("subplot_by can only be 'NULL', 'region_name', 'region_id' or 'poll'")
   }
 
   if(!is.null(color_by) && !(color_by %in% c("region_id","year"))){
@@ -289,7 +289,7 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
   if(!is.null(subplot_by) && (type=='ts')){
     facets <- ifelse(length(units)==1, subplot_by, c(subplot_by,'unit'))
-    plt <- plt + facet_wrap(facets, scales = ifelse(subplot_by=='region_id','fixed','free'))
+    plt <- plt + facet_wrap(facets, scales = ifelse(subplot_by %in% c('region_id','region_name'),'fixed','free'))
 
     if(is.null(color_by) || (color_by==subplot_by)){
       plt <- plt + theme(legend.position = "none")
