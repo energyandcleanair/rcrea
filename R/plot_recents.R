@@ -1,7 +1,7 @@
 
-plot_recents <- function(folder, source, countries=NULL, city=NULL, aggregate_level="country", polls=NULL, subplot_by="poll", subfile_by="country"){
+plot_recents <- function(folder, source, countries=NULL, city=NULL, aggregate_level="country", polls=NULL, subplot_by="poll", subfile_by="country",  runnings=c(0, 7, 14, 30)){
 
-  runnings <- c(0, 7, 14, 30)
+
   width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
@@ -10,7 +10,7 @@ plot_recents <- function(folder, source, countries=NULL, city=NULL, aggregate_le
                   "earthengine"="Sentinel-5P TROPOMI OFFL NO2",
                   "cpcb"="Central Pollution Control Board")
 
-  meas <- measurements(country=countries, city=city, poll=polls, aggregate_level=aggregate_level, source=source, with_metadata = T)
+  meas <- rcrea::measurements(country=countries, city=city, poll=polls, aggregate_level=aggregate_level, source=source, with_metadata = T)
 
   subfiles <- switch(subfile_by,
                      "country"=unique(meas$country),
@@ -42,7 +42,7 @@ plot_recents <- function(folder, source, countries=NULL, city=NULL, aggregate_le
 
 
         # Getting standard plot
-        plt <- rcrea::plot_measurements(filtered_meas,
+        plt <- plot_measurements(filtered_meas,
                                         poll=polls,
                                         running_width=running,
                                         color_by = 'year',
