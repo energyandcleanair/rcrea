@@ -112,12 +112,7 @@ server <- function(input, output, session) {
 
     output$selectInputCity <- renderUI({
         req(input$country)
-        filtered_locations <- switch(input$source,
-                                     "cpcb"= locations %>% dplyr::filter(source %in% c("cpcb-api","cpcb-archive")),
-                                     "eea"= locations %>% dplyr::filter(source==input$source),
-                                     "earthengine"= locations %>% dplyr::filter(source==input$source),
-                                     "openaq"= locations %>% dplyr::filter(source=="openaq"),
-                                     locations)
+        filtered_locations <- locations %>% dplyr::filter(source==input$source)
 
         choices = c(wholecountry_name, (filtered_locations %>%
                                             dplyr::filter(country==input$country))$city)
