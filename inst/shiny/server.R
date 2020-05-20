@@ -101,13 +101,7 @@ server <- function(input, output, session) {
 
     output$selectInputCountry <- renderUI({
         req(input$source)
-        filtered_locations <- switch(input$source,
-                            "cpcb"= locations %>% dplyr::filter(source %in% c("cpcb-api","cpcb-archive")),
-                            "eea"= locations %>% dplyr::filter(source==input$source),
-                            "earthengine"= locations %>% dplyr::filter(source==input$source),
-                            "openaq"= locations %>% dplyr::filter(source=="openaq"),
-                            locations)
-
+        filtered_locations <- locations %>% dplyr::filter(source==input$source)
         countries <- unique(filtered_locations$country)
         countries <- countries[!is.na(countries)]
         names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
