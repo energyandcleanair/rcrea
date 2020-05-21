@@ -126,8 +126,7 @@ locations <- function(country=NULL,
 #' @param with_metadata T/F Whether to add additional information columnes (e.g. city, country, location name, geometry). If True, query takes significantly more time
 #' @param user_filter Additional filtering function for measurements applied before time aggregation
 #' @param aggregate_at_city_level T/F Whether or not to keep measurements at the station level (otherwise, aggregate at city level)
-#' @param add_noaa_station_ids T/F Whether or not to add an array of noaa_station_ids located within @param noaa_station_radius_km
-#'
+#' @param deweathered If NULL, ignored. If T, only deweathered measurements. If F, only non deweather measurements
 #' @return a tibble (locally collected or not) of measurements matching search criteria.
 #' @export
 #'
@@ -147,6 +146,7 @@ measurements <- function(country=NULL,
                          with_metadata=FALSE,
                          with_geometry=FALSE,
                          aggregate_level='city',
+                         deweathered=F,
                          con=NULL) {
 
 
@@ -180,6 +180,12 @@ measurements <- function(country=NULL,
   procs <- processes(con) %>%
     dplyr::filter(region_type==aggregate_level,
                   average_by==period)
+
+  if(!is.null(deweathered)){
+    procs <- procs %>% dplyr::filter(
+      (is.null(deweather) & !deweathered) |
+        (!is.null(deweather) & deweathered))
+  }
 
   if(nrow(procs %>% dplyr::collect())==0){
     stop("No pre-processing found corresponding to required data.")
@@ -223,7 +229,7 @@ measurements <- function(country=NULL,
                           "gadm2" = c("country", "gid_1", "name_1", "gid_2", "name_2","source"),
                           "country" = c("country","source"),
                           NULL
-                          )
+  )
 
   region_id_col <- switch(aggregate_level,
                           "station" = "location_id",
@@ -234,16 +240,16 @@ measurements <- function(country=NULL,
   )
 
   region_name_col <- switch(aggregate_level,
-                          "station" = "location",
-                          "city" = "city",
-                          "gadm1" = "name_1",
-                          "gadm2" = "name_2",
-                          "country" = "country")
+                            "station" = "location",
+                            "city" = "city",
+                            "gadm1" = "name_1",
+                            "gadm2" = "name_2",
+                            "country" = "country")
 
   if(!is.null(locs_group_by)){
     locs <- locs %>% dplyr::group_by_at(locs_group_by) %>%
-                         dplyr::summarise(geometry=ST_Union(geometry),
-                                          timezone= sql("mode() within group (order by timezone)")) %>%
+      dplyr::summarise(geometry=ST_Union(geometry),
+                       timezone= sql("mode() within group (order by timezone)")) %>%
       dplyr::ungroup()
   }
 

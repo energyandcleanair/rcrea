@@ -2,11 +2,11 @@
 db_writing <- function(){
   # Create one
   load_dot_env(file = ".env")
-  db_url <- Sys.getenv("CREA_DB_UR2L")
+  db_url <- Sys.getenv("CREA_DB_URL")
   if(db_url==""){
     stop("Missing database url. Please define CREA_DB_URL in your environment")
   }
-  db <- dbxConnect(url=Sys.getenv("CREA_DB_URL"))
+  db <- dbx::dbxConnect(url=Sys.getenv("CREA_DB_URL"))
   return(db)
 }
 
@@ -32,14 +32,14 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather)
                   agg_spatial==agg_spatial,
                   agg_temp==agg_temp,
                   deweather==deweather) %>%
-    select(id, filter, agg_spatial, agg_temp, deweather)
+    dplyr::select(id, filter, agg_spatial, agg_temp, deweather)
 
   if(nrow(p)==0){
     db <- db_writing()
     id = paste0("process_",format(Sys.time(), "%Y%m%d_%H%M%S"))
     p <- tibble(id=id,filter=filter,agg_spatial=agg_spatial,agg_temp=agg_temp,deweather=deweather)
-    dbxUpsert(db, "processes", p ,where_cols=c('id'))
-    dbxDisconnect(db)
+    dbx::dbxUpsert(db, "processes", p ,where_cols=c('id'))
+    dbx::dbxDisconnect(db)
     return(id)
   }else if(nrow(p)==1){
     return(p$id[1])
@@ -69,13 +69,13 @@ upsert_meas <- function(meas){
 
   db <- db_writing()
   tryCatch({
-    dbxUpsert(db, "measurements_new", meas %>% select(required_cols),
+    dbx::dbxUpsert(db, "measurements_new", meas %>% dplyr::select(all_of(required_cols)),
               where_cols=c('date', 'pollutant', 'unit', 'process_id', 'region_id', 'source'))
   }, error=function(err){
-    dbxDisconnect(db)
+    dbx::dbxDisconnect(db)
     stop(paste("Upserting failed:",err))
   })
-  dbxDisconnect(db)
+  dbx::dbxDisconnect(db)
 }
 
 
