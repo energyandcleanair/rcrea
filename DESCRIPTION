@@ -37,7 +37,9 @@ Imports:
     ggthemes,
     scales,
     tibble,
-    directlabels
+    directlabels,
+    dbx,
+    urltools
 Depends:
     ggplot2
 Suggests: 
