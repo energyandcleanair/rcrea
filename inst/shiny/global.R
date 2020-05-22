@@ -26,4 +26,4 @@ exc_status_breaks <- c(-Inf, 0, 0.5, 0.999, Inf)
 exc_status_labels <- c("Not breached","Less than halfway through","More than halfway through", "Breached")
 exc_status_colours <- c("#1a964128","#a6d96a28","#fdae6128", "#d7191c28")
 
-processes <- rcrea::processes() %>% collect()
+processes <- rcrea::processes() %>% dplyr::collect()
