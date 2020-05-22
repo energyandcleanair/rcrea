@@ -170,6 +170,7 @@ measurements <- function(country=NULL,
   source_ <- tolower(source)
   city_ <- tolower(city)
   country_ <- tolower(country)
+  location_id_ <- tolower(location_id)
 
   # Connecting
   con = if(!is.null(con)) con else connection()
@@ -231,10 +232,10 @@ measurements <- function(country=NULL,
   # Filtering by region_id (can be location_ids or gids...)
   # https://github.com/tidyverse/dbplyr/issues/296
   if(!is.null(location_id)){
-    quo <- switch(toString(length(location_id)),
+    quo <- switch(toString(length(location_id_)),
                   "0" = locs, # NULL
-                  "1" = dplyr:::apply_filter_syms(any_vars(lower(.) == location_id), syms(loc_id_col)),
-                  quo <- dplyr:::apply_filter_syms(any_vars(lower(.) %in% location_id), syms(loc_id_col))
+                  "1" = dplyr:::apply_filter_syms(any_vars(lower(.) == location_id_), syms(loc_id_col)),
+                  quo <- dplyr:::apply_filter_syms(any_vars(lower(.) %in% location_id_), syms(loc_id_col))
     )
     if(!is.null(quo)){
       locs <- locs %>% dplyr::filter(!!dbplyr::partial_eval(quo, loc_id_col))
