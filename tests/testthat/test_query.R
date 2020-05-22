@@ -83,6 +83,38 @@ test_that("query return targets", {
 
 })
 
+
+test_that("gadm queries return measurements from several sources", {
+
+  gadm1_id <- tolower("BEL.1_1")
+  m_eea <- measurements(location_id=gadm1_id,source='eea',aggregate_level = 'gadm1', date_from="2020-05-01")
+  m_openaq <- measurements(location_id=gadm1_id,source='openaq',aggregate_level = 'gadm1', date_from="2020-05-01")
+  m_both <- measurements(location_id=gadm1_id,aggregate_level = 'gadm1', date_from="2020-05-01")
+
+  expect_gt(nrow(m_eea),0)
+  expect_gt(nrow(m_openaq),0)
+  expect_equal(nrow(m_both),nrow(m_eea)+nrow(m_openaq))
+
+  expect_equal(m_eea %>% distinct(region_id) %>% pull(), gadm1_id)
+  expect_equal(m_openaq %>% distinct(region_id) %>% pull(), gadm1_id)
+  expect_equal(m_eea %>% distinct(source) %>% pull(), "eea")
+  expect_equal(m_openaq %>% distinct(source) %>% pull(), "openaq")
+
+  gadm2_id <- tolower("FIN.4.4_1")
+  m_eea <- measurements(location_id=gadm2_id,source='eea',aggregate_level = 'gadm2', date_from="2020-01-01")
+  m_openaq <- measurements(location_id=gadm2_id,source='openaq',aggregate_level = 'gadm2', date_from="2020-01-01")
+  m_both <- measurements(location_id=gadm2_id,aggregate_level = 'gadm2', date_from="2020-01-01")
+
+  expect_gt(nrow(m_eea),0)
+  expect_gt(nrow(m_openaq),0)
+  expect_equal(nrow(m_both),nrow(m_eea)+nrow(m_openaq))
+
+  expect_equal(m_eea %>% distinct(region_id) %>% pull(), gadm2_id)
+  expect_equal(m_openaq %>% distinct(region_id) %>% pull(), gadm2_id)
+  expect_equal(m_eea %>% distinct(source) %>% pull(), "eea")
+  expect_equal(m_openaq %>% distinct(source) %>% pull(), "openaq")
+})
+
 test_that("query return measurements", {
 
   browser() # For debug

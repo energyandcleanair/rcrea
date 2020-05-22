@@ -212,12 +212,15 @@ measurements <- function(country=NULL,
   # Perform actions
   #-----------------------
   # Prepare locations
+  #Not filtering anymore here, but in measurements instead. To use GADM stations
+  locs_source <- if(aggregate_level %in% c("gadm1","gadm2")){NULL}else{source_}
+
   locs <- locations(country=country,
                     city=city,
                     id=location_id,
                     with_meta=T,
                     collect=F,
-                    source=source,
+                    source= locs_source,
                     con = con) %>%
     dplyr::rename(location_id=id, location=name)
 
@@ -259,10 +262,17 @@ measurements <- function(country=NULL,
 
   # Take measurements at these locations
   result <- tbl_safe(con, "measurements_new")
+  result <- switch(toString(length(source_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
+                   result %>% dplyr::filter(tolower(source) %in% source_) # Vector
+  )
+
+
   result <- result %>%
     dplyr::mutate(region_id=tolower(region_id)) %>%
-    dplyr::right_join(locs %>% dplyr::mutate(region_id=tolower(region_id)),
-                      by=c("region_id","source"), suffix = c("_remove", ""))
+    dplyr::right_join(locs %>% dplyr::mutate(region_id=tolower(region_id)) %>% select(-c(source)),
+                      by=c("region_id"), suffix = c("_remove", ""))
 
   # R package uses 'poll' whilst db is using 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)
