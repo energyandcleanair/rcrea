@@ -229,6 +229,7 @@ measurements <- function(country=NULL,
   )
 
   # Filtering by region_id (can be location_ids or gids...)
+  # https://github.com/tidyverse/dbplyr/issues/296
   if(!is.null(location_id)){
     quo <- switch(toString(length(location_id)),
                   "0" = locs, # NULL
