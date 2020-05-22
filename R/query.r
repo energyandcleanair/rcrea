@@ -57,7 +57,7 @@ locations <- function(country=NULL,
   country_ <- tolower(country)
   city_ <- tolower(city)
   source_ <- tolower(source)
-  id_ <- id
+  id_ <- tolower(id)
 
   # Connecting
   con = if(!is.null(con)) con else connection()
@@ -84,8 +84,8 @@ locations <- function(country=NULL,
 
   result <- switch(toString(length(id_)),
                    "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(id == id_), # Single station id
-                   result %>% dplyr::filter(id %in% id_) # Vector of station ids
+                   "1" = result %>% dplyr::filter(tolower(id) == id_), # Single station id
+                   result %>% dplyr::filter(tolower(id) %in% id_) # Vector of station ids
   )
 
   if(keep_only_for_dashboard){
@@ -212,17 +212,34 @@ measurements <- function(country=NULL,
   # Perform actions
   #-----------------------
   # Prepare locations
-  #Not filtering anymore here, but in measurements instead. To use GADM stations
-  locs_source <- if(aggregate_level %in% c("gadm1","gadm2")){NULL}else{source_}
-
   locs <- locations(country=country,
                     city=city,
-                    id=location_id,
                     with_meta=T,
                     collect=F,
-                    source= locs_source,
+                    source= source_,
                     con = con) %>%
     dplyr::rename(location_id=id, location=name)
+
+  loc_id_col <- region_id_col <- switch(aggregate_level,
+                                        "station" = "id",
+                                        "city" = "city",
+                                        "gadm1" = "gid_1",
+                                        "gadm2" = "gid_2",
+                                        "country" = "country"
+  )
+
+  # Filtering by region_id (can be location_ids or gids...)
+  if(!is.null(location_id)){
+    quo <- switch(toString(length(location_id)),
+                  "0" = locs, # NULL
+                  "1" = dplyr:::apply_filter_syms(any_vars(lower(.) == location_id), syms(loc_id_col)),
+                  quo <- dplyr:::apply_filter_syms(any_vars(lower(.) %in% location_id), syms(loc_id_col))
+    )
+    if(!is.null(quo)){
+      locs <- locs %>% dplyr::filter(!!dbplyr::partial_eval(quo, loc_id_col))
+    }
+  }
+
 
   # Group locations by aggregation_level
   locs_group_by <- switch(aggregate_level,
@@ -268,11 +285,10 @@ measurements <- function(country=NULL,
                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
   )
 
-
   result <- result %>%
     dplyr::mutate(region_id=tolower(region_id)) %>%
-    dplyr::right_join(locs %>% dplyr::mutate(region_id=tolower(region_id)) %>% select(-c(source)),
-                      by=c("region_id"), suffix = c("_remove", ""))
+    dplyr::right_join(locs %>% dplyr::mutate(region_id=tolower(region_id)),
+                      by=c("region_id","source"), suffix = c("_remove", ""))
 
   # R package uses 'poll' whilst db is using 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)

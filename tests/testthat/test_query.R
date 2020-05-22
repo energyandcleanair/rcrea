@@ -83,6 +83,19 @@ test_that("query return targets", {
 
 })
 
+test_that("gadm queries don't return duplicate", {
+
+  m2 <- measurements(location_id=c(NA, NA),
+                      aggregate_level="gadm2",
+                      date_from="2020-01-01",
+                      source='eea',
+                      poll=rcrea::NO2)
+
+  n_duplicate <- m2 %>% group_by(date, region_id, process_id, source, timezone, poll, unit) %>%
+    filter(n()>1) %>% nrow()
+
+  expect_equal(n_duplicate, 0)
+})
 
 test_that("gadm queries return measurements from several sources", {
 
