@@ -28,7 +28,8 @@ ui <- fluidPage(
                     selectInput("poll",
                                 "Pollutant:",
                                 choices = polls,
-                                selected = rcrea::PM25
+                                selected = rcrea::PM25,
+                                multiple = T
                     ),
                     selectInput("averaging",
                                 "Time averaging:",
@@ -50,7 +51,7 @@ ui <- fluidPage(
                     ),
                     conditionalPanel( condition = "input.plot_type=='ts'",
                                       checkboxInput("overlayCities", "Overlay cities", value=FALSE)),
-
+                    uiOutput("selectInputProcess"),
                     uiOutput("selectInputTarget"),
                     uiOutput("selectInputScale"),
                     downloadButton("download_csv", "Download (.csv)"),

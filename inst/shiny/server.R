@@ -16,8 +16,6 @@ server <- function(input, output, session) {
 
         # To trigger refresh
         input$meas_refresh
-
-
         source <- isolate(input$source)
         country <- isolate(input$country)
         city <- isolate(input$city)
@@ -28,7 +26,7 @@ server <- function(input, output, session) {
 
         print("Fetching measurements")
 
-        if(city == wholecountry_name){
+        if(all(city == wholecountry_name)){
             city = NULL
             aggregate_level='country'
         }else{
@@ -39,7 +37,7 @@ server <- function(input, output, session) {
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level, source=source, with_metadata = F)
+        rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level, source=source, with_metadata = F, deweathered=NULL)
     })
 
     targets <- reactive({
@@ -127,6 +125,13 @@ server <- function(input, output, session) {
         selectInput("scale", "Applicable scales:", multiple=T, choices = scales()$name)
     })
 
+    output$selectInputProcess <- renderUI({
+        require(meas())
+        process_ids <- unique(meas()$process_id)
+        choices = process_ids
+        selectInput("process", "Processing:", multiple=F, choices = choices)
+    })
+
 
     output$meas_plot <- renderPlot({
 
@@ -144,6 +149,7 @@ server <- function(input, output, session) {
         scales <- input$scale
         targets <- input$target
         plot_type <- input$plot_type
+        process_ <- input$process
 
         req(poll, averaging, plot_type, city, months, source_)
 
@@ -160,12 +166,21 @@ server <- function(input, output, session) {
                             "heatmap_w_text" = NULL)
 
         subplot_by <-  switch(plot_type,
-                            "ts" = switch(input$overlayCities+1, "region_id", NULL),
-                            "ts_year" = "region_id",
+                            "ts" = switch(input$overlayCities+1,
+                                          c(if(length(poll)>1) "poll" else NULL,
+                                            if(length(city)>1) "region_id" else NULL),
+                                          , NULL),
+                            "ts_year" = c(if(length(poll)>1) "poll" else NULL,
+                                          if(length(city)>1) "region_id" else NULL),
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
-        meas_plot_data <- meas() %>% dplyr::filter(lubridate::month(date)>=months[1], lubridate::month(date)<=months[2]) %>% dplyr::filter(source==source_)
+
+
+        meas_plot_data <- meas() %>% dplyr::filter(lubridate::month(date)>=months[1],
+                                                   lubridate::month(date)<=months[2],
+                                                   source==source_,
+                                                   process_id==process_)
 
         meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
 
@@ -333,7 +348,7 @@ server <- function(input, output, session) {
 
         # Get measurements
         rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, source=source, with_metadata = F) %>%
-            dplyr::select(region_id, date, poll, unit, source, timezone) %>%
+            dplyr::select(region_id, date, poll, unit, source, timezone, process_id) %>%
             dplyr::arrange(desc(date))
     })
 

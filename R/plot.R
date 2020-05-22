@@ -100,7 +100,7 @@ plot_measurements_count <- function(meas, poll=NULL, running_days=NULL, color_by
 
   # Select pollutants
   if(!is.null(poll)){
-    meas = meas[meas$poll == poll, ]
+    meas = meas[meas$poll %in% poll, ]
   }
 
   # Take mean over relevant grouping (at least city, date and pollutant)
@@ -189,8 +189,10 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
   )
 
 
-  # Capitalize pollutants for display
+  # Capitalize pollutants and regions for display
   meas$poll <- toupper(meas$poll)
+  meas$region_id <- tools::toTitleCase(meas$region_id)
+
 
   # Deprecated argument(s)
   if(exists('running_days') && !is.null(running_days)){
@@ -293,8 +295,14 @@ plot_measurements <-function(meas, poll=NULL, running_width=NULL, running_days=N
 
 
   if(!is.null(subplot_by) && (type=='ts')){
-    facets <- ifelse(length(units)==1, subplot_by, c(subplot_by,'unit'))
-    plt <- plt + facet_wrap(facets, scales = ifelse(subplot_by %in% c('region_id','region_name'),'fixed','free'))
+    facets <- if(length(units)==1){subplot_by}else{c(subplot_by,'unit')}
+    scales = ifelse(all(subplot_by %in% c("region_id","region_name")),'fixed','free')
+    plt <- switch(as.character(length(facets)),
+                        "2"= plt + facet_grid(paste0(facets[1]," ~ ",facets[2]), scales=scales),
+                        "3"= plt + facet_grid(paste0(facets[1]," ~ ",paste(facets[2:3],sep="+")), scales=scales),
+                  plt + facet_wrap(facets, scales=scales)
+    )
+
 
     if(is.null(color_by) || (color_by==subplot_by)){
       plt <- plt + theme(legend.position = "none")
@@ -311,7 +319,7 @@ plot_exceedances <-function(excs, poll=NULL, average_by='day', subplot_by='city'
 
   # Select pollutants
   if(!is.null(poll)){
-    excs = excs[excs$poll == poll, ]
+    excs = excs[excs$poll %in% poll, ]
   }
 
   # Add status: 0: no violation, 100: violation reached threshold
