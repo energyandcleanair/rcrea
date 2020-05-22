@@ -231,7 +231,7 @@ measurements <- function(country=NULL,
 
   # Filtering by region_id (can be location_ids or gids...)
   # https://github.com/tidyverse/dbplyr/issues/296
-  if(!is.null(location_id)){
+  if(!is.null(location_id_) & length(location_id_)>0){
     quo <- switch(toString(length(location_id_)),
                   "0" = locs, # NULL
                   "1" = dplyr:::apply_filter_syms(any_vars(lower(.) == location_id_), syms(loc_id_col)),
