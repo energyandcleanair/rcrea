@@ -200,7 +200,8 @@ server <- function(input, output, session) {
                             "ts" = switch(input$overlayCities+1,
                                           c(if(length(poll)>1) "poll" else NULL,
                                             if(length(region)>1) "region_id" else NULL),
-                                          , NULL),
+                                          if(length(poll)>1) "poll" else NULL
+                                          ),
                             "ts_year" = c(if(length(poll)>1) "poll" else NULL,
                                           if(length(region)>1) "region_id" else NULL),
                             "heatmap" = NULL,
