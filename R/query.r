@@ -32,7 +32,8 @@ processes <- function(con=NULL){
     utils.unnest_json("filter",
                       filter_type = "type") %>%
     utils.unnest_json("agg_spatial",
-                      region_type = "region_type") %>%
+                      region_type = "region_type",
+                      weighting = "weighting") %>%
     utils.unnest_json("agg_temp",
                       period = "period")
 }
@@ -147,6 +148,7 @@ measurements <- function(country=NULL,
                          with_geometry=FALSE,
                          aggregate_level='city',
                          deweathered=F,
+                         population_weighted=F,
                          con=NULL) {
 
 
@@ -187,6 +189,15 @@ measurements <- function(country=NULL,
       (is.null(deweather) & !deweathered) |
         (!is.null(deweather) & deweathered))
   }
+
+  if(!is.null(population_weighted)){
+    procs <- procs %>% dplyr::filter(
+      (is.null(weighting) & !population_weighted) |
+        (!is.null(weighting) & population_weighted))
+  }
+
+  procs %>% dplyr::filter("\"weighting\": \"gpw\"" %in% agg_spatial) %>% dplyr::select(agg_spatial)
+
 
   if(nrow(procs %>% dplyr::collect())==0){
     stop("No pre-processing found corresponding to required data.")
@@ -233,9 +244,9 @@ measurements <- function(country=NULL,
   # https://github.com/tidyverse/dbplyr/issues/296
   if(!is.null(location_id_) & length(location_id_)>0){
     quo <- switch(toString(length(location_id_)),
-                  "0" = locs, # NULL
-                  "1" = dplyr:::apply_filter_syms(any_vars(lower(.) == location_id_), syms(loc_id_col)),
-                  quo <- dplyr:::apply_filter_syms(any_vars(lower(.) %in% location_id_), syms(loc_id_col))
+                  "0" = NULL,
+                  "1" = dplyr:::apply_filter_syms(dplyr::any_vars(lower(.) == location_id_), syms(loc_id_col)),
+                  quo <- dplyr:::apply_filter_syms(dplyr::any_vars(lower(.) %in% location_id_), syms(loc_id_col))
     )
     if(!is.null(quo)){
       locs <- locs %>% dplyr::filter(!!dbplyr::partial_eval(quo, loc_id_col))
