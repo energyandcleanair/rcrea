@@ -5,7 +5,7 @@ library(shinycssloaders)
 library(countrycode)
 
 locations <- rcrea::locations(keep_only_for_dashboard=T, with_meta=T, with_geometry=F, collect=F) %>%
-  dplyr::distinct(city, country, source) %>% dplyr::collect()
+  dplyr::distinct(city, gid_1, name_1, gid_2, name_2, country, source) %>% dplyr::collect()
 countries <- unique(locations$country)
 countries <- countries[!is.na(countries)]
 names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
@@ -13,7 +13,7 @@ countries <- countries[!is.na(names(countries))]
 
 wholecountry_name <- '--- Whole Country ---'
 standards <- rcrea::standards(collect=T)
-sources <- c("cpcb", "openaq", "eea", "earthengine")
+sources <- c("cpcb", "openaq", "eea", "earthengine", "mee")
 polls <- c(rcrea::PM25, rcrea::PM10, rcrea::NO2, rcrea::O3, rcrea::SO2, rcrea::CO)
 averagings <- c("hour", "day")
 

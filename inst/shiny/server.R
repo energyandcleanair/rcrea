@@ -12,32 +12,63 @@ server <- function(input, output, session) {
 
     # Tab 1 -----------------------------------------------------
     # Reactive Values ---------------------------------------
+
+    region_choices <- reactive({
+        req(input$source)
+        req(input$regionLevel)
+        req(input$country)
+
+        filtered_locations <- locations %>% dplyr::filter(source==input$source)
+        region_name_col <- switch(input$regionLevel,
+                                  "city"="city",
+                                  "gadm2"="name_2",
+                                  "gadm1"="name_1")
+        region_id_col <- switch(input$regionLevel,
+                                "city"="city",
+                                "gadm2"="gid_2",
+                                "gadm1"="gid_1")
+
+        l <- filtered_locations %>%
+            dplyr::filter(country==input$country) %>%
+            dplyr::filter_at(c(region_name_col, region_id_col), ~ !is.na(.)) %>%
+            dplyr::distinct_at(c(region_id_col, region_name_col))
+
+        choices = c(wholecountry_name,
+                    l %>% dplyr::pull(region_id_col))
+
+        choices=setNames(choices,
+                         c(wholecountry_name,
+                           l %>% dplyr::pull(region_name_col)))
+        choices
+    })
+
     meas <- reactive({
 
         # To trigger refresh
         input$meas_refresh
         source <- isolate(input$source)
         country <- isolate(input$country)
-        city <- isolate(input$city)
+        region <- isolate(input$region)
+        region_level <- isolate(input$regionLevel)
         poll <- isolate(input$poll)
         averaging <-  isolate(input$averaging)
         years <- isolate(input$years)
-        req(country, city, poll, averaging, years)
+        req(country, region, poll, averaging, years)
 
         print("Fetching measurements")
 
-        if(all(city == wholecountry_name)){
-            city = NULL
+        if(all(region == wholecountry_name)){
+            region = NULL
             aggregate_level='country'
         }else{
-            aggregate_level='city'
+            aggregate_level=region_level
         }
 
         date_from <- lubridate::ymd(years[1]*10000+101)
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level, source=source, with_metadata = F, deweathered=NULL)
+        rcrea::measurements(country=country, location_id=region, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level, source=source, with_metadata = F, deweathered=NULL)
     })
 
     targets <- reactive({
@@ -46,7 +77,7 @@ server <- function(input, output, session) {
         meas()
 
         country <- isolate(input$country)
-        city <- isolate(input$city)
+        city <- isolate(input$region)
         poll <- isolate(input$poll)
         req(country, city, poll)
 
@@ -108,13 +139,10 @@ server <- function(input, output, session) {
         selectInput("country", "Country:", multiple=T, choices = countries)
     })
 
-    output$selectInputCity <- renderUI({
+    output$selectInputRegion <- renderUI({
         req(input$country)
-        filtered_locations <- locations %>% dplyr::filter(source==input$source)
-
-        choices = c(wholecountry_name, (filtered_locations %>%
-                                            dplyr::filter(country==input$country))$city)
-        selectInput("city", "City/Region:", multiple=T, choices = choices)
+        req(input$regionLevel)
+        selectInput("region", "City/Region:", multiple=T, choices = region_choices())
     })
 
     output$selectInputTarget <- renderUI({
@@ -140,8 +168,11 @@ server <- function(input, output, session) {
 
         poll <- isolate(input$poll)
         averaging <- isolate(input$averaging)
-        city <- isolate(input$city)
+        region <- isolate(input$region)
         source_ <- isolate(input$source)
+        region_choices_ <- isolate(region_choices())
+
+
 
         # Plotting parameteres
         months <- input$months
@@ -151,7 +182,7 @@ server <- function(input, output, session) {
         plot_type <- input$plot_type
         process_ <- input$process
 
-        req(poll, averaging, plot_type, city, months, source_)
+        req(poll, averaging, plot_type, region, months, source_)
 
         type <- switch(plot_type,
                "ts" = "ts",
@@ -168,10 +199,10 @@ server <- function(input, output, session) {
         subplot_by <-  switch(plot_type,
                             "ts" = switch(input$overlayCities+1,
                                           c(if(length(poll)>1) "poll" else NULL,
-                                            if(length(city)>1) "region_id" else NULL),
+                                            if(length(region)>1) "region_id" else NULL),
                                           , NULL),
                             "ts_year" = c(if(length(poll)>1) "poll" else NULL,
-                                          if(length(city)>1) "region_id" else NULL),
+                                          if(length(region)>1) "region_id" else NULL),
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
@@ -181,6 +212,12 @@ server <- function(input, output, session) {
                                                    lubridate::month(date)<=months[2],
                                                    source==source_,
                                                    process_id==process_)
+
+        # Replace region ids with region name
+        if(all(region!=wholecountry_name)){
+            id_to_name <- setNames(names(region_choices_),tolower(unname(region_choices_)))
+            meas_plot_data <- meas_plot_data %>% dplyr::mutate(region_id=id_to_name[region_id])
+        }
 
         meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
 
@@ -197,7 +234,7 @@ server <- function(input, output, session) {
         if(!is.null(targets)){
             for (i_target in 1:length(target)){
                 target <- targets() %>% dplyr::filter(short_name == targets[i_target])
-                target_line <- rcrea::partial_plot_target(poll=poll, target=target, country=country, city=city, location_id=NULL,
+                target_line <- rcrea::partial_plot_target(poll=poll, target=target, country=country, city=region, location_id=NULL,
                                                            average_by=averaging,
                                                            date_from = min(meas()$date), date_to = max(meas()$date),
                                                            type=type, color_by=color_by)
