@@ -22,23 +22,21 @@ server <- function(input, output, session) {
         region_name_col <- switch(input$regionLevel,
                                   "city"="city",
                                   "gadm2"="name_2",
-                                  "gadm1"="name_1")
+                                  "gadm1"="name_1",
+                                  "country"="country_name")
         region_id_col <- switch(input$regionLevel,
                                 "city"="city",
                                 "gadm2"="gid_2",
-                                "gadm1"="gid_1")
+                                "gadm1"="gid_1",
+                                "country"="country")
 
         l <- filtered_locations %>%
             dplyr::filter(country==input$country) %>%
             dplyr::filter_at(c(region_name_col, region_id_col), ~ !is.na(.)) %>%
             dplyr::distinct_at(c(region_id_col, region_name_col))
 
-        choices = c(wholecountry_name,
-                    l %>% dplyr::pull(region_id_col))
-
-        choices=setNames(choices,
-                         c(wholecountry_name,
-                           l %>% dplyr::pull(region_name_col)))
+        choices = l %>% dplyr::pull(region_id_col)
+        choices=setNames(choices, l %>% dplyr::pull(region_name_col))
         choices
     })
 
@@ -68,7 +66,7 @@ server <- function(input, output, session) {
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        rcrea::measurements(country=country, location_id=region, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level, source=source, with_metadata = F, deweathered=NULL)
+        rcrea::measurements(country=country, location_id=region, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level, source=source, with_metadata = F, deweathered=NULL, population_weighted = NULL)
     })
 
     targets <- reactive({
@@ -215,10 +213,8 @@ server <- function(input, output, session) {
                                                    process_id==process_)
 
         # Replace region ids with region name
-        if(all(region!=wholecountry_name)){
-            id_to_name <- setNames(names(region_choices_),tolower(unname(region_choices_)))
-            meas_plot_data <- meas_plot_data %>% dplyr::mutate(region_id=id_to_name[region_id])
-        }
+        id_to_name <- setNames(names(region_choices_),tolower(unname(region_choices_)))
+        meas_plot_data <- meas_plot_data %>% dplyr::mutate(region_id=id_to_name[region_id])
 
         meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
 

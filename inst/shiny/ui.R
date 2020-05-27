@@ -21,7 +21,7 @@ ui <- fluidPage(
                     uiOutput("selectInputCountry"),
                     selectInput("regionLevel",
                                 "Region Level:",
-                                choices = list("city"="city","county"="gadm2","state/province"="gadm1"),
+                                choices = list("city"="city","county"="gadm2","state/province"="gadm1","country"="country"),
                                 multiple=F,
                                 selected = "city"
                     ),
@@ -40,7 +40,7 @@ ui <- fluidPage(
                     sliderInput("years", "Year", min=2015, max=2020, value=c(2018, 2020), step=1, sep = "", ticks = F
                     ),
                     actionButton("meas_refresh", "Refresh Measurements"),
-                    h4("Display Options"),
+                    h4("Display options"),
                     sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=1, step=1, sep = ""
                     ),
                     sliderInput("months", "Month", min=1, max=12, value=c(1, 12), step=1, sep = "", ticks = F

@@ -94,7 +94,7 @@ locations <- function(country=NULL,
   }
 
   # Keeping only interesting columns
-  cols <- c("id", "name", "city", "country", "gid_1", "name_1", "gid_2", "name_2")
+  cols <- c("id", "name", "city", "country", "country_name", "gid_1", "name_1", "gid_2", "name_2")
   cols <- if(with_geometry)  c(cols, "geometry") else cols
   cols <- if(with_meta) c(cols, 'timezone', "last_scraped_data", "source", "last_updated") else cols
 
