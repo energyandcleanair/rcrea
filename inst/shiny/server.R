@@ -153,7 +153,8 @@ server <- function(input, output, session) {
 
     output$selectInputProcess <- renderUI({
         require(meas())
-        process_ids <- unique(meas()$process_id)
+        #TODO find a better way to select non-deweather / non-population-weighted by default
+        process_ids <- sort(unique(meas()$process_id))
         choices = process_ids
         selectInput("process", "Processing:", multiple=F, choices = choices)
     })
