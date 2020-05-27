@@ -141,6 +141,7 @@ measurements <- function(country=NULL,
                          date_from='2015-01-01',
                          date_to=NULL,
                          source=NULL,
+                         best_source_only=F,
                          average_by='day',
                          collect=TRUE,
                          user_filter=NULL,
@@ -152,6 +153,7 @@ measurements <- function(country=NULL,
                          con=NULL) {
 
 
+  # Check input
   # Accept both NA and NULL
   location_id <- if(!is.null(location_id) && is.na(location_id)) NULL else location_id
   city <- if(!is.null(city) && length(city)==1 && is.na(city)) NULL else city
@@ -164,6 +166,12 @@ measurements <- function(country=NULL,
   if(!aggregate_level %in% c('station','city','gadm1','gadm2','country')){
     stop("'aggregate_level' should be either 'location/station','city','gadm1','gadm2' or 'country'")
   }
+
+  if(!is.null(source) & best_source_only){
+    warning("Cannot select both a source and set best_source_only=T. Overwriting with best_source_only=F")
+    best_source_only=F
+  }
+
   # If location_id specified, we have to keep it
   # aggregate_at_city_level <- aggregate_at_city_level & is.null(location_id)
 
@@ -219,6 +227,7 @@ measurements <- function(country=NULL,
   if(with_geometry){
     meta_cols <- c(meta_cols, "geometry")
   }
+
 
   # ----------------------
   # Perform actions
@@ -290,6 +299,18 @@ measurements <- function(country=NULL,
     dplyr::mutate_at(region_id_col, .funs = list(region_id = ~(.))) %>%
     dplyr::mutate_at(region_name_col, .funs = list(region_name = ~(.)))
 
+  # Use best source if asked
+  # EEA is best for Europe
+  # CPCB is best for India
+  # MEE is best for China
+  # OpenAQ for the rest
+  if(!length(source_) & best_source_only){
+    locs <- locs %>%
+      dplyr::mutate(source_ranking=switch(source,"eea"=1,"mee"=1,"cpcb"=1,"openaq"=2, 3)) %>%
+      dplyr::group_by(region_id) %>%
+      dplyr::filter(source_ranking==min(source_ranking, na.rm=T))
+  }
+
   # Take measurements at these locations
   result <- tbl_safe(con, "measurements_new")
   result <- switch(toString(length(source_)),
@@ -331,6 +352,13 @@ measurements <- function(country=NULL,
                    "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
   )
+
+
+
+
+
+
+
 
   if(!is.null(user_filter)){
     result <- user_filter(result)
