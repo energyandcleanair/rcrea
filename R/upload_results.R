@@ -24,7 +24,7 @@ db_writing <- function(){
 #' @return id (string) of the process found or created
 #' @export
 #'
-retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather){
+retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather, prefix_if_not_exists='process_'){
 
   # Check existing process
   p=processes() %>% collect() %>%
@@ -36,7 +36,7 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather)
 
   if(nrow(p)==0){
     db <- db_writing()
-    id = paste0("process_",format(Sys.time(), "%Y%m%d_%H%M%S"))
+    id = paste0(prefix_if_not_exists, format(Sys.time(), "%Y%m%d_%H%M%S"))
     p <- tibble(id=id,filter=filter,agg_spatial=agg_spatial,agg_temp=agg_temp,deweather=deweather)
     dbx::dbxUpsert(db, "processes", p ,where_cols=c('id'))
     dbx::dbxDisconnect(db)
