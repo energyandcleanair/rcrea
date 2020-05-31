@@ -159,8 +159,12 @@ server <- function(input, output, session) {
 
     output$selectInputProcess <- renderUI({
         require(meas())
-        #TODO find a better way to select non-deweather / non-population-weighted by default
-        process_ids <- sort(unique(meas()$process_id))
+        #Select non-deweather / non-population-weighted by default: putting them first
+        process_ids <- meas() %>%
+            dplyr::distinct(process_id) %>%
+            dplyr::left_join(processes, by=c("process_id"="id")) %>%
+            dplyr::arrange(!is.na(deweather), !is.na(weighting)) %>%
+            dplyr::pull(process_id)
         choices = process_ids
         value = ifelse(length(process_ids)>0, process_ids[1], NULL)
         selectInput("process", "Processing:", multiple=T, choices = choices, selected = value)
