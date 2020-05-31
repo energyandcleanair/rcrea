@@ -36,7 +36,7 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
 
   if(nrow(p)==0){
     db <- db_writing()
-    id = if(!is.null(preferred_name),
+    id = ifelse(!is.null(preferred_name),
             preferred_name,
             paste0('Process_', format(Sys.time(), "%Y%m%d_%H%M%S")))
     p <- tibble(id=id,filter=filter,agg_spatial=agg_spatial,agg_temp=agg_temp,deweather=deweather)
