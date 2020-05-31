@@ -140,7 +140,13 @@ server <- function(input, output, session) {
     output$selectInputRegion <- renderUI({
         req(input$country)
         req(input$regionLevel)
-        selectInput("region", "City/Region:", multiple=T, choices = region_choices())
+        pickerInput("region",
+                    input$regionLevel,
+                    choices = region_choices(),
+                    options = list(`actions-box` = TRUE,
+                                   `selected-text-format` = "count > 3"),
+                    multiple = T)
+        # selectInput("region", "City/Region:", multiple=T, choices = region_choices())
     })
 
     output$selectInputTarget <- renderUI({
@@ -156,7 +162,8 @@ server <- function(input, output, session) {
         #TODO find a better way to select non-deweather / non-population-weighted by default
         process_ids <- sort(unique(meas()$process_id))
         choices = process_ids
-        selectInput("process", "Processing:", multiple=F, choices = choices)
+        value = ifelse(length(process_ids)>0, process_ids[1], NULL)
+        selectInput("process", "Processing:", multiple=T, choices = choices, selected = value)
     })
 
 
@@ -170,8 +177,6 @@ server <- function(input, output, session) {
         region <- isolate(input$region)
         source_ <- isolate(input$source)
         region_choices_ <- isolate(region_choices())
-
-
 
         # Plotting parameteres
         months <- input$months
@@ -211,13 +216,14 @@ server <- function(input, output, session) {
         meas_plot_data <- meas() %>% dplyr::filter(lubridate::month(date)>=months[1],
                                                    lubridate::month(date)<=months[2],
                                                    source==source_,
-                                                   process_id==process_)
+                                                   process_id %in% process_)
 
         # Replace region ids with region name
         id_to_name <- setNames(names(region_choices_),tolower(unname(region_choices_)))
         meas_plot_data <- meas_plot_data %>% dplyr::mutate(region_id=id_to_name[region_id])
 
-        meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type)
+        meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
+                                       linetype_by=ifelse(length(process_)>1,"process_id",NA))
 
         if(plot_type=='ts_year'){
             month_date <- meas_plot_data$date
@@ -263,6 +269,40 @@ server <- function(input, output, session) {
 
         meas_plot
     })
+
+    output$processes_table <- DT::renderDataTable({
+        DT::datatable(data=processes %>%
+                          dplyr::filter(id %in% meas()$process_id),
+                      options = list(
+                          dom = 't',
+                          columnDefs = list(list(visible=FALSE, targets=c())),
+                          pageLength = 15,
+                          autoWidth = TRUE
+                          # ,
+                          # rowCallback = JS(
+                          #     "function(row, data) {",
+                          #     "var n_exc = data[3];",
+                          #     "var str_exc = n_exc < 1 ? (n_exc * 100).toFixed(0).toString() + '%' :  Math.floor(n_exc).toString() + ' times';",
+                          #     "$('td:eq(3)', row).html(str_exc);",
+                          #     "}"
+                          # )
+                          # callback = JS("var tips = ['tooltip1', 'tooltip2', 'tooltip3', 'tooltip4', 'tooltip5'],
+                          #             firstRow = $('#exc_status_table thead tr th');
+                          #             for (var i = 0; i < tips.length; i++) {
+                          #               $(firstRow[i]).attr('title', tips[i]);
+                          #             }")
+                      ),
+                      rownames = FALSE,
+        )
+        # %>%
+        #     formatDate(c(6), "toLocaleDateString") %>%
+        #     formatStyle(
+        #         'status',
+        #         target = 'row',
+        #         backgroundColor = styleEqual(exc_status_labels, exc_status_colours)
+        #     )
+    }
+    )
 
     # Tab 2 -----------------------------------------------------
 

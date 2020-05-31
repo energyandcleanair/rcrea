@@ -16,7 +16,7 @@ filter_sanity_daily <- function(result){
 filter_sanity_raw <- function(result){
   # Filters out measurements that are obviously wrong
   result <- result %>%
-    dplyr::filter(value >= 0) %>%
+    # dplyr::filter(value >= 0) %>%
     #dplyr::filter(!is.na(location_id)) %>%
     dplyr::filter(!is.na(date)) %>%
     dplyr::filter(!is.na(poll))  %>%
@@ -208,7 +208,7 @@ measurements <- function(country=NULL,
 
 
   if(nrow(procs %>% dplyr::collect())==0){
-    stop("No pre-processing found corresponding to required data.")
+    stop("No pre-processing found corresponding to required data. Are you at the right aggregation level (cities don't have population-weighted average) ?")
     #TODO implement calculation from raw in that case
     # return(NULL)
   }
@@ -352,11 +352,6 @@ measurements <- function(country=NULL,
                    "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
   )
-
-
-
-
-
 
 
 

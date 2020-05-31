@@ -96,8 +96,8 @@ test_that("gadm queries don't return duplicate", {
 
   expect_equal(n_duplicate, 0)
 
-  gadm1_id <- tolower("BEL.1_1")
-  m <- measurements(location_id=gadm1_id,aggregate_level = 'gadm1', date_from="2020-05-01")
+  gadm1_id <- tolower("GBR.3_1")
+  m <- measurements(location_id=gadm1_id, aggregate_level = 'gadm1', date_from="2020-03-28", date_to="2020-04-01")
   n_duplicate <- m %>% group_by(date, region_id, process_id, source, timezone, poll, unit) %>%
     filter(n()>1) %>% nrow()
 
@@ -106,8 +106,8 @@ test_that("gadm queries don't return duplicate", {
 
 test_that("gadm queries return measurements from several sources", {
 
-  gadm1_id <- tolower("BEL.1_1")
-  m_eea <- measurements(location_id=gadm1_id,source='eea',aggregate_level = 'gadm1', date_from="2020-05-01")
+  gadm1_id <- "BEL.1_1"
+  m_eea_1 <- measurements(location_id=gadm1_id,source='eea',aggregate_level = 'gadm1', date_from="2020-05-01")
   m_openaq <- measurements(location_id=gadm1_id,source='openaq',aggregate_level = 'gadm1', date_from="2020-05-01")
   m_both <- measurements(location_id=gadm1_id,aggregate_level = 'gadm1', date_from="2020-05-01")
 
@@ -120,7 +120,7 @@ test_that("gadm queries return measurements from several sources", {
   expect_equal(m_eea %>% distinct(source) %>% pull(), "eea")
   expect_equal(m_openaq %>% distinct(source) %>% pull(), "openaq")
 
-  gadm2_id <- tolower("FIN.4.4_1")
+  gadm2_id <- "FIN.4.4_1"
   m_eea <- measurements(location_id=gadm2_id,source='eea',aggregate_level = 'gadm2', date_from="2020-01-01")
   m_openaq <- measurements(location_id=gadm2_id,source='openaq',aggregate_level = 'gadm2', date_from="2020-01-01")
   m_both <- measurements(location_id=gadm2_id,aggregate_level = 'gadm2', date_from="2020-01-01")

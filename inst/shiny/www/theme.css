@@ -2729,7 +2729,14 @@ textarea.form-control {
   vertical-align: middle;
 }
 
-.btn {
+.btn.dropdown-toggle {
+  color: #333333;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 20px;
+    -webkit-font-smoothing: inherit;
+}
+.btn:not(.dropdown-toggle) {
   height: 30px;
   line-height: 22.5px;
   display: inline-block;

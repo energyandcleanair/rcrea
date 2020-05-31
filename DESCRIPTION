@@ -39,7 +39,8 @@ Imports:
     tibble,
     directlabels,
     dbx,
-    urltools
+    urltoolsm
+    RColorBrewer
 Depends:
     ggplot2
 Suggests: 

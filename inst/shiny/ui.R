@@ -62,7 +62,8 @@ ui <- fluidPage(
                 # Show a plot of the generated distribution
                 mainPanel(
                    width=10,
-                   plotOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1")
+                   plotOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1"),
+                   DT::dataTableOutput("processes_table")
                 )
             )
         ),

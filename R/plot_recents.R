@@ -8,7 +8,8 @@ plot_recents <- function(folder, source, countries=NULL, city=NULL, aggregate_le
   sources <- list("eea"="European Environment Agency",
                   "openaq"="OpenAQ",
                   "earthengine"="Sentinel-5P TROPOMI OFFL NO2",
-                  "cpcb"="Central Pollution Control Board")
+                  "cpcb"="Central Pollution Control Board",
+                  "mee"="Ministry of Ecology and Environment")
 
   meas <- rcrea::measurements(country=countries, city=city, poll=polls, aggregate_level=aggregate_level, source=source, with_metadata = T)
 
