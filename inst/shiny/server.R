@@ -276,7 +276,9 @@ server <- function(input, output, session) {
 
     output$processes_table <- DT::renderDataTable({
         DT::datatable(data=processes %>%
-                          dplyr::filter(id %in% meas()$process_id),
+                          dplyr::filter(id %in% meas()$process_id) %>%
+                          dplyr::select(id, "Filtering"=filter, "Spatial aggregation"=agg_spatial, "Temporal aggregation"=agg_temp, "Deweathering"=deweather)
+                      ,
                       options = list(
                           dom = 't',
                           columnDefs = list(list(visible=FALSE, targets=c())),
