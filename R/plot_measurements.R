@@ -105,7 +105,7 @@ plot_measurements <-function(meas,
   # Build plot
   if(!is.null(color_by) & !is.na(color_by)){
     plt_aes <- aes_string(x='date', y='value', color=color_by)
-    n_colors <- nrow(meas %>% ungroup() %>% dplyr::distinct_at(color_by))
+    n_colors <- nrow(meas %>% dplyr::ungroup() %>% dplyr::distinct_at(color_by))
   }else{
     plt_aes <- aes_string(x='date', y='value', color=shQuote("red"))
     n_colors <- 1
