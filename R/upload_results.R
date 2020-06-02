@@ -29,9 +29,9 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
   # Check existing process
   p=processes() %>% collect() %>%
     dplyr::filter(filter==filter,
-                  agg_spatial==agg_spatial,
-                  agg_temp==agg_temp,
-                  deweather==deweather) %>%
+                  agg_spatial==!!agg_spatial,
+                  agg_temp==!!agg_temp,
+                  deweather==!!deweather) %>%
     dplyr::select(id, filter, agg_spatial, agg_temp, deweather)
 
   if(nrow(p)==0){
