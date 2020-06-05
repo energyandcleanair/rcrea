@@ -103,7 +103,7 @@ plot_measurements <-function(meas,
   meas <- meas %>% dplyr::group_by(poll, unit) %>% dplyr::mutate(value_cat=cut_poll(poll, value))
 
   # Build plot
-  if(!is.null(color_by) & !is.na(color_by)){
+  if(!is.null(color_by) && !is.na(color_by)){
     plt_aes <- aes_string(x='date', y='value', color=color_by)
     n_colors <- nrow(meas %>% dplyr::ungroup() %>% dplyr::distinct_at(color_by))
   }else{
@@ -111,7 +111,7 @@ plot_measurements <-function(meas,
     n_colors <- 1
   }
 
-  if(!is.null(linetype_by) & !is.na(linetype_by)){
+  if(!is.null(linetype_by) && !is.na(linetype_by)){
     plt_aes$linetype <- aes_string(linetype=linetype_by)$linetype
   }
 

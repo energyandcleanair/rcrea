@@ -225,6 +225,7 @@ server <- function(input, output, session) {
         # Replace region ids with region name
         id_to_name <- setNames(names(region_choices_),tolower(unname(region_choices_)))
         meas_plot_data <- meas_plot_data %>% dplyr::mutate(region_id=id_to_name[region_id])
+        if(nrow(meas_plot_data)==0) return()
 
         meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
                                        linetype_by=ifelse(length(process_)>1,"process_id",NA))
