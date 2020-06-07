@@ -10,6 +10,26 @@ db_writing <- function(){
   return(db)
 }
 
+create_new_process_id <- function(preferred_id=NULL){
+  id_0 <- ifelse(!is.null(preferred_id),
+                 preferred_id,
+              paste0('process_', format(Sys.time(), "%Y%m%d_%H%M%S")))
+
+  existing_ids <- processes() %>%
+    dplyr::distinct(id) %>%
+    dplyr::collect() %>%
+    dplyr::pull(id)
+
+  id <- id_0
+  v <- 2
+  while(id %in% existing_ids){
+    id <- paste0(id_0,"_v",v)
+    v <- v+1
+  }
+  return(id)
+}
+
+
 #' Retrieve or create process in database
 #'
 #' After processing data, you may want to upload it in crea database. Yet you need
@@ -36,11 +56,9 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
 
   if(nrow(p)==0){
     db <- db_writing()
-    id = ifelse(!is.null(preferred_name),
-            preferred_name,
-            paste0('Process_', format(Sys.time(), "%Y%m%d_%H%M%S")))
+    id <- create_new_process_id(preferred_name)
     p <- tibble(id=id,filter=filter,agg_spatial=agg_spatial,agg_temp=agg_temp,deweather=deweather)
-    dbx::dbxUpsert(db, "processes", p ,where_cols=c('id'))
+    dbx::dbxInsert(db, "processes", p)
     dbx::dbxDisconnect(db)
     return(id)
   }else if(nrow(p)==1){
