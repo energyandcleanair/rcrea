@@ -141,6 +141,7 @@ measurements <- function(country=NULL,
                          date_from='2015-01-01',
                          date_to=NULL,
                          source=NULL,
+                         process_id=NULL,
                          best_source_only=F,
                          average_by='day',
                          collect=TRUE,
@@ -158,6 +159,7 @@ measurements <- function(country=NULL,
   location_id <- if(!is.null(location_id) && is.na(location_id)) NULL else location_id
   city <- if(!is.null(city) && length(city)==1 && is.na(city)) NULL else city
   country <- if(!is.null(country) && is.na(country)) NULL else country
+  process_id <- if(!is.null(process_id) && is.na(process_id)) NULL else process_id
 
   if(aggregate_level=="location"){
     aggregate_level <- "station"
@@ -172,6 +174,11 @@ measurements <- function(country=NULL,
     best_source_only=F
   }
 
+  if(!is.null(process_id) & !is.null(deweathered)){
+    warning("Deweathered parameter is ignored when process_id is specified")
+    deweathered <- NULL
+  }
+
   # If location_id specified, we have to keep it
   # aggregate_at_city_level <- aggregate_at_city_level & is.null(location_id)
 
@@ -181,6 +188,7 @@ measurements <- function(country=NULL,
   city_ <- tolower(city)
   country_ <- tolower(country)
   location_id_ <- tolower(location_id)
+  process_id_ <- process_id #Index of process_id is not lowered
 
   # Connecting
   con = if(!is.null(con)) con else connection()
@@ -351,6 +359,12 @@ measurements <- function(country=NULL,
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
+  )
+
+  result <- switch(toString(length(process_id_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(process_id == process_id_), # Single value
+                   result %>% dplyr::filter(process_id %in% process_id_) # Vector
   )
 
 

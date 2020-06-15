@@ -1,5 +1,17 @@
 
-plot_recents <- function(folder, source, countries=NULL, city=NULL, aggregate_level="country", polls=NULL, subplot_by="poll", subfile_by="country",  runnings=c(0, 7, 14, 30)){
+plot_recents <- function(
+  folder,
+  source,
+  countries=NULL,
+  city=NULL,
+  process_id=NULL,
+  aggregate_level="country",
+  polls=NULL,
+  subplot_by="poll",
+  subfile_by="country",
+  runnings=c(0, 7, 14, 30),
+  add_lockdown=F
+  ){
 
 
   width <- list("s"=8,"m"=12,"l"=16)
@@ -11,7 +23,13 @@ plot_recents <- function(folder, source, countries=NULL, city=NULL, aggregate_le
                   "cpcb"="Central Pollution Control Board",
                   "mee"="Ministry of Ecology and Environment")
 
-  meas <- rcrea::measurements(country=countries, city=city, poll=polls, aggregate_level=aggregate_level, source=source, with_metadata = T)
+  meas <- rcrea::measurements(country=countries,
+                              city=city,
+                              poll=polls,
+                              aggregate_level=aggregate_level,
+                              process_id=process_id,
+                              source=source,
+                              with_metadata = T)
 
   subfiles <- switch(subfile_by,
                      "country"=unique(meas$country),
@@ -50,7 +68,11 @@ plot_recents <- function(folder, source, countries=NULL, city=NULL, aggregate_le
                                         subplot_by = subplot_by)
 
         # Prettying it
-        (plt_dl <- directlabels::direct.label(plt + theme_classic(),method = list(directlabels::dl.trans(y = y + .1), "top.bumptwice")) + theme_crea() + scale_size_manual(values=c(1), guide=F) +
+        (plt_dl <- directlabels::direct.label(plt + theme_classic(),
+                                              method = list(directlabels::dl.trans(y = y + .1),
+                                                            "top.bumptwice")) +
+            theme_crea() +
+            scale_size_manual(values=c(1), guide=F) +
             scale_color_brewer(limits=factor(seq(2020,min(2017,min(lubridate::year(meas$date))))), palette="Spectral") +
             theme(legend.position="right") +
             labs(
