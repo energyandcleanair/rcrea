@@ -376,9 +376,15 @@ measurements <- function(country=NULL,
   # Whether to collect the query i.e. actually run the query
   if(collect){
     result <- result %>% dplyr::select(all_of(c(value_cols, meta_cols))) %>% dplyr::collect()
+
+    if(with_geometry){
+      result <- result %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
+    }
+
     # Localize time
     # We can't use purrr:map since it won't deal with datetime objects
     # hence the rowwise
+
     if(nrow(result)>0){
       result <- result %>% dplyr::rowwise() %>% tidyr::replace_na(list('timezone'='UTC')) %>%
         dplyr::mutate(date=lubridate::force_tz(date,tzone=timezone))
