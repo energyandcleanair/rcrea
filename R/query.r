@@ -249,8 +249,9 @@ measurements <- function(country=NULL,
                     con = con) %>%
     dplyr::rename(location_id=id, location=name)
 
+
   loc_id_col <- region_id_col <- switch(aggregate_level,
-                                        "station" = "id",
+                                        "station" = "location_id",
                                         "city" = "city",
                                         "gadm1" = "gid_1",
                                         "gadm2" = "gid_2",
