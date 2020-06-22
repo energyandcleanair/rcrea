@@ -67,10 +67,16 @@ utils.yoy <- function(meas, mode="absolute"){
   return(res)
 }
 
-utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg, group_by_cols, min_values=NULL){
+utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg,
+                                  group_by_cols=NULL,
+                                  min_values=NULL){
 
   if(average_width==0){
     return(meas)
+  }
+
+  if(is.null(group_by_cols)){
+    group_by_cols <- setdiff(colnames(meas), c(vars_to_avg, "date"))
   }
 
   meas <- meas %>% dplyr::mutate(date=lubridate::floor_date(date,average_by))
