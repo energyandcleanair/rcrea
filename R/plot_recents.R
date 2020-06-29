@@ -45,11 +45,6 @@ plot_recents <- function(
                   "cpcb"="Central Pollution Control Board",
                   "mee"="Ministry of Ecology and Environment")
 
-  subfiles <- switch(subfile_by,
-                     "country"=unique(meas$country),
-                     "city"=unique(meas$region_name),
-                     "gadm1"=unique(meas$region_id),
-                     "poll"=unique(meas$poll))
 
   if(is.null(meas_raw)){
     meas_raw <- rcrea::measurements(country=country,
@@ -64,6 +59,12 @@ plot_recents <- function(
   meas <- meas_raw
   meas[meas$unit=='mg/m3',]$value <- meas[meas$unit=='mg/m3',]$value*1000
   meas[meas$unit=='mg/m3',]$unit <- "µg/m3"
+
+  subfiles <- switch(subfile_by,
+                     "country"=unique(meas$country),
+                     "city"=unique(meas$region_name),
+                     "gadm1"=unique(meas$region_id),
+                     "poll"=unique(meas$poll))
 
   for(subfile in subfiles){
     for(running in running_days){
