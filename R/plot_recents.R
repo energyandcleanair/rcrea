@@ -1,17 +1,39 @@
 
+
+#' Plotting manager: main interface to plot measur
+#'
+#' @param folder
+#' @param source
+#' @param countries
+#' @param city
+#' @param process_id
+#' @param aggregate_level
+#' @param polls
+#' @param subplot_by
+#' @param subfile_by
+#' @param runnings
+#' @param add_lockdown
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plot_recents <- function(
-  folder,
-  source,
-  countries=NULL,
+  source=NULL,
+  meas_raw=NULL,
+  folder=NULL,
+  poll=NULL,
+  aggregate_level="country",
+  country=NULL,
   city=NULL,
   process_id=NULL,
-  aggregate_level="country",
-  polls=NULL,
+  running_days=c(0, 7, 14, 30),
+  color_by='region_id',
   subplot_by="poll",
   subfile_by="country",
-  runnings=c(0, 7, 14, 30),
-  add_lockdown=F
-  ){
+
+  add_lockdown=F,
+  size=c("s","m","l")){
 
 
   width <- list("s"=8,"m"=12,"l"=16)
@@ -23,20 +45,23 @@ plot_recents <- function(
                   "cpcb"="Central Pollution Control Board",
                   "mee"="Ministry of Ecology and Environment")
 
-  meas <- rcrea::measurements(country=countries,
-                              city=city,
-                              poll=polls,
-                              aggregate_level=aggregate_level,
-                              process_id=process_id,
-                              source=source,
-                              with_metadata = T)
-
   subfiles <- switch(subfile_by,
                      "country"=unique(meas$country),
                      "city"=unique(meas$region_name),
                      "gadm1"=unique(meas$region_id),
                      "poll"=unique(meas$poll))
 
+  if(is.null(meas_raw)){
+    meas_raw <- rcrea::measurements(country=country,
+                                city=city,
+                                poll=poll,
+                                aggregate_level=aggregate_level,
+                                process_id=process_id,
+                                source=source,
+                                with_metadata = T)
+  }
+
+  meas <- meas_raw
   meas[meas$unit=='mg/m3',]$value <- meas[meas$unit=='mg/m3',]$value*1000
   meas[meas$unit=='mg/m3',]$unit <- "µg/m3"
 
@@ -45,10 +70,10 @@ plot_recents <- function(
       tryCatch({
 
         region_name <- switch(subfile_by,
-                           "country"= countrycode::countrycode(subfile, origin="iso2c", destination = "country.name"),
-                           "city"=subfile,
-                           "gadm1"=subfile
-                           )
+                              "country"= countrycode::countrycode(subfile, origin="iso2c", destination = "country.name"),
+                              "city"=subfile,
+                              "gadm1"=subfile
+        )
 
         filtered_meas <- switch(subfile_by,
                                 "country"= meas%>% dplyr::filter(country==subfile),
@@ -62,10 +87,10 @@ plot_recents <- function(
 
         # Getting standard plot
         plt <- plot_measurements(filtered_meas,
-                                        poll=polls,
-                                        running_width=running,
-                                        color_by = 'year',
-                                        subplot_by = subplot_by)
+                                 poll=polls,
+                                 running_width=running,
+                                 color_by = 'year',
+                                 subplot_by = subplot_by)
 
         # Prettying it
         (plt_dl <- directlabels::direct.label(plt + theme_classic(),
@@ -111,3 +136,29 @@ plot_recents <- function(
     }
   }
 }
+
+
+plot_meas_observation <- function(meas_raw, running_width){
+
+
+
+}
+
+plot_meas_trend <- function(meas_raw, running_width){
+
+
+
+}
+
+plot_meas_anomaly <- function(meas_raw, running_width){
+
+
+
+}
+
+
+
+
+
+
+
