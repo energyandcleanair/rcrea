@@ -88,7 +88,7 @@ plot_recents <- function(
 
         # Getting standard plot
         plt <- plot_measurements(filtered_meas,
-                                 poll=polls,
+                                 poll=poll,
                                  running_width=running,
                                  color_by = 'year',
                                  subplot_by = subplot_by)
