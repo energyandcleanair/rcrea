@@ -1,6 +1,6 @@
 
 
-#' Plotting manager: main interface to plot measur
+#' Plotting
 #'
 #' @param folder
 #' @param source
@@ -11,7 +11,7 @@
 #' @param polls
 #' @param subplot_by
 #' @param subfile_by
-#' @param runnings
+#' @param running_days
 #' @param add_lockdown
 #'
 #' @return
@@ -66,7 +66,7 @@ plot_recents <- function(
   meas[meas$unit=='mg/m3',]$unit <- "µg/m3"
 
   for(subfile in subfiles){
-    for(running in runnings){
+    for(running in running_days){
       tryCatch({
 
         region_name <- switch(subfile_by,
