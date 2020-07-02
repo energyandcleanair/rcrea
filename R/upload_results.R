@@ -47,7 +47,7 @@ create_new_process_id <- function(preferred_id=NULL){
 retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather, preferred_name=NULL){
 
   # Check existing process
-  p=processes() %>% collect() %>%
+  p=processes() %>% dplyr::collect() %>%
     dplyr::filter(filter==filter,
                   agg_spatial==!!agg_spatial,
                   agg_temp==!!agg_temp,
