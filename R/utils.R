@@ -67,7 +67,10 @@ utils.yoy <- function(meas, mode="absolute"){
   return(res)
 }
 
-utils.rolling_average <- function(meas, average_by, average_width, vars_to_avg,
+utils.rolling_average <- function(meas,
+                                  average_by,
+                                  average_width,
+                                  vars_to_avg,
                                   group_by_cols=NULL,
                                   min_values=NULL){
 

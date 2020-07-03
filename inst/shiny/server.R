@@ -195,12 +195,16 @@ server <- function(input, output, session) {
         type <- switch(plot_type,
                "ts" = "ts",
                "ts_year" = "ts",
+               "yoy" = "yoy",
+               "yoy_year" = "yoy",
                "heatmap" = "heatmap",
                "heatmap_w_text" = "heatmap_w_text")
 
         color_by <-  switch(plot_type,
                             "ts" = switch(input$overlayCities+1, NULL, "region_id"),
+                            "yoy" = switch(input$overlayCities+1, NULL, "region_id"),
                             "ts_year" = "year",
+                            "yoy_year" = "year",
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
@@ -210,7 +214,14 @@ server <- function(input, output, session) {
                                             if(length(region)>1) "region_id" else NULL),
                                           if(length(poll)>1) "poll" else NULL
                                           ),
+                            "yoy" = switch(input$overlayCities+1,
+                                          c(if(length(poll)>1) "poll" else NULL,
+                                            if(length(region)>1) "region_id" else NULL),
+                                          if(length(poll)>1) "poll" else NULL
+                            ),
                             "ts_year" = c(if(length(poll)>1) "poll" else NULL,
+                                          if(length(region)>1) "region_id" else NULL),
+                            "yoy_year" = c(if(length(poll)>1) "poll" else NULL,
                                           if(length(region)>1) "region_id" else NULL),
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
@@ -230,7 +241,7 @@ server <- function(input, output, session) {
         meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
                                        linetype_by=ifelse(length(process_)>1,"process_id",NA))
 
-        if(plot_type=='ts_year'){
+        if(plot_type %in% c('ts_year','yoy_year')){
             month_date <- meas_plot_data$date
             lubridate::year(month_date) <- 0
             meas_plot <- meas_plot + scale_x_datetime(limits=c(min(month_date),max(month_date)),
@@ -255,12 +266,12 @@ server <- function(input, output, session) {
         }
 
         # Adding scale colours if any and if timeseries
-        if(type=='ts'){
+        if(type %in% c('ts','yoy')){
             if(!is.null(scales)){
                 for (i_scale in 1:length(scales)){
                     scale <- scales() %>% dplyr::filter(name == scales[i_scale]) %>% dplyr::filter(poll == poll)
 
-                    if(plot_type=='ts_year'){
+                    if(plot_type %in% c('ts_year','yoy_year')){
                         date_from <- as.POSIXct("0000-01-01")
                         date_to <- as.POSIXct("0001-01-01")
                     }else{

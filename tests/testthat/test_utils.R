@@ -7,7 +7,7 @@ test_that("y-o-y", {
                lubridate::date("2019-12-31"),
                by="days")
 
-  df <- tibble(value=c(values, values*2), date=dates)
+  df <- tibble::tibble(value=c(values, values*2), date=dates)
 
   # Shuffle it
   df <- df[sample(nrow(df)),]
@@ -24,9 +24,9 @@ test_that("y-o-y", {
   expect_true(is.na(df_yoy$value[df_yoy$date=="2019-06-01"]))
 
   # Test relative y-o-y
-  df <- tibble(value=c(values, values*2), date=dates)
-  df_yoy$value[is.na(df_yoy$value)] <- -999
+  df <- tibble::tibble(value=c(values, values*2), date=dates)
   df_yoy <- utils.yoy(df, mode="relative") %>% dplyr::arrange(date)
+  df_yoy$value[is.na(df_yoy$value)] <- -999
   expect_true(all(df_yoy$value == c(rep(-999, 365), rep(1, 365))))
 
   # Test y-o-y NA when no value
@@ -43,7 +43,7 @@ test_that("running average", {
                lubridate::date("2018-12-31"),
                by="days")
 
-  df <- tibble(value=values, date=dates)
+  df <- tibble::tibble(value=values, date=dates)
 
   # Shuffle it
   df <- df[sample(nrow(df)),]
@@ -52,12 +52,13 @@ test_that("running average", {
   df_0 <- utils.rolling_average(df, average_by = "day", average_width = 0,
                                 vars_to_avg = "value", group_by_cols = NULL) %>%
     dplyr::arrange(date)
-  expect_true(all(df_0$value == df$value))
+  expect_true(all(df_0 %>% dplyr::arrange(date) %>% dplyr::pull(value)
+                  == df %>% dplyr::arrange(date) %>% dplyr::pull(value)))
 
   df_1 <- utils.rolling_average(df, average_by = "day", average_width = 1,
                                 vars_to_avg = "value", group_by_cols = NULL) %>%
     dplyr::arrange(date)
-  expect_true(all(df_1$value == df$value))
+  expect_true(all(df_1 %>% dplyr::arrange(date) %>% dplyr::pull(value) == df_1 %>% dplyr::arrange(date) %>% dplyr::pull(value)))
 
   # 2
   df_2 <- utils.rolling_average(df, average_by = "day", average_width = 2,
@@ -72,5 +73,24 @@ test_that("running average", {
     dplyr::arrange(date)
   all(is.na(df_5$value[1:4]))
   expect_true(all(df_5$value[5:365]==seq(3,363)))
+
+  #  with NAs
+  values <- c(1,2,3,NA,NA,NA,7,8,9)
+  dates <- seq(lubridate::date("2018-01-01"),
+               lubridate::date("2018-01-09"),
+               by="days")
+  df <- tibble::tibble(value=values, date=dates, group="1")
+  utils.rolling_average(df, average_by = "day", average_width = 2,
+                       vars_to_avg = "value", group_by_cols = "group",
+                       min_values=0) %>%
+    dplyr::arrange(date)
+
+  utils.rolling_average(df, average_by = "day", average_width = 3,
+                        vars_to_avg = "value", group_by_cols = "group",
+                        min_values=2) %>%
+    dplyr::arrange(date)
+
+
+
 
 })

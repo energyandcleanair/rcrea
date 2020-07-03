@@ -92,6 +92,10 @@ plot_measurements <-function(meas,
     stop("No measurement to plot after applying running average. Try reducing running average width.")
   }
 
+  if(type=='yoy'){
+    meas <- utils.yoy(meas, "absolute")
+  }
+
   # Remove year for time series to overlap
   if('year' %in% color_by){
     meas <- meas %>% dplyr::mutate(year=factor(lubridate::year(date)))
@@ -130,6 +134,10 @@ plot_measurements <-function(meas,
                   ylim(ymin, NA) +
                   scale_size_manual(values=c(0.8), guide = FALSE) +
                   scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1]),
+                "yoy" = plt + geom_line(aes(size="1")) +
+                  ylim(ymin, NA) +
+                  scale_size_manual(values=c(0.8), guide = FALSE) +
+                  scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1]),
                   # scale_color_brewer(palette="Spectral"),
                 # CREAtheme.scale_color_crea_d("dramatic"),
                 "heatmap" = plt +
@@ -152,7 +160,7 @@ plot_measurements <-function(meas,
   }
 
 
-  if(!is.null(subplot_by) && (type=='ts')){
+  if(!is.null(subplot_by) && (type %in% c('ts','yoy'))){
     facets <- if(length(units)==1){subplot_by}else{c(subplot_by,'unit')}
     scales = ifelse(all(subplot_by %in% c("region_id","region_name")),'fixed','free')
     plt <- switch(as.character(length(facets)),

@@ -19,6 +19,8 @@ averagings <- c("hour", "day")
 
 plot_types <- list("Time Series" = "ts",
                    "Time Series (overlaid years)" = "ts_year",
+                   "Year-on-year" = "yoy",
+                   "Year-on-year (overlaid years)" = "yoy_year",
                    "Heatmap" = "heatmap",
                    "Heatmap (with text)" = "heatmap_w_text")
 

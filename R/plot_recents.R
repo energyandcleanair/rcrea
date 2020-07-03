@@ -18,6 +18,7 @@
 #' @export
 #'
 #' @examples
+#'
 plot_recents <- function(
   source=NULL,
   meas_raw=NULL,

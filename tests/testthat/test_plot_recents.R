@@ -4,13 +4,13 @@ test_that("plot recents with various configs", {
 
   browser() # For debug
 
-  polls <- c(rcrea::PM25, rcrea::NO2)
-  city <- c('Delhi','Mumbai', 'Jaipur')
+  poll <- c(rcrea::PM25, rcrea::NO2)
+  city <- c('Delhi','Mumbai','Jaipur')
   folder <- "tmp_plots"
   source <- "cpcb"
   subfile_by <- "country"
   aggregate_level <- "city"
-  runnings <- c(0, 7)
+  running_days <- c(0, 7)
 
   f <- list.files(folder, pattern = "*.png", include.dirs = T, full.names = T, recursive = F)
   file.remove(f)
@@ -20,10 +20,10 @@ test_that("plot recents with various configs", {
       folder=folder,
       source=source,
       city=city,
-      polls=polls,
+      poll=poll,
       subfile_by=subfile_by,
       aggregate_level=aggregate_level,
-      runnings=runnings
+      running_days=running_days
     ),
     NA)
 
@@ -36,10 +36,10 @@ test_that("plot recents with various configs", {
       folder=folder,
       source=source,
       city=city,
-      polls=polls,
+      poll=poll,
       subfile_by=subfile_by,
       aggregate_level=aggregate_level,
-      runnings=runnings,
+      running_days=running_days,
       process_id="trend_gbm_lag1"
     ),
     NA)
@@ -52,11 +52,11 @@ test_that("plot recents with various configs", {
       folder=folder,
       source=source,
       city=city,
-      polls=polls,
+      poll=poll,
       subfile_by="poll",
       subplot_by = "region_id",
       aggregate_level=aggregate_level,
-      runnings=runnings,
+      running_days=running_days
       process_id="trend_gbm_lag1"
     ),
     NA)
@@ -64,4 +64,4 @@ test_that("plot recents with various configs", {
   expect_equal(length(f), 6 * length(polls) * length(runnings))
   file.remove(f)
 
-}
+})
