@@ -1,7 +1,7 @@
 
 db_writing <- function(){
   # Create one
-  load_dot_env(file = ".env")
+  dotenv::load_dot_env(file = ".env")
   db_url <- Sys.getenv("CREA_DB_URL")
   if(db_url==""){
     stop("Missing database url. Please define CREA_DB_URL in your environment")
