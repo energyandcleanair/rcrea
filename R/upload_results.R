@@ -80,7 +80,7 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
 #' @examples
 upsert_meas <- function(meas){
 
-  meas <- meas %>% rename(pollutant=poll)
+  meas <- meas %>% dplyr::rename(pollutant=poll)
 
   required_cols <- c("date","pollutant","unit","region_id","process_id","source","value")
   if(!all(required_cols %in% colnames(meas))){
