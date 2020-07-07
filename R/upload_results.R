@@ -57,7 +57,7 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
   if(nrow(p)==0){
     db <- db_writing()
     id <- create_new_process_id(preferred_name)
-    p <- tibble(id=id,filter=filter,agg_spatial=agg_spatial,agg_temp=agg_temp,deweather=deweather)
+    p <- tibble::tibble(id=id,filter=filter,agg_spatial=agg_spatial,agg_temp=agg_temp,deweather=deweather)
     dbx::dbxInsert(db, "processes", p)
     dbx::dbxDisconnect(db)
     return(id)
