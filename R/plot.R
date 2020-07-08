@@ -41,7 +41,7 @@ partial_plot_target <- function(poll, target, country, city, location_id, date_f
     value_baseline <- rcrea::measurements(country=country, city=city, poll=poll, average_by='year', collect=F,
                                        date_from = lubridate::ymd(target$year_baseline*10000 + 101),
                                        date_to = lubridate::ymd(target$year_baseline*10000 + 1231)) %>%
-                      dplyr::summarize(value=mean(value)) %>% collect()
+                      dplyr::summarize(value=mean(value)) %>% dplyr::collect()
     value_baseline <- value_baseline[[1]]
 
     years <- seq(lubridate::year(date_from), lubridate::year(date_to))

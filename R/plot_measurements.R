@@ -110,9 +110,11 @@ plot_measurements <-function(meas,
   if(!is.null(color_by) && !is.na(color_by)){
     plt_aes <- aes_string(x='date', y='value', color=color_by)
     n_colors <- nrow(meas %>% dplyr::ungroup() %>% dplyr::distinct_at(color_by))
+    show_color_legend <- (color_by != subplot_by)
   }else{
     plt_aes <- aes_string(x='date', y='value', color=shQuote("red"))
     n_colors <- 1
+    show_color_legend <- F
   }
 
   if(!is.null(linetype_by) && !is.na(linetype_by)){
@@ -122,7 +124,7 @@ plot_measurements <-function(meas,
   units <- unique(meas$unit)
   ylabel <- ifelse(length(units)==1, units, "Concentration")
 
-  plt <- ggplot2::ggplot(meas, plt_aes) +
+  plt <- ggplot2::ggplot(meas, plt_aes, color="red") +
     labs(x='', y=ylabel,
          title=paste(''),
          subtitle = '',
@@ -130,7 +132,7 @@ plot_measurements <-function(meas,
     theme_crea()
   ymin <- min(min(meas$value, na.rm=T),0)
   plt <- switch(type,
-                "ts" = plt + geom_line(aes(size="1")) +
+                "ts" = plt + geom_line(aes(size="1"), show.legend = show_color_legend) +
                   ylim(ymin, NA) +
                   scale_size_manual(values=c(0.8), guide = FALSE) +
                   scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1]),
@@ -169,10 +171,7 @@ plot_measurements <-function(meas,
                   plt + facet_wrap(facets, scales=scales)
     )
 
-
-    if(is.null(color_by) || (color_by==subplot_by)){
-      plt <- plt + theme(legend.position = "none")
-    }
+    plt <- plt + guides(color = show_color_legend)
   }else{
     plt <- plt + facet_wrap(~unit, scales = 'free')
   }

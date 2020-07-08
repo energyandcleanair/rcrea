@@ -132,3 +132,37 @@ utils.unnest_json <-function(.data,.json_col, ...){
 }
 
 
+
+utils.add_lockdown <- function(meas){
+
+  if(! "country" %in% colnames(meas)){
+    warning("Missing country information in measurements. Can't add Lockdown information")
+    return(meas)
+  }
+
+  lockdown <- read.csv(url('https://docs.google.com/spreadsheets/d/e/2PACX-1vTKMedY9Mzy7e81wWU95Ent79Liq7UwbUz0qTQbkSeAmFCPfqIVNbl1zs99bUOgsJUJbz53GxvBfeiP/pub?gid=0&single=true&output=csv'))
+  lockdown$movement <- strptime(lockdown$movement_national,"%Y%m%d")
+  lockdown$school <- strptime(lockdown$school,"%Y%m%d")
+  lockdown$workplace <- strptime(lockdown$workplace,"%Y%m%d")
+  lockdown$movement0 <- lockdown$movement
+  lockdown$school0 <- lockdown$school
+  lockdown$workplace0 <- lockdown$workplace
+
+  lockdown$partial_restriction <- pmin(lockdown$school,lockdown$workplace, na.rm=T)
+  lockdown$partial_restriction0 <- lockdown$partial_restriction
+
+  lubridate::year(lockdown$movement0) <- 0
+  lubridate::year(lockdown$school0) <- 0
+  lubridate::year(lockdown$workplace0) <- 0
+  lubridate::year(lockdown$partial_restriction0) <- 0
+
+  lockdown$school_workplace <- pmin(lockdown$school, lockdown$workplace, na.rm=T)
+  lockdown$school_workplace0 <- pmin(lockdown$school0, lockdown$workplace0, na.rm=T)
+
+  lockdown$first_measures <- pmin(lockdown$partial_restriction, lockdown$movement, na.rm=T)
+  lockdown$first_measures0 <- pmin(lockdown$partial_restriction0, lockdown$movement0, na.rm=T)
+
+  lockdown$iso2 <- countrycode(lockdown$iso3, origin='iso3c', destination='iso2c')
+
+  meas %>% dplyr::left_join(lockdown, by=c("country"="iso2"))
+}

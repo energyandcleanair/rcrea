@@ -32,7 +32,9 @@ plot_recents <- function(
   color_by='region_id',
   subplot_by="poll",
   subfile_by="country",
-
+  title=NULL,
+  subtitle=NULL,
+  caption=NULL,
   add_lockdown=F,
   size=c("s","m","l")){
 
@@ -61,6 +63,10 @@ plot_recents <- function(
   meas[meas$unit=='mg/m3',]$value <- meas[meas$unit=='mg/m3',]$value*1000
   meas[meas$unit=='mg/m3',]$unit <- "µg/m3"
 
+  if(add_lockdown){
+    meas <- utils.add_lockdown(meas)
+  }
+
   subfiles <- switch(subfile_by,
                      "country"=unique(meas$country),
                      "city"=unique(meas$region_name),
@@ -77,12 +83,20 @@ plot_recents <- function(
                               "gadm1"=subfile
         )
 
+        title <- coalesce(c(title, paste("Air pollutant concentrations in",region_name)))
+        subtitle <- trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
+        caption_source <- coalesce(c(caption, paste0("Source: CREA based on ", sources[[source]],".")))
+        caption_updated <- paste("Updated on ",format(Sys.Date(), format="%d %B %Y"))
+        caption <- paste(caption_source, caption_updated)
+
         filtered_meas <- switch(subfile_by,
                                 "country"= meas%>% dplyr::filter(country==subfile),
                                 "city"= meas%>% dplyr::filter(region_name==subfile),
                                 "gadm1"= meas%>% dplyr::filter(region_id==subfile),
                                 "poll"= meas%>% dplyr::filter(poll==subfile)
-        )
+        ) %>%
+          mutate(region_id=tools::toTitleCase(region_id),
+                 year=lubridate::year(date)) #To match plot_measurements names
 
         country <- unique(filtered_meas$country)
 
@@ -91,47 +105,77 @@ plot_recents <- function(
         plt <- plot_measurements(filtered_meas,
                                  poll=poll,
                                  running_width=running,
-                                 color_by = 'year',
+                                 color_by = color_by,
                                  subplot_by = subplot_by)
 
+        if(add_lockdown){
+          plt <- plt +
+            geom_vline(data=filtered_meas, aes(xintercept=movement, linetype="National lockdown"),
+                       color=rcrea::CREAtheme.pal_crea['Turquoise']) +
+            geom_vline(data=filtered_meas, aes(xintercept=movement0, linetype="National lockdown"),
+                       color=rcrea::CREAtheme.pal_crea['Turquoise']) +
+            geom_vline(data=filtered_meas, aes(xintercept=partial_restriction, linetype="Partial restrictions"),
+                       color=rcrea::CREAtheme.pal_crea['Turquoise']) +
+            geom_vline(data=filtered_meas, aes(xintercept=partial_restriction0, linetype="Partial restrictions"),
+                       color=rcrea::CREAtheme.pal_crea['Turquoise']) +
+            scale_linetype_manual(values=c("dashed","dotted"), name=NULL)
+        }
+
         # Prettying it
-        (plt_dl <- directlabels::direct.label(plt + theme_classic(),
-                                              method = list(directlabels::dl.trans(y = y + .1),
-                                                            "top.bumptwice")) +
+        if(!is.null(color_by)){
+          plt <- plt + directlabels::geom_dl(data=plt$data,
+                                             aes_string(label=color_by),
+                                             method=list(directlabels::dl.trans(y = y + .1),
+                                                             "top.bumptwice")) +
+            guides(color = FALSE)
+        }
+
+        plt <- plt + theme_classic() +
             theme_crea() +
-            scale_size_manual(values=c(1), guide=F) +
-            scale_color_brewer(limits=factor(seq(2020,min(2017,min(lubridate::year(meas$date))))), palette="Spectral") +
+            scale_size_manual(values=c(1), guide=F)
+
+        if(!is.null(color_by) && color_by=="year"){
+          plt <- plt + scale_color_brewer(limits=factor(seq(2020,min(2017,min(lubridate::year(meas$date))))), palette="Spectral")
+        }
+
+        plt <- plt +
             theme(legend.position="right") +
             labs(
-              title=paste("Air pollutant concentrations in",region_name),
-              subtitle=if(running==0){NULL}else{paste0(running,"-day running average")},
-              caption=paste0("Source: CREA based on ", sources[[source]],". Updated on ",format(Sys.Date(), format="%d %B %Y")))
-        )
+              title=title,
+              subtitle=subtitle,
+              caption=caption)
 
-        for(size in names(width)){
 
-          # Full version
-          ggsave(file.path(folder, paste0(tolower(country),
-                                          "_",source,
-                                          ifelse(aggregate_level!="country",paste0("_",tolower(subfile)),""),
-                                          "_full",ifelse(running==0,"",running),
-                                          "_",size,".png")),
-                 width=width[[size]], height=height[[size]],
-                 plot=plt_dl +
-                   scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
 
-          # Version cut at current month end
-          cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
-          ggsave(file.path(folder, paste0(tolower(country),
-                                          "_",source,
-                                          ifelse(aggregate_level!="country",paste0("_",tolower(subfile)),""),
-                                          "_cut",ifelse(running==0,"",running),
-                                          "_",size,".png")),
-                 width=width[[size]], height=height[[size]],
-                 plot=plt_dl + scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))) +
-                   scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
+        if(!is.null(folder)){
+          for(size in names(width)){
 
+            # Full version
+            ggsave(file.path(folder, paste0(tolower(country),
+                                            "_",source,
+                                            ifelse(aggregate_level!="country",paste0("_",tolower(subfile)),""),
+                                            "_full",ifelse(running==0,"",running),
+                                            "_",size,".png")),
+                   width=width[[size]], height=height[[size]],
+                   plot=plt +
+                     scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
+
+            # Version cut at current month end
+            cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
+            ggsave(file.path(folder, paste0(tolower(country),
+                                            "_",source,
+                                            ifelse(aggregate_level!="country",paste0("_",tolower(subfile)),""),
+                                            "_cut",ifelse(running==0,"",running),
+                                            "_",size,".png")),
+                   width=width[[size]], height=height[[size]],
+                   plot=plt + scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))) +
+                     scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
+
+          }
+        }else{
+          print(plt)
         }
+
       }, error=function(err){
         warning(paste("Failed for file",subfile,"-",err))
       })
@@ -157,9 +201,6 @@ plot_meas_anomaly <- function(meas_raw, running_width){
 
 
 }
-
-
-
 
 
 
