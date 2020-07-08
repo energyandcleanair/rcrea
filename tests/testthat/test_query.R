@@ -46,6 +46,33 @@ test_that("reconnection works", {
 #
 # })
 
+test_that("raw measurements", {
+
+  browser()
+
+  meas <- measurements(location_id=c('id-4'),
+                       date_from="2020-06-01",
+                       date_to="2020-06-05",
+                       source='openaq',
+                       aggregate_level = "station", # Ideally this line shouldn't be required
+                       process_id='raw',
+                       poll=rcrea::PM25)
+
+  expect_gt(nrow(meas), 0)
+
+  meas <- measurements(city='jakarta',
+                           date_from="2020-06-01",
+                           date_to="2020-06-05",
+                           source='openaq',
+                           aggregate_level = "station", # Ideally this line shouldn't be required
+                           process_id='raw',
+                           poll=rcrea::PM25)
+
+  expect_gt(nrow(meas), 0)
+
+
+})
+
 test_that("query return locations", {
 
   browser() # For debug
@@ -86,10 +113,10 @@ test_that("query return targets", {
 test_that("gadm queries don't return duplicate", {
 
   m <- measurements(location_id=c(NA, NA),
-                      aggregate_level="gadm2",
-                      date_from="2020-01-01",
-                      source='eea',
-                      poll=rcrea::NO2)
+                    aggregate_level="gadm2",
+                    date_from="2020-01-01",
+                    source='eea',
+                    poll=rcrea::NO2)
 
   n_duplicate <- m %>% group_by(date, region_id, process_id, source, timezone, poll, unit) %>%
     filter(n()>1) %>% nrow()
@@ -207,11 +234,11 @@ test_that("query return measurements", {
 
         }, error=function(err){
           testthat::fail(message=paste("Query failed",
-                     "average_by:", average_by,
-                     "aggregate_level:", aggregate_level,
-                     "with_metadata:", with_metadata,
-                     err
-                     ))
+                                       "average_by:", average_by,
+                                       "aggregate_level:", aggregate_level,
+                                       "with_metadata:", with_metadata,
+                                       err
+          ))
         })
       }
     }
@@ -314,23 +341,23 @@ test_that("measurements have a properly set timezone", {
   # 24	01-Aug-2019 - 23:00	02-Aug-2019 - 00:00	19.9	10.49	9.48	19.96	93.02
 
   official_dates <- tibble::tibble(lubridate::force_tz(lubridate::ymd_h(c("2019-08-01 00",
-                                                           "2019-08-01 01",
-                                                           "2019-08-01 02",
-                                                           "2019-08-01 03",
-                                                           "2019-08-01 04")),
-                                        tzone='Asia/Kolkata'))
+                                                                          "2019-08-01 01",
+                                                                          "2019-08-01 02",
+                                                                          "2019-08-01 03",
+                                                                          "2019-08-01 04")),
+                                                       tzone='Asia/Kolkata'))
 
   official_pm25 <- c(30.95,38.81,39.12,41.7,27.58)
 
 
   meas_test_location <- measurements(
-                            location_id='IN-82',
-                            poll=PM25,
-                            date_from='2019-08-01',
-                            date_to='2019-08-02',
-                            average_by = 'hour',
-                            aggregate_level='location',
-                            collect = T) %>% dplyr::arrange(date)
+    location_id='IN-82',
+    poll=PM25,
+    date_from='2019-08-01',
+    date_to='2019-08-02',
+    average_by = 'hour',
+    aggregate_level='location',
+    collect = T) %>% dplyr::arrange(date)
 
   meas_dates <- meas_test_location[1:5,'date']
   meas_pm25 <- meas_test_location[1:5,'value']

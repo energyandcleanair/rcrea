@@ -179,6 +179,15 @@ measurements <- function(country=NULL,
     deweathered <- NULL
   }
 
+  # if(!is.null(process_id) & !is.null(aggregate_level)){
+  #   warning("aggregate_level parameter is ignored when process_id is specified")
+  #   aggregate_level <- NULL
+  # }
+
+  if(!is.null(process_id) & !is.null(average_by)){
+    warning("average_by parameter is ignored when process_id is specified")
+    average_by <- NULL
+  }
   # If location_id specified, we have to keep it
   # aggregate_at_city_level <- aggregate_at_city_level & is.null(location_id)
 
@@ -196,9 +205,16 @@ measurements <- function(country=NULL,
   # ------------------------------------------------
   # Look for processes that match user requirements
   #-------------------------------------------------
-  procs <- processes(con) %>%
-    dplyr::filter(region_type==aggregate_level,
-                  average_by==period)
+  procs <- processes(con)
+
+  if(!is.null(aggregate_level)){
+    procs <- procs %>% dplyr::filter(aggregate_level==region_type)
+  }
+
+  if(!is.null(average_by)){
+    procs <- procs %>% dplyr::filter(average_by==period)
+  }
+
 
   if(!is.null(deweathered)){
     procs <- procs %>% dplyr::filter(
@@ -250,7 +266,7 @@ measurements <- function(country=NULL,
     dplyr::rename(location_id=id, location=name)
 
 
-  loc_id_col <- region_id_col <- switch(aggregate_level,
+  loc_id_col <- switch(aggregate_level,
                                         "station" = "location_id",
                                         "city" = "city",
                                         "gadm1" = "gid_1",
