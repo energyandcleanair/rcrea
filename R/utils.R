@@ -23,7 +23,7 @@ utils.add_lag <- function(meas, cols, hour_lags){
       print(paste("Adding ", hour_lag,"hour lag"))
       my_lag <- list(function(x) dplyr::lag(x, n=hour_lag))
       names(my_lag) <- paste(hour_lag) #will be appended to column name by mutate_at
-      result <- result %>% mutate_at(cols,my_lag)
+      result <- result %>% dplyr::mutate_at(cols,my_lag)
     }
 
 
@@ -162,7 +162,7 @@ utils.add_lockdown <- function(meas){
   lockdown$first_measures <- pmin(lockdown$partial_restriction, lockdown$movement, na.rm=T)
   lockdown$first_measures0 <- pmin(lockdown$partial_restriction0, lockdown$movement0, na.rm=T)
 
-  lockdown$iso2 <- countrycode(lockdown$iso3, origin='iso3c', destination='iso2c')
+  lockdown$iso2 <- countrycode::countrycode(lockdown$iso3, origin='iso3c', destination='iso2c')
 
   meas %>% dplyr::left_join(lockdown, by=c("country"="iso2"))
 }

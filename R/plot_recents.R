@@ -39,6 +39,20 @@ plot_recents <- function(
   size=c("s","m","l")){
 
 
+  build_filename <- function(source, subfile, full_cut, aggregate_level, running, size, add_lockdown){
+
+    paste0(source,
+           "_",
+           aggregate_level,
+           "_",
+           subfile,
+           "_",
+           full_cut,
+           ifelse(running==0,"",running),
+           ifelse(add_lockdown,"_lockdown",""),
+           "_",size,".png")
+  }
+
   width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
@@ -83,9 +97,9 @@ plot_recents <- function(
                               "gadm1"=subfile
         )
 
-        title <- coalesce(c(title, paste("Air pollutant concentrations in",region_name)))
+        title <- dplyr::coalesce(c(title, paste("Air pollutant concentrations in",region_name)))
         subtitle <- trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
-        caption_source <- coalesce(c(caption, paste0("Source: CREA based on ", sources[[source]],".")))
+        caption_source <- dplyr::coalesce(c(caption, paste0("Source: CREA based on ", sources[[source]],".")))
         caption_updated <- paste("Updated on ",format(Sys.Date(), format="%d %B %Y"))
         caption <- paste(caption_source, caption_updated)
 
@@ -95,7 +109,7 @@ plot_recents <- function(
                                 "gadm1"= meas%>% dplyr::filter(region_id==subfile),
                                 "poll"= meas%>% dplyr::filter(poll==subfile)
         ) %>%
-          mutate(region_id=tools::toTitleCase(region_id),
+          dplyr::mutate(region_id=tools::toTitleCase(region_id),
                  year=lubridate::year(date)) #To match plot_measurements names
 
         country <- unique(filtered_meas$country)
@@ -151,24 +165,33 @@ plot_recents <- function(
           for(size in names(width)){
 
             # Full version
-            ggsave(file.path(folder, paste0(tolower(country),
-                                            "_",source,
-                                            ifelse(aggregate_level!="country",paste0("_",tolower(subfile)),""),
-                                            "_full",ifelse(running==0,"",running),
-                                            "_",size,".png")),
+            filename_full <- build_filename(source=source,
+                                       subfile=subfile,
+                                       full_cut="full",
+                                       running=running,
+                                       size=size,
+                                       aggregate_level=aggregate_level,
+                                       add_lockdown=add_lockdown
+                                       )
+
+            ggsave(file.path(folder, filename_full),
                    width=width[[size]], height=height[[size]],
                    plot=plt +
                      scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
 
             # Version cut at current month end
-            cutdate <- lubridate::date(paste(0,lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
-            ggsave(file.path(folder, paste0(tolower(country),
-                                            "_",source,
-                                            ifelse(aggregate_level!="country",paste0("_",tolower(subfile)),""),
-                                            "_cut",ifelse(running==0,"",running),
-                                            "_",size,".png")),
+            cutdate <- lubridate::date(paste(lubridate::year(min(plt$data$date)),lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
+            filename_cut <- build_filename(source=source,
+                                           subfile=subfile,
+                                           full_cut="cut",
+                                           running=running,
+                                           size=size,
+                                           aggregate_level=aggregate_level,
+                                           add_lockdown=add_lockdown
+            )
+            ggsave(file.path(folder, filename_cut),
                    width=width[[size]], height=height[[size]],
-                   plot=plt + scale_x_datetime(date_labels = "%b", limits=c(as.POSIXct('0000-01-01'),as.POSIXct(cutdate))) +
+                   plot=plt + scale_x_datetime(date_labels = "%b", limits=c(min(min(plt$data$date)), as.POSIXct(cutdate))) +
                      scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
 
           }
