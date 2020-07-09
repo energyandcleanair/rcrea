@@ -97,11 +97,11 @@ plot_recents <- function(
                               "gadm1"=subfile
         )
 
-        title <- dplyr::coalesce(c(title, paste("Air pollutant concentrations in",region_name)))
-        subtitle <- trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
+        title_full <- dplyr::coalesce(c(title, paste("Air pollutant concentrations in",region_name)))
+        subtitle_full <- trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
         caption_source <- dplyr::coalesce(c(caption, paste0("Source: CREA based on ", sources[[source]],".")))
         caption_updated <- paste("Updated on ",format(Sys.Date(), format="%d %B %Y"))
-        caption <- paste(caption_source, caption_updated)
+        caption_full <- paste(caption_source, caption_updated)
 
         filtered_meas <- switch(subfile_by,
                                 "country"= meas%>% dplyr::filter(country==subfile),
@@ -155,9 +155,9 @@ plot_recents <- function(
         plt <- plt +
             theme(legend.position="right") +
             labs(
-              title=title,
-              subtitle=subtitle,
-              caption=caption)
+              title=title_full,
+              subtitle=subtitle_full,
+              caption=caption_full)
 
 
 
@@ -180,7 +180,7 @@ plot_recents <- function(
                      scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
 
             # Version cut at current month end
-            cutdate <- lubridate::date(paste(lubridate::year(max(plt$data$date)),lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
+            cutdate <- lubridate::date(paste(lubridate::year(max(plt$data$date)),lubridate::month(lubridate::today()+lubridate::duration(1,"months")), 1, sep="-"))
             filename_cut <- build_filename(source=source,
                                            subfile=subfile,
                                            full_cut="cut",
