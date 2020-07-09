@@ -180,7 +180,7 @@ plot_recents <- function(
                      scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
 
             # Version cut at current month end
-            cutdate <- lubridate::date(paste(lubridate::year(min(plt$data$date)),lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
+            cutdate <- lubridate::date(paste(lubridate::year(max(plt$data$date)),lubridate::month(lubridate::today()+lubridate::duration(1,"months")),1,sep="-"))
             filename_cut <- build_filename(source=source,
                                            subfile=subfile,
                                            full_cut="cut",
