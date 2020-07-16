@@ -47,6 +47,24 @@ test_that("plot recents with various configs", {
   expect_equal(length(f), 6 * length(runnings))
   file.remove(f)
 
+  # Deweathered EEA
+  expect_error(
+    plot_recents(
+      folder=folder,
+      source="eea",
+      city=c("Paris","London"),
+      poll=rcrea::NO2,
+      process_id="anomaly_offsetted_gbm_lag1_city",
+      subfile_by="poll",
+      subplot_by = "region_id",
+      aggregate_level="city",
+      running_days=14,
+    ),
+    NA)
+  f <- list.files(folder, pattern = "*.png", include.dirs = T, full.names = T, recursive = F)
+  expect_equal(length(f), 6 * length(polls) * length(runnings))
+  file.remove(f)
+
   expect_error(
     plot_recents(
       folder=folder,

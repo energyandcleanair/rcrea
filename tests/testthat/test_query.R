@@ -70,7 +70,6 @@ test_that("raw measurements", {
 
   expect_gt(nrow(meas), 0)
 
-
 })
 
 test_that("query return locations", {
