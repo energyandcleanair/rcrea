@@ -3,6 +3,7 @@ plot_measurements <-function(meas,
                              poll=NULL,
                              running_width=NULL,
                              running_days=NULL,
+                             running_maxNAs=NULL,
                              color_by='region_id',
                              average_by='day',
                              subplot_by=NULL,
@@ -79,8 +80,14 @@ plot_measurements <-function(meas,
   if(is.null(running_width) || (running_width<=1)){
     meas <- dplyr::arrange(meas, date) %>% dplyr::filter(!is.na(value))
   }else{
+    if(!is.null(running_maxNAs)){
+      min_values <- running_width-running_maxNAs
+    }else{
+      min_values <- NULL
+    }
     meas <- meas %>% utils.rolling_average(average_by=average_by,
                                            average_width=running_width,
+                                           min_values=min_values,
                                            vars_to_avg=c("value"),
                                            group_by_cols = setdiff(colnames(meas), c("value","date")))
 
@@ -161,7 +168,6 @@ plot_measurements <-function(meas,
     plt <- plt + scale_x_datetime(date_labels = "%b")
   }
 
-
   if(!is.null(subplot_by) && (type %in% c('ts','yoy'))){
     facets <- if(length(units)==1){subplot_by}else{c(subplot_by,'unit')}
     scales = ifelse(all(subplot_by %in% c("region_id","region_name")),'fixed','free')
@@ -170,8 +176,9 @@ plot_measurements <-function(meas,
                   "3"= plt + facet_grid(formula(paste0(facets[1]," ~ ",paste(facets[2:3],collapse="+"))), scales=scales),
                   plt + facet_wrap(facets, scales=scales)
     )
-
-    plt <- plt + guides(color = show_color_legend)
+    if(!show_color_legend){
+      plt <- plt + guides(color = show_color_legend)
+    }
   }else{
     plt <- plt + facet_wrap(~unit, scales = 'free')
   }
