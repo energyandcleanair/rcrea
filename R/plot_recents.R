@@ -101,7 +101,7 @@ plot_recents <- function(
         title_full <- dplyr::coalesce(c(title, paste("Air pollutant concentrations in",region_name)))
         subtitle_full <- trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
         caption_source <- dplyr::coalesce(c(caption, paste0("Source: CREA based on ", sources[[source]],".")))
-        caption_updated <- paste("Updated on ",format(Sys.Date(), format="%d %B %Y"))
+        caption_updated <- paste("Updated on",format(Sys.Date(), format="%d %B %Y"))
         caption_full <- paste(caption_source, caption_updated)
 
         filtered_meas <- switch(subfile_by,
