@@ -161,9 +161,12 @@ plot_recents <- function(
               caption=caption_full)
 
 
-
         if(!is.null(folder)){
           for(size in names(width)){
+
+            if(min(meas$value, na.rm=T)>=0){
+              plt <- plt +scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]])))
+            }
 
             # Full version
             filename_full <- build_filename(source=source,
@@ -177,8 +180,7 @@ plot_recents <- function(
 
             ggsave(file.path(folder, filename_full),
                    width=width[[size]], height=height[[size]],
-                   plot=plt +
-                     scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
+                   plot=plt)
 
             # Version cut at current month end
             cutdate <- lubridate::date(paste(lubridate::year(max(plt$data$date)),lubridate::month(lubridate::today()+lubridate::duration(1,"months")), 1, sep="-"))
@@ -192,8 +194,8 @@ plot_recents <- function(
             )
             ggsave(file.path(folder, filename_cut),
                    width=width[[size]], height=height[[size]],
-                   plot=plt + scale_x_datetime(date_labels = "%b", limits=c(min(min(plt$data$date)), as.POSIXct(cutdate))) +
-                     scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]]))))
+                   plot=plt + scale_x_datetime(date_labels = "%b", limits=c(min(min(plt$data$date)), as.POSIXct(cutdate)))
+            )
 
           }
         }else{
