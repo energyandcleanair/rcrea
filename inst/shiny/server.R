@@ -31,7 +31,7 @@ server <- function(input, output, session) {
                                 "country"="country")
 
         l <- filtered_locations %>%
-            dplyr::filter(country==input$country) %>%
+            dplyr::filter(country %in% input$country) %>%
             dplyr::filter_at(c(region_name_col, region_id_col), ~ !is.na(.)) %>%
             dplyr::distinct_at(c(region_id_col, region_name_col))
 
@@ -143,8 +143,10 @@ server <- function(input, output, session) {
         pickerInput("region",
                     input$regionLevel,
                     choices = region_choices(),
-                    options = list(`actions-box` = TRUE,
-                                   `selected-text-format` = "count > 3"),
+                    options = pickerOptions(
+                        actionsBox=T,
+                        selectedTextFormat="count > 3",
+                        liveSearch=T),
                     multiple = T)
         # selectInput("region", "City/Region:", multiple=T, choices = region_choices())
     })
