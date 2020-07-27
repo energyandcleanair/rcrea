@@ -45,8 +45,16 @@ connection_str <- function(){
                  CONN_DBNAME, CONN_HOST, CONN_PORT, CONN_USER, CONN_PASSWORD))
 }
 
-connection <- function(reconnect=FALSE) {
 
+connection <- function(current_connection=NULL, reconnect=FALSE) {
+
+  # We keep only one connection alive
+  if(!is.null(current_connection) && (current_connection != pkg.globals$CON)){
+    tryCatch({
+      DBI::dbDisconnect(pkg.globals$CON)
+    })
+    pkg.globals$CON <- current_connection
+  }
 
   if(!is.null(pkg.globals$CON) && (reconnect || !DBI::dbIsValid(pkg.globals$CON))){
     tryCatch({
@@ -62,8 +70,6 @@ connection <- function(reconnect=FALSE) {
                         user = CONN_USER,
                         password = CONN_PASSWORD)
   }
-
-
 
   return(pkg.globals$CON)
 }

@@ -199,8 +199,8 @@ measurements <- function(country=NULL,
   location_id_ <- tolower(location_id)
   process_id_ <- process_id #Index of process_id is not lowered
 
-  # Connecting
-  con = if(!is.null(con)) con else connection()
+  # Connecting if required (if con is NULL or invalid)
+  con = connection(current_connection=con)
 
   # ------------------------------------------------
   # Look for processes that match user requirements
