@@ -60,7 +60,10 @@ plot_measurements <-function(meas,
 
   # Take mean over relevant grouping (at least city, date and pollutant)
   group_by_cols <- union(c('region_id', 'poll', 'unit', 'process_id'), union(setdiff(color_by,c("year")), setdiff(subplot_by,c("year"))))
-  meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
+
+  if(!is.null(average_by)){
+    meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
+  }
   meas <- meas %>% dplyr::group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = mean(value))
 
   # Make date axis homogeneous i.e. a row for every day / month / year

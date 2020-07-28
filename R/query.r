@@ -179,10 +179,10 @@ measurements <- function(country=NULL,
     deweathered <- NULL
   }
 
-  # if(!is.null(process_id) & !is.null(aggregate_level)){
-  #   warning("aggregate_level parameter is ignored when process_id is specified")
-  #   aggregate_level <- NULL
-  # }
+  if(!is.null(process_id) & !is.null(aggregate_level)){
+    warning("aggregate_level parameter is ignored when process_id is specified")
+    aggregate_level <- NULL # Will be updated lated
+  }
 
   if(!is.null(process_id) & !is.null(average_by)){
     warning("average_by parameter is ignored when process_id is specified")
@@ -228,6 +228,20 @@ measurements <- function(country=NULL,
         (!is.null(weighting) & population_weighted))
   }
 
+  if(!is.null(process_id_)){
+    procs <- switch(toString(length(process_id_)),
+           "0" = procs, # NULL
+           "1" = procs %>% dplyr::filter(id == process_id_), # Single value
+           procs %>% dplyr::filter(id %in% process_id_)
+           )
+
+    aggregate_level <- procs %>% dplyr::distinct(region_type) %>% dplyr::pull()
+    if(length(aggregate_level)>1){
+      stop("Can only specify process_id with similar aggregation_level")
+    }
+  }
+
+
   procs %>% dplyr::filter("\"weighting\": \"gpw\"" %in% agg_spatial) %>% dplyr::select(agg_spatial)
 
 
@@ -267,11 +281,11 @@ measurements <- function(country=NULL,
 
 
   loc_id_col <- switch(aggregate_level,
-                                        "station" = "location_id",
-                                        "city" = "city",
-                                        "gadm1" = "gid_1",
-                                        "gadm2" = "gid_2",
-                                        "country" = "country"
+                       "station" = "location_id",
+                       "city" = "city",
+                       "gadm1" = "gid_1",
+                       "gadm2" = "gid_2",
+                       "country" = "country"
   )
 
   # Filtering by region_id (can be location_ids or gids...)

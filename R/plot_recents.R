@@ -160,14 +160,15 @@ plot_recents <- function(
               subtitle=subtitle_full,
               caption=caption_full)
 
+        if(min(meas$value, na.rm=T)<0){
+          plt <- plt + geom_hline(yintercept=0)
+        }
 
         if(!is.null(folder)){
           for(size in names(width)){
 
             if(min(meas$value, na.rm=T)>=0){
               plt <- plt +scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]])))
-            }else{
-              plt <- plt + geom_hline(yintercept=0, size=2)
             }
 
             # Full version
