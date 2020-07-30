@@ -54,6 +54,9 @@ server <- function(input, output, session) {
         req(country, region, poll, averaging, years)
 
         print("Fetching measurements")
+        if(averaging == noaveraging_name){
+            averaging = NULL
+        }
 
         if(all(region == wholecountry_name)){
             region = NULL
@@ -193,6 +196,10 @@ server <- function(input, output, session) {
         process_ <- input$process
 
         req(poll, averaging, plot_type, region, months, source_)
+
+        if(averaging == noaveraging_name){
+            averaging = NULL
+        }
 
         type <- switch(plot_type,
                "ts" = "ts",

@@ -67,6 +67,40 @@ utils.yoy <- function(meas, mode="absolute"){
   return(res)
 }
 
+#' Fill time series with NAs at regular interval
+#'
+#' @param x
+#' @param average_by
+#' @param vars_to_avg
+#' @param group_by_cols
+#'
+#' @return
+#' @export
+#'
+#' @examples
+utils.fill_ts <- function(x,
+                            average_by="day",
+                            vars_to_avg="value",
+                            group_by_cols=NULL){
+  if(!"date" %in% x){
+    stop("Data should contain a date column")
+  }
+
+  if(is.null(group_by_cols)){
+    group_by_cols <- setdiff(colnames(meas), c(vars_to_avg, "date"))
+  }
+
+  x <- x %>% dplyr::mutate(date=lubridate::floor_date(date,average_by))
+  date_grid <- x %>% dplyr::group_by_at(group_by_cols) %>%
+    dplyr::summarize(date_min=min(date), date_max = max(date)) %>%
+    dplyr::mutate(date=purrr::map2(date_min, date_max, ~seq(.x, .y, by=average_by) %>% trunc(units=average_by))) %>%
+    dplyr::select(-c(date_min, date_max)) %>%
+    tidyr::unnest(cols=c(date))
+
+  x <- merge(x, date_grid, by = c(group_by_cols, "date"), all=TRUE)
+  return(x)
+}
+
 utils.rolling_average <- function(meas,
                                   average_by,
                                   average_width,
@@ -82,14 +116,10 @@ utils.rolling_average <- function(meas,
     group_by_cols <- setdiff(colnames(meas), c(vars_to_avg, "date"))
   }
 
-  meas <- meas %>% dplyr::mutate(date=lubridate::floor_date(date,average_by))
-  date_grid <- meas %>% dplyr::group_by_at(group_by_cols) %>%
-    dplyr::summarize(date_min=min(date), date_max = max(date)) %>%
-    dplyr::mutate(date=purrr::map2(date_min, date_max, ~seq(.x, .y, by=average_by) %>% trunc(units=average_by))) %>%
-    dplyr::select(-c(date_min, date_max)) %>%
-    tidyr::unnest(cols=c(date))
-
-  meas <- merge(meas, date_grid, by = c(group_by_cols, "date"), all=TRUE)
+  meas <- utils.fill_ts(meas,
+                        average_by=average_by,
+                        vars_to_avg=vars_to_avg,
+                        group_by_cols=group_by_cols)
 
 
   # Rolling mean
