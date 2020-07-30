@@ -82,7 +82,7 @@ utils.fill_ts <- function(x,
                             average_by="day",
                             vars_to_avg="value",
                             group_by_cols=NULL){
-  if(!"date" %in% x){
+  if(!"date" %in% names(x)){
     stop("Data should contain a date column")
   }
 
