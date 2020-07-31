@@ -46,7 +46,7 @@ connection_str <- function(){
 }
 
 
-connection <- function(current_connection=NULL, reconnect=FALSE) {
+connection <- function(current_connection=NULL, force_reconnect=FALSE) {
 
   # We keep only one connection alive
   if(!is.null(current_connection) && (current_connection != pkg.globals$CON)){
@@ -56,7 +56,7 @@ connection <- function(current_connection=NULL, reconnect=FALSE) {
     pkg.globals$CON <- current_connection
   }
 
-  if(!is.null(pkg.globals$CON) && (reconnect || !DBI::dbIsValid(pkg.globals$CON))){
+  if(!is.null(pkg.globals$CON) && (force_reconnect || !DBI::dbIsValid(pkg.globals$CON))){
     tryCatch({
       DBI::dbDisconnect(pkg.globals$CON)
     })
@@ -79,7 +79,7 @@ tbl_safe <- function(con, query_initial){
     dplyr::tbl(con, query_initial)
   },error = function(e) {
     print("Trying to reconnect")
-    con <- connection(reconnect = TRUE)
+    con <- connection(force_reconnect = FALSE)
     result <- dplyr::tbl(con, query_initial)
     return(result)
   })
