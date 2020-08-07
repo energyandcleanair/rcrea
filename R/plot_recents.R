@@ -61,7 +61,8 @@ plot_recents <- function(
                   "earthengine"="Sentinel-5P TROPOMI OFFL NO2",
                   "cpcb"="Central Pollution Control Board",
                   "mee"="Ministry of Ecology and Environment",
-                  "csb"="Ministry of Environment and Urban Planning")
+                  "csb"="Ministry of Environment and Urban Planning",
+                  "jp"="Japan Atmospheric Environmental Regional Observation System")
 
 
   if(is.null(meas_raw)){

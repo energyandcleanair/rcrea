@@ -345,7 +345,7 @@ measurements <- function(country=NULL,
   # OpenAQ for the rest
   if(!length(source_) & best_source_only){
     locs <- locs %>%
-      dplyr::mutate(source_ranking=switch(source,"eea"=1,"mee"=1,"cpcb"=1,"openaq"=2, 3)) %>%
+      dplyr::mutate(source_ranking=switch(source,"eea"=1,"mee"=1,"cpcb"=1,"csb"=1,"jp"=1,"openaq"=2, 3)) %>%
       dplyr::group_by(region_id) %>%
       dplyr::filter(source_ranking==min(source_ranking, na.rm=T))
   }
