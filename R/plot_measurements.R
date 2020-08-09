@@ -92,7 +92,8 @@ plot_measurements <-function(meas,
                                            average_width=running_width,
                                            min_values=min_values,
                                            vars_to_avg=c("value"),
-                                           group_by_cols = setdiff(colnames(meas), c("value","date")))
+                                           group_by_cols = setdiff(colnames(meas), c("value","date"))) %>%
+      dplyr::filter(!is.na(value))
 
     # meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
     #   dplyr::mutate(value_plot=zoo::rollapply(value, width=running_width, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
