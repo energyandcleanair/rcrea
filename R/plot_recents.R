@@ -124,6 +124,7 @@ plot_recents <- function(
                                  color_by = color_by,
                                  subplot_by = subplot_by)
 
+
         if(add_lockdown){
           plt <- plt +
             geom_vline(data=filtered_meas, aes(xintercept=movement, linetype="National lockdown"),

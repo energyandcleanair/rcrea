@@ -11,6 +11,8 @@ plot_measurements <-function(meas,
                              type='ts'){
 
   poll_ <- tolower(poll)
+  chg_colors <- c("#35416C", "#8CC9D0", "darkgray", "#CC0000", "#990000")
+
 
   # Testing the charts make sense (i.e. not averaging different pollutants)
   if(is.null(poll) && (!'poll' %in% color_by) && (!'poll' %in% subplot_by)){
@@ -29,8 +31,8 @@ plot_measurements <-function(meas,
     stop("subplot_by can only be 'NULL', 'region_name', 'region_id' or 'poll'")
   }
 
-  if(!is.null(color_by) && !(color_by %in% c("region_id","year"))){
-    stop("color_by can only be 'NULL', 'region_id' or 'year'")
+  if(!is.null(color_by) && !(color_by %in% c("region_id","year", "value"))){
+    stop("color_by can only be 'NULL', 'region_id', 'year' or 'value'")
   }
 
 
@@ -59,7 +61,7 @@ plot_measurements <-function(meas,
   }
 
   # Take mean over relevant grouping (at least city, date and pollutant)
-  group_by_cols <- union(c('region_id', 'poll', 'unit', 'process_id'), union(setdiff(color_by,c("year")), setdiff(subplot_by,c("year"))))
+  group_by_cols <- union(c('region_id', 'poll', 'unit', 'process_id'), union(setdiff(color_by,c("year","value")), setdiff(subplot_by,c("year","value"))))
 
   if(!is.null(average_by)){
     meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
@@ -121,7 +123,7 @@ plot_measurements <-function(meas,
   if(!is.null(color_by) && !is.na(color_by)){
     plt_aes <- aes_string(x='date', y='value', color=color_by)
     n_colors <- nrow(meas %>% dplyr::ungroup() %>% dplyr::distinct_at(color_by))
-    show_color_legend <- (color_by != subplot_by)
+    show_color_legend <- (!color_by %in% c(subplot_by,"value"))
   }else{
     plt_aes <- aes_string(x='date', y='value', color=shQuote("red"))
     n_colors <- 1
@@ -142,17 +144,18 @@ plot_measurements <-function(meas,
          caption = '') +
     theme_crea()
   ymin <- min(min(meas$value, na.rm=T),0)
+  maxabs <- max(abs(meas$value), na.rm=T)
   plt <- switch(type,
-                "ts" = plt + geom_line(aes(size="1"), show.legend = show_color_legend) +
+                "ts" = plt + geom_line(aes(size="1"), lineend="round", show.legend = show_color_legend) +
                   ylim(ymin, NA) +
                   scale_size_manual(values=c(0.8), guide = FALSE) +
-                  scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1]),
+                  {if(color_by=="value")scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
+                  {if(color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
                 "yoy" = plt + geom_line(aes(size="1")) +
                   ylim(ymin, NA) +
                   scale_size_manual(values=c(0.8), guide = FALSE) +
-                  scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1]),
-                  # scale_color_brewer(palette="Spectral"),
-                # CREAtheme.scale_color_crea_d("dramatic"),
+                  {if(color_by=="value")scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
+                  {if(color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
                 "heatmap" = plt +
                   geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'), fill='value_plot_cat'), color='white') +
                   scale_y_discrete() +
