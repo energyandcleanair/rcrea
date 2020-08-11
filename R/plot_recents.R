@@ -62,7 +62,8 @@ plot_recents <- function(
                   "cpcb"="Central Pollution Control Board",
                   "mee"="Ministry of Ecology and Environment",
                   "csb"="Ministry of Environment and Urban Planning",
-                  "jp"="Japan Atmospheric Environmental Regional Observation System")
+                  "jp"="Japan Atmospheric Environmental Regional Observation System",
+                  "airkorea"="Air Korea")
 
 
   if(is.null(meas_raw)){
