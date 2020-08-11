@@ -139,7 +139,7 @@ plot_recents <- function(
         }
 
         # Prettying it
-        if(!is.null(color_by)){
+        if(!is.null(color_by) & (color_by != "value")){
           plt <- plt + directlabels::geom_dl(data=plt$data,
                                              aes_string(label=color_by),
                                              method=list(directlabels::dl.trans(y = y + .1),
