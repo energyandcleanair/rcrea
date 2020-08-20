@@ -31,8 +31,8 @@ plot_measurements <-function(meas,
     stop("subplot_by can only be 'NULL', 'region_name', 'region_id' or 'poll'")
   }
 
-  if(!is.null(color_by) && !(color_by %in% c("region_id","year", "value"))){
-    stop("color_by can only be 'NULL', 'region_id', 'year' or 'value'")
+  if(!is.null(color_by) && !(color_by %in% c("region_id","year", "value", "poll"))){
+    stop("color_by can only be 'NULL', 'region_id', 'year', 'value' or 'poll")
   }
 
 
