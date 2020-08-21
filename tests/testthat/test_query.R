@@ -70,6 +70,10 @@ test_that("raw measurements", {
 
   expect_gt(nrow(meas), 0)
 
+  meas_china_powerplants <- measurements(country='CN', location_type='powerplant', date_from="2020-06-01")
+  expect_gt(nrow(locs_china_powerplants), 0)
+  expect_true('earthengine' %in% unique(locs_china_powerplants$source))
+
 })
 
 test_that("query return locations", {
@@ -90,6 +94,10 @@ test_that("query return locations", {
 
   locs_delhi_cpcb <- locations(city='Delhi', source='cpcb', with_meta = T)
   expect_equal(unique(locs_delhi_cpcb$source), 'cpcb')
+
+  locs_china_powerplants <- locations(country='CN', type='powerplant', with_meta = T)
+  expect_gt(nrow(locs_china_powerplants), 0)
+  expect_true('earthengine' %in% unique(locs_china_powerplants$source))
 
 })
 

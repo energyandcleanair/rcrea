@@ -41,6 +41,7 @@ processes <- function(con=NULL){
 locations <- function(country=NULL,
                       city=NULL,
                       id=NULL,
+                      type=NULL,
                       source=NULL,
                       collect=TRUE,
                       keep_only_for_dashboard=F,
@@ -59,6 +60,7 @@ locations <- function(country=NULL,
   city_ <- tolower(city)
   source_ <- tolower(source)
   id_ <- tolower(id)
+  type_ <- tolower(type)
 
   # Connecting
   con = if(!is.null(con)) con else connection()
@@ -87,6 +89,12 @@ locations <- function(country=NULL,
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(tolower(id) == id_), # Single station id
                    result %>% dplyr::filter(tolower(id) %in% id_) # Vector of station ids
+  )
+
+  result <- switch(toString(length(type_)),
+                   "0" = result, # NULL
+                   "1" = result %>% dplyr::filter(tolower(type) == type_), # Single station id
+                   result %>% dplyr::filter(tolower(type) %in% type_) # Vector of station ids
   )
 
   if(keep_only_for_dashboard){
@@ -137,6 +145,7 @@ locations <- function(country=NULL,
 measurements <- function(country=NULL,
                          city=NULL,
                          location_id=NULL,
+                         location_type=NULL,
                          poll=NULL,
                          date_from='2015-01-01',
                          date_to=NULL,
@@ -273,6 +282,7 @@ measurements <- function(country=NULL,
   # Prepare locations
   locs <- locations(country=country,
                     city=city,
+                    type=location_type,
                     with_meta=T,
                     collect=F,
                     source= source_,

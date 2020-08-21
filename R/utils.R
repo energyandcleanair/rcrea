@@ -170,7 +170,8 @@ utils.add_lockdown <- function(meas){
     return(meas)
   }
 
-  lockdown <- read.csv(url('https://docs.google.com/spreadsheets/d/e/2PACX-1vTKMedY9Mzy7e81wWU95Ent79Liq7UwbUz0qTQbkSeAmFCPfqIVNbl1zs99bUOgsJUJbz53GxvBfeiP/pub?gid=0&single=true&output=csv'))
+  lockdown <- read.csv(url('https://docs.google.com/spreadsheets/d/e/2PACX-1vTKMedY9Mzy7e81wWU95Ent79Liq7UwbUz0qTQbkSeAmFCPfqIVNbl1zs99bUOgsJUJbz53GxvBfeiP/pub?gid=0&single=true&output=csv')) %>%
+    rename(source_lockdown=source)
   lockdown$movement <- strptime(lockdown$movement_national,"%Y%m%d")
   lockdown$school <- strptime(lockdown$school,"%Y%m%d")
   lockdown$workplace <- strptime(lockdown$workplace,"%Y%m%d")
