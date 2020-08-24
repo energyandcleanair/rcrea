@@ -24,6 +24,7 @@ plot_recents <- function(
   meas_raw=NULL,
   folder=NULL,
   poll=NULL,
+  unit=NULL,
   aggregate_level="country",
   country=NULL,
   city=NULL,
@@ -74,6 +75,10 @@ plot_recents <- function(
                                 process_id=process_id,
                                 source=source,
                                 with_metadata = T)
+  }
+
+  if(!is.null(unit)){
+    meas_raw <- meas_raw %>% dplyr::filter(unit %in% !!unit)
   }
 
   meas <- meas_raw
