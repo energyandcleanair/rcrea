@@ -129,7 +129,8 @@ locations <- function(country=NULL,
 #' @param poll Pollutant name (e.g. rcrea::CO, "co", rcrea::PM25, "pm25")
 #' @param date_from Beginning date of queried measurements ('yyyy-mm-dd')
 #' @param date_to End date of queried measurements ('yyyy-mm-dd')
-#' @param source Source of the data. e.g. cpcb, openaq, openaq-archive
+#' @param source Source of the data. e.g. cpcb, openaq, eea, airkorea, jp
+#' @param mix_sources Whether all sources are mixed into a single dataset (averaged per date. USE WITH CAUTION)
 #' @param average_by How to time-average results e.g. 'hour', day', 'week', 'month' or 'year'
 #' @param collect T/F Whether to collect results into local tibble (see \code{\link{dbplyr::collect}})
 #' @param with_metadata T/F Whether to add additional information columnes (e.g. city, country, location name, geometry). If True, query takes significantly more time
@@ -150,6 +151,7 @@ measurements <- function(country=NULL,
                          date_from='2015-01-01',
                          date_to=NULL,
                          source=NULL,
+                         mix_sources=F,
                          process_id=NULL,
                          best_source_only=F,
                          average_by='day',
@@ -322,6 +324,10 @@ measurements <- function(country=NULL,
                           NULL
   )
 
+  if(mix_sources){
+    locs_group_by <- setdiff(locs_group_by, "source")
+  }
+
   region_id_col <- switch(aggregate_level,
                           "station" = "location_id",
                           "city" = "city",
@@ -368,10 +374,15 @@ measurements <- function(country=NULL,
                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
   )
 
+  locs_meas_group_by <- c("region_id","source")
+  if(mix_sources){
+    locs_meas_group_by <- c("region_id")
+  }
+
   result <- result %>%
     dplyr::mutate(region_id=tolower(region_id)) %>%
     dplyr::right_join(locs %>% dplyr::mutate(region_id=tolower(region_id)),
-                      by=c("region_id","source"), suffix = c("_remove", ""))
+                      by=locs_meas_group_by, suffix = c("_remove", ""))
 
   # R package uses 'poll' whilst db is using 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)
@@ -409,9 +420,17 @@ measurements <- function(country=NULL,
   )
 
 
-
   if(!is.null(user_filter)){
     result <- user_filter(result)
+  }
+
+  if(mix_sources){
+    result_group_by_cols=setdiff(c(value_cols, meta_cols), c("process_id","source","value"))
+    result <- result %>%
+      dplyr::group_by_at(result_group_by_cols) %>%
+      dplyr::summarize(value=mean(value, na.rm = T),
+                       process_id=max(process_id, na.rm = T)) %>% #Can't use mode... Doesn't really matter
+      dplyr::mutate(source="mixed")
   }
 
   # Whether to collect the query i.e. actually run the query

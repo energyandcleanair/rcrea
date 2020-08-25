@@ -70,7 +70,7 @@ test_that("raw measurements", {
 
   expect_gt(nrow(meas), 0)
 
-  meas_china_powerplants <- measurements(country='CN', location_type='powerplant', date_from="2020-06-01")
+  meas_china_powerplants <- measurements(country='CN', location_type='powerplant', date_from="2020-01-01")
   expect_gt(nrow(locs_china_powerplants), 0)
   expect_true('earthengine' %in% unique(locs_china_powerplants$source))
 
@@ -136,6 +136,25 @@ test_that("gadm queries don't return duplicate", {
     filter(n()>1) %>% nrow()
 
   expect_equal(n_duplicate, 0)
+})
+
+test_that("queries with mix_sources=T", {
+  m <- rcrea::measurements(city="london",source=c("eea","openaq"), poll="pm25", mix_sources = T, with_geometry=T, with_metadata = T)
+  expect_gt(nrow(m),0)
+  expect_equals(unique(m$source),"mixed")
+
+  m <- rcrea::measurements(city="london",source=c("eea","openaq"), poll="pm25", mix_sources = T, with_geometry=F, with_metadata = F)
+  expect_gt(nrow(m),0)
+  expect_equals(unique(m$source),"mixed")
+
+  m <- rcrea::measurements(city="london",source=c("eea","openaq"), poll="pm25", mix_sources = T, with_geometry=T, with_metadata = F)
+  expect_gt(nrow(m),0)
+  expect_equals(unique(m$source),"mixed")
+
+  m <- rcrea::measurements(city="london",source=c("eea","openaq"), poll="pm25", mix_sources = T, with_geometry=F, with_metadata = T)
+  expect_gt(nrow(m),0)
+  expect_equals(unique(m$source),"mixed")
+
 })
 
 test_that("gadm queries return measurements from several sources", {
