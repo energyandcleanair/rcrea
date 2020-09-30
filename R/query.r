@@ -43,6 +43,7 @@ locations <- function(country=NULL,
                       id=NULL,
                       type=NULL,
                       source=NULL,
+                      source_city=NULL,
                       collect=TRUE,
                       keep_only_for_dashboard=F,
                       with_geometry=TRUE,
@@ -55,35 +56,75 @@ locations <- function(country=NULL,
     warning('with_tz argument has been replaced by with_meta')
   }
 
+  if(!is.null(source) & !is.null(source_city)){
+    warning("Cannot define both source and source_city. Overwriting with source_city")
+  }
+
+  if(!is.null(city) & !is.null(source_city)){
+    warning("Cannot define both city and source_city. Overwriting with source_city")
+  }
+
+  if(is.null(source_city) & !is.null(source)){
+    source_city <- utils.to_source_city(source, city)
+    city <- NULL
+  }
+
   # Variable names must be different to column names
   country_ <- tolower(country)
-  city_ <- tolower(city)
-  source_ <- tolower(source)
   id_ <- tolower(id)
   type_ <- tolower(type)
 
   # Connecting
   con = if(!is.null(con)) con else connection()
-  result <- tbl_safe(con, "locations") # Old version without explicit geomoetry column
+  l <- tbl_safe(con, "locations") # Old version without explicit geomoetry column
 
   # Apply filters
+  if(!is.null(source_city)){
+    # Some sources were indicated, with or without cities
+    for(source_ in names(source_city)){
+      r <- l %>% dplyr::filter(tolower(source)==tolower(source_))
+      city_ <- tolower(source_city[[source]])
+      r <- switch(toString(length(city_)),
+                  "0" = r, # NULL
+                  "1" = r %>% dplyr::filter(tolower(city) == city_), # Single city name
+                  r %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
+      )
+
+      if(source==names(source_city)[1]){
+        result <- r
+      }else{
+        result <- union(result, r)
+      }
+    }
+  }else{
+    # No source indicated, only cities
+    city_ <- tolower(city)
+    result <- switch(toString(length(city_)),
+                "0" = l, # NULL
+                "1" = l %>% dplyr::filter(tolower(city) == city_), # Single city name
+                l %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
+    )
+  }
+
+
   result <- switch(toString(length(country_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(country) == country_), # Single country name
-                   result %>% dplyr::filter(tolower(country) %in% country_) # Vector of country names
+              "0" = result, # NULL
+              "1" = result %>% dplyr::filter(tolower(country) == country_), # Single country name
+              result %>% dplyr::filter(tolower(country) %in% country_) # Vector of country names
   )
 
-  result <- switch(toString(length(city_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(city) == city_), # Single city name
-                   result %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
-  )
-
-  result <- switch(toString(length(source_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(source) == source_),
-                   result %>% dplyr::filter(tolower(source) %in% source_)
-  )
+#
+#   result <- switch(toString(length(city_)),
+#                    "0" = result, # NULL
+#                    "1" = result %>% dplyr::filter(tolower(city) == city_), # Single city name
+#                    result %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
+#   )
+#
+#   result <- switch(toString(length(source_)),
+#                    "0" = result, # NULL
+#                    "1" = result %>% dplyr::filter(tolower(source) == source_),
+#                    result %>% dplyr::filter(tolower(source) %in% source_)
+#   )
 
   result <- switch(toString(length(id_)),
                    "0" = result, # NULL
@@ -104,7 +145,7 @@ locations <- function(country=NULL,
   # Keeping only interesting columns
   cols <- c("id", "name", "city", "country", "country_name", "gid_1", "name_1", "gid_2", "name_2")
   cols <- if(with_geometry)  c(cols, "geometry") else cols
-  cols <- if(with_meta) c(cols, 'timezone', "last_scraped_data", "source", "last_updated") else cols
+  cols <- if(with_meta) c(cols, 'timezone', "last_scraped_data", "source", "last_updated", "type") else cols
 
   result <- result %>% dplyr::select_at(cols)
 
@@ -130,7 +171,6 @@ locations <- function(country=NULL,
 #' @param date_from Beginning date of queried measurements ('yyyy-mm-dd')
 #' @param date_to End date of queried measurements ('yyyy-mm-dd')
 #' @param source Source of the data. e.g. cpcb, openaq, eea, airkorea, jp
-#' @param mix_sources Whether all sources are mixed into a single dataset (averaged per date. USE WITH CAUTION)
 #' @param average_by How to time-average results e.g. 'hour', day', 'week', 'month' or 'year'
 #' @param collect T/F Whether to collect results into local tibble (see \code{\link{dbplyr::collect}})
 #' @param with_metadata T/F Whether to add additional information columnes (e.g. city, country, location name, geometry). If True, query takes significantly more time
@@ -151,7 +191,7 @@ measurements <- function(country=NULL,
                          date_from='2015-01-01',
                          date_to=NULL,
                          source=NULL,
-                         mix_sources=F,
+                         source_city=NULL,
                          process_id=NULL,
                          best_source_only=F,
                          average_by='day',
@@ -202,10 +242,9 @@ measurements <- function(country=NULL,
   # If location_id specified, we have to keep it
   # aggregate_at_city_level <- aggregate_at_city_level & is.null(location_id)
 
+
   # Note: variable names must be different to column names for dbplyr filters to work
   poll_ <- tolower(poll)
-  source_ <- tolower(source)
-  city_ <- tolower(city)
   country_ <- tolower(country)
   location_id_ <- tolower(location_id)
   process_id_ <- process_id #Index of process_id is not lowered
@@ -225,7 +264,6 @@ measurements <- function(country=NULL,
   if(!is.null(average_by)){
     procs <- procs %>% dplyr::filter(average_by==period)
   }
-
 
   if(!is.null(deweathered)){
     procs <- procs %>% dplyr::filter(
@@ -282,12 +320,13 @@ measurements <- function(country=NULL,
   # Perform actions
   #-----------------------
   # Prepare locations
-  locs <- locations(country=country,
+  locs <- locations(source=source,
                     city=city,
+                    source_city=source_city,
+                    country=country,
                     type=location_type,
                     with_meta=T,
                     collect=F,
-                    source= source_,
                     con = con) %>%
     dplyr::rename(location_id=id, location=name)
 
@@ -324,10 +363,6 @@ measurements <- function(country=NULL,
                           NULL
   )
 
-  if(mix_sources){
-    locs_group_by <- setdiff(locs_group_by, "source")
-  }
-
   region_id_col <- switch(aggregate_level,
                           "station" = "location_id",
                           "city" = "city",
@@ -359,7 +394,7 @@ measurements <- function(country=NULL,
   # CPCB is best for India
   # MEE is best for China
   # OpenAQ for the rest
-  if(!length(source_) & best_source_only){
+  if(best_source_only){
     locs <- locs %>%
       dplyr::mutate(source_ranking=switch(source,"eea"=1,"mee"=1,"cpcb"=1,"csb"=1,"jp"=1,"airkorea"=1, "openaq"=2, 3)) %>%
       dplyr::group_by(region_id) %>%
@@ -368,16 +403,13 @@ measurements <- function(country=NULL,
 
   # Take measurements at these locations
   result <- tbl_safe(con, "measurements_new")
-  result <- switch(toString(length(source_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
-                   result %>% dplyr::filter(tolower(source) %in% source_) # Vector
-  )
+  # result <- switch(toString(length(source_)),
+  #                  "0" = result, # NULL
+  #                  "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
+  #                  result %>% dplyr::filter(tolower(source) %in% source_) # Vector
+  # )
 
   locs_meas_group_by <- c("region_id","source")
-  if(mix_sources){
-    locs_meas_group_by <- c("region_id")
-  }
 
   result <- result %>%
     dplyr::mutate(region_id=tolower(region_id)) %>%
@@ -406,12 +438,12 @@ measurements <- function(country=NULL,
                    "0" = result, # NULL
                    "1" = result %>% dplyr::filter(date <= date_to)
   )
-
-  result <- switch(toString(length(source_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
-                   result %>% dplyr::filter(tolower(source) %in% source_) # Vector
-  )
+#
+#   result <- switch(toString(length(source_)),
+#                    "0" = result, # NULL
+#                    "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
+#                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
+#   )
 
   result <- switch(toString(length(process_id_)),
                    "0" = result, # NULL
@@ -424,14 +456,6 @@ measurements <- function(country=NULL,
     result <- user_filter(result)
   }
 
-  if(mix_sources){
-    result_group_by_cols=setdiff(c(value_cols, meta_cols), c("process_id","source","value"))
-    result <- result %>%
-      dplyr::group_by_at(result_group_by_cols) %>%
-      dplyr::summarize(value=mean(value, na.rm = T),
-                       process_id=max(process_id, na.rm = T)) %>% #Can't use mode... Doesn't really matter
-      dplyr::mutate(source="mixed")
-  }
 
   # Whether to collect the query i.e. actually run the query
   if(collect){
@@ -451,7 +475,7 @@ measurements <- function(country=NULL,
     }
   }
 
-  return(result)
+  return(result %>% dplyr::ungroup())
 }
 
 
