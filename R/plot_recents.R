@@ -28,6 +28,7 @@ plot_recents <- function(
   aggregate_level="country",
   country=NULL,
   city=NULL,
+  source_city=NULL, #If not null, replaces source and city list(source1=c(city1,city2), source2=c(city3,city4))
   process_id=NULL,
   running_days=c(0, 7, 14, 30),
   color_by='region_id',
@@ -37,7 +38,8 @@ plot_recents <- function(
   subtitle=NULL,
   caption=NULL,
   add_lockdown=F,
-  size=c("s","m","l")){
+  size=c("s","m","l"),
+  years=NULL){
 
 
   build_filename <- function(source, subfile, full_cut, aggregate_level, running, size, add_lockdown){
@@ -81,6 +83,14 @@ plot_recents <- function(
     meas_raw <- meas_raw %>% dplyr::filter(unit %in% !!unit)
   }
 
+  if(is.null(poll)){
+    poll <- unique(meas_raw$poll)
+  }
+
+  if(is.null(years)){
+    years <- unique(lubridate::year(meas_raw$date))
+  }
+
   meas <- meas_raw
   meas[meas$unit=='mg/m3',]$value <- meas[meas$unit=='mg/m3',]$value*1000
   meas[meas$unit=='mg/m3',]$unit <- "µg/m3"
@@ -105,9 +115,19 @@ plot_recents <- function(
                               "gadm1"=subfile
         )
 
-        title_full <- dplyr::coalesce(c(title, paste("Air pollutant concentrations in",region_name)))
+        title_full <- switch(subfile_by,
+                              "poll"=paste(rcrea::poll_str(subfile),"pollutant levels"),
+                              paste("Air pollutant concentrations in",subfile)
+        )
+        title_full <- dplyr::coalesce(c(title, title_full))
         subtitle_full <- trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
-        caption_source <- dplyr::coalesce(c(caption, paste0("Source: CREA based on ", sources[[source]],".")))
+
+        if(is.null(source)){
+          caption_source <- "Source: CREA."
+        }else{
+          caption_source <- dplyr::coalesce(c(caption, paste0("Source: CREA based on ", sources[[source]], ".")))
+        }
+
         caption_updated <- paste("Updated on",format(Sys.Date(), format="%d %B %Y"))
         caption_full <- paste(caption_source, caption_updated)
 
@@ -128,7 +148,10 @@ plot_recents <- function(
                                  poll=poll,
                                  running_width=running,
                                  color_by = color_by,
-                                 subplot_by = subplot_by)
+                                 subplot_by = subplot_by,
+                                 running_maxNAs = running/3,
+                                 years=years
+                                 )
 
 
         if(add_lockdown){
@@ -150,7 +173,7 @@ plot_recents <- function(
                                              aes_string(label=color_by),
                                              method=list(directlabels::dl.trans(y = y + .1),
                                                              "top.bumptwice")) +
-            guides(color = FALSE)
+            guides(color =F)
         }
 
         plt <- plt + theme_classic() +
@@ -158,7 +181,7 @@ plot_recents <- function(
             scale_size_manual(values=c(1), guide=F)
 
         if(!is.null(color_by) && color_by=="year"){
-          plt <- plt + scale_color_brewer(limits=factor(seq(2020,min(2017,min(lubridate::year(meas$date))))), palette="Spectral")
+          plt <- plt + scale_color_brewer(limits=factor(seq(2020,min(2017,min(years)))), palette="Spectral")
         }
 
         plt <- plt +
@@ -173,7 +196,7 @@ plot_recents <- function(
         }
 
         if(!is.null(folder)){
-          for(size in names(width)){
+          for(s in size){
 
             if(min(meas$value, na.rm=T)>=0){
               plt <- plt +scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]])))
@@ -184,13 +207,13 @@ plot_recents <- function(
                                        subfile=subfile,
                                        full_cut="full",
                                        running=running,
-                                       size=size,
+                                       size=s,
                                        aggregate_level=aggregate_level,
                                        add_lockdown=add_lockdown
                                        )
 
             ggsave(file.path(folder, filename_full),
-                   width=width[[size]], height=height[[size]],
+                   width=width[[s]], height=height[[s]],
                    plot=plt)
 
             # Version cut at current month end
@@ -199,12 +222,12 @@ plot_recents <- function(
                                            subfile=subfile,
                                            full_cut="cut",
                                            running=running,
-                                           size=size,
+                                           size=s,
                                            aggregate_level=aggregate_level,
                                            add_lockdown=add_lockdown
             )
             ggsave(file.path(folder, filename_cut),
-                   width=width[[size]], height=height[[size]],
+                   width=width[[s]], height=height[[s]],
                    plot=plt + scale_x_datetime(date_labels = "%b", limits=c(min(min(plt$data$date)), as.POSIXct(cutdate)))
             )
 
