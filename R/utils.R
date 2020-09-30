@@ -26,7 +26,6 @@ utils.add_lag <- function(meas, cols, hour_lags){
       result <- result %>% dplyr::mutate_at(cols,my_lag)
     }
 
-
   return(result)
 }
 
@@ -144,8 +143,11 @@ utils.rolling_average <- function(meas,
     dplyr::summarise_at(vars_to_avg, mean_fn, filter_min_values=F)
 
   # then rolling average
-  meas <- meas %>% dplyr::group_by_at(group_by_cols) %>% dplyr::arrange(date) %>%
-    dplyr::mutate_at(vars_to_avg, train_roll_fn)
+  meas <- meas %>%
+    dplyr::group_by_at(group_by_cols) %>%
+    dplyr::arrange(date) %>%
+    dplyr::mutate_at(vars_to_avg, train_roll_fn) %>%
+    dplyr::ungroup()
   return(meas)
 }
 
@@ -171,7 +173,7 @@ utils.add_lockdown <- function(meas){
   }
 
   lockdown <- read.csv(url('https://docs.google.com/spreadsheets/d/e/2PACX-1vTKMedY9Mzy7e81wWU95Ent79Liq7UwbUz0qTQbkSeAmFCPfqIVNbl1zs99bUOgsJUJbz53GxvBfeiP/pub?gid=0&single=true&output=csv')) %>%
-    rename(source_lockdown=source)
+    dplyr::rename(source_lockdown=source)
   lockdown$movement <- strptime(lockdown$movement_national,"%Y%m%d")
   lockdown$school <- strptime(lockdown$school,"%Y%m%d")
   lockdown$workplace <- strptime(lockdown$workplace,"%Y%m%d")
@@ -196,4 +198,8 @@ utils.add_lockdown <- function(meas){
   lockdown$iso2 <- countrycode::countrycode(lockdown$iso3, origin='iso3c', destination='iso2c')
 
   meas %>% dplyr::left_join(lockdown, by=c("country"="iso2"))
+}
+
+utils.to_source_city <- function(source, city){
+  lapply(source, function(x) city) %>% setNames(source)
 }
