@@ -82,6 +82,7 @@ upsert_meas <- function(meas){
 
   meas <- meas %>% dplyr::rename(pollutant=poll)
 
+
   required_cols <- c("date","pollutant","unit","region_id","process_id","source","value")
   if(!all(required_cols %in% colnames(meas))){
     stop(paste("Missing columns ", paste(setdiff(required_cols, colnames(meas)))))
@@ -89,8 +90,42 @@ upsert_meas <- function(meas){
 
   db <- db_writing()
   tryCatch({
-    dbx::dbxUpsert(db, "measurements_new", meas %>% dplyr::select(all_of(required_cols)),
-              where_cols=c('date', 'pollutant', 'unit', 'process_id', 'region_id', 'source'))
+    # We upload by chunks to avoid SSL EOF error
+    ms <- split(meas, (seq(nrow(meas))-1) %/% 100000)
+
+    upload_chunk <- function(m){
+      dbx::dbxUpsert(db, "measurements_new", m %>% dplyr::select(all_of(required_cols)),
+                     where_cols=c('date', 'pollutant', 'unit', 'process_id', 'region_id', 'source'))
+    }
+
+    lapply(ms, upload_chunk)
+
+  }, error=function(err){
+    dbx::dbxDisconnect(db)
+    stop(paste("Upserting failed:",err))
+  })
+  dbx::dbxDisconnect(db)
+}
+
+#' Upsert locations in crea database
+#'
+#' @param meas
+#'
+#' @return
+#' @export
+#'
+#' @examples
+upsert_locations <- function(locs){
+
+  required_cols <- c("id","name","city","country","timezone","source","geometry","type")
+  if(!all(required_cols %in% colnames(locs))){
+    stop(paste("Missing columns ", paste(setdiff(required_cols, colnames(locs)))))
+  }
+
+  db <- db_writing()
+  tryCatch({
+    dbx::dbxUpsert(db, "locations", locs %>% dplyr::select(all_of(required_cols)),
+                   where_cols=c('id'))
   }, error=function(err){
     dbx::dbxDisconnect(db)
     stop(paste("Upserting failed:",err))
