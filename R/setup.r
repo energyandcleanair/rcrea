@@ -33,10 +33,10 @@ poll_str <- function(poll){
   return(switch(poll,
          "co" = "CO",
          "pm25" = "PM2.5",
-         "no2" = expression("NO"["2"]),
+         "no2" = "NO2",
          "o3" = "Ozone",
          "pm10" = "PM10",
-         "so2" = expression("SO"["2"])
+         "so2" = "SO2"
   ))
 }
 
