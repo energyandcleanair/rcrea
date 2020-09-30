@@ -28,7 +28,7 @@ test_that("plot recents with various configs", {
     NA)
 
   f <- list.files(folder, pattern = "*.png", include.dirs = T, full.names = T, recursive = F)
-  expect_equal(length(f), 6 * length(runnings))
+  expect_equal(length(f), 6 * length(running_days))
   file.remove(f)
 
   expect_error(
@@ -44,7 +44,7 @@ test_that("plot recents with various configs", {
     ),
     NA)
   f <- list.files(folder, pattern = "*.png", include.dirs = T, full.names = T, recursive = F)
-  expect_equal(length(f), 6 * length(runnings))
+  expect_equal(length(f), 6 * length(running_days))
   file.remove(f)
 
   # Deweathered EEA
@@ -54,7 +54,7 @@ test_that("plot recents with various configs", {
       source="eea",
       city=c("Paris","London"),
       poll=rcrea::NO2,
-      process_id="anomaly_offsetted_gbm_lag1_city",
+      process_id="anomaly_offsetted_gbm_lag1_city_mad",
       subfile_by="poll",
       subplot_by = "region_id",
       aggregate_level="city",
@@ -62,7 +62,7 @@ test_that("plot recents with various configs", {
     ),
     NA)
   f <- list.files(folder, pattern = "*.png", include.dirs = T, full.names = T, recursive = F)
-  expect_equal(length(f), 6 * length(polls) * length(runnings))
+  expect_equal(length(f), 6 * 1 * length(running_days))
   file.remove(f)
 
   expect_error(
@@ -74,12 +74,12 @@ test_that("plot recents with various configs", {
       subfile_by="poll",
       subplot_by = "region_id",
       aggregate_level=aggregate_level,
-      running_days=running_days
+      running_days=running_days,
       process_id="trend_gbm_lag1"
     ),
     NA)
   f <- list.files(folder, pattern = "*.png", include.dirs = T, full.names = T, recursive = F)
-  expect_equal(length(f), 6 * length(polls) * length(runnings))
+  expect_equal(length(f), 6 * length(poll) * length(running_days))
   file.remove(f)
 
 })

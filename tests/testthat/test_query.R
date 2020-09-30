@@ -18,6 +18,76 @@ test_that("reconnection works", {
   meas2 <- measurements(location_id='IN-107', poll=rcrea::CO, date_from="2020-01-01", collect=T) # Queries first locations and then measurements
   expect_gt(nrow(meas2),0)
 })
+
+test_that("source_query works on locations", {
+
+  source_city=list("eea"=c("paris","rome"), #several
+                   "openaq"="paris",#one
+                   "jp"=c(), #all
+                   "cpcb"="") #none
+  l <- locations(source_city = source_city, with_meta=T)
+
+  expect_true(identical(
+    l%>% filter(source=="eea") %>% distinct(city) %>% arrange(city) %>% pull() %>% tolower(),
+    source_city[["eea"]] %>% sort() %>% tolower()
+    ))
+
+  expect_true(identical(
+    l%>% filter(source=="openaq") %>% distinct(city) %>% arrange(city) %>% pull() %>% tolower(),
+    source_city[["openaq"]] %>% sort() %>% tolower()
+  ))
+
+  expect_gt( l%>% filter(source=="jp") %>% distinct(city) %>% count() %>% pull(), 47)
+  expect_equal(l%>% filter(source=="cpcb") %>% distinct(city) %>% count() %>% pull(), 0)
+
+  l <- locations(source="eea", with_meta=T)
+  expect_gt( l%>% filter(source=="eea") %>% distinct(city) %>% count() %>% pull(), 100)
+  expect_equal( l%>% filter(source!="eea") %>% distinct(city) %>% count() %>% pull(), 0)
+
+  l <- locations(source="eea", city="paris", with_meta=T)
+  expect_equal( l%>% filter(source=="eea") %>% distinct(city) %>% count() %>% pull(), 1)
+
+  l <- locations(source=NULL, city="paris", with_meta=T)
+  expect_equal( l%>% filter(tolower(city)!="paris") %>% distinct(city) %>% count() %>% pull(), 0)
+  expect_gte( l%>% filter(tolower(city)=="paris") %>% distinct(source) %>% count() %>% pull(), 2) #At least EEA and OpenAQ for Paris
+
+})
+
+
+test_that("source_query works on measurements", {
+
+  source_city=list("eea"=c("paris","rome"), #several
+                   "openaq"="paris",#one
+                   "jp"=c(), #all
+                   "cpcb"="") #none
+
+  m <- measurements(source_city = source_city, with_meta=T, poll="no2", date_from="2020-03-01", date_to="2020-03-02")
+
+  expect_true(identical(
+    m %>% filter(source=="eea") %>% distinct(region_id) %>% arrange(region_id) %>% pull() %>% tolower(),
+    source_city[["eea"]] %>% sort() %>% tolower()
+  ))
+
+  expect_true(identical(
+    m %>% filter(source=="openaq") %>% distinct(region_id) %>% arrange(region_id) %>% pull() %>% tolower(),
+    source_city[["openaq"]] %>% sort() %>% tolower()
+  ))
+
+  expect_gt(m %>% filter(source=="jp") %>% distinct(region_id) %>% count() %>% pull(), 46)
+  expect_equal(m %>% filter(source=="cpcb") %>% distinct(region_id) %>% count() %>% pull(), 0)
+
+  m <- measurements(source="eea", with_meta=T, date_from="2020-01-01", date_to="2020-01-02", poll="no2")
+  expect_gt( m %>% filter(source=="eea") %>% distinct(region_id) %>% count() %>% pull(), 100)
+  expect_equal( m %>% filter(source!="eea") %>% distinct(region_id) %>% count() %>% pull(), 0)
+
+  m <- measurements(source="eea", city="paris", date_from="2020-01-01", date_to="2020-01-02", with_meta=T)
+  expect_equal( m %>% filter(source=="eea") %>% distinct(region_id) %>% count() %>% pull(), 1)
+
+  m <- measurements(source=NULL, city="paris", date_from="2020-01-01", date_to="2020-01-02", with_meta=T)
+  expect_equal( m %>% filter(tolower(region_id)!="paris") %>% distinct(region_id) %>% count() %>% pull(), 0)
+  expect_gte( m %>% filter(tolower(region_id)=="paris") %>% distinct(source) %>% count() %>% pull(), 2) #At least EEA and OpenAQ for Paris
+
+})
 #
 # test_that("RPostgres faster than RPostgresQL", {
 #
