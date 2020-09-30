@@ -8,6 +8,7 @@ plot_measurements <-function(meas,
                              average_by='day',
                              subplot_by=NULL,
                              linetype_by=NULL,
+                             years=NULL,
                              type='ts'){
 
   poll_ <- tolower(poll)
@@ -97,6 +98,9 @@ plot_measurements <-function(meas,
                                            group_by_cols = setdiff(colnames(meas), c("value","date"))) %>%
       dplyr::filter(!is.na(value))
 
+    if(!is.null(years)){
+      meas <- meas %>% dplyr::filter(lubridate::year(date) %in% years)
+    }
     # meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
     #   dplyr::mutate(value_plot=zoo::rollapply(value, width=running_width, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
