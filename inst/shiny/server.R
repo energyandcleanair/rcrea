@@ -466,9 +466,10 @@ server <- function(input, output, session) {
         country_ <- tolower(input$trajs_country)
         req(date_, country_, city_)
 
-        url.short <- trajs() %>% dplyr::filter(tolower(country)==country_,
+        url.short <- trajs() %>%
+            dplyr::filter(tolower(country)==country_,
                            date==date_,
-                           tolower(city)==city) %>%
+                           tolower(city)==city_) %>%
             dplyr::pull(name) %>% as.character()
         paste("https://storage.googleapis.com", trajs.bucket, url.short, sep="/")
 
