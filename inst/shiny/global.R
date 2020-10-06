@@ -4,7 +4,8 @@ require(shinyWidgets)
 library(shinycssloaders)
 library(countrycode)
 
-readRenviron(".Renviron")
+Sys.setenv("GCS_AUTH_FILE"=Sys.getenv("GCS_AUTH_FILE", "keys/gcs.shiny.auth.json"))
+Sys.setenv("GCS_DEFAULT_BUCKET"=Sys.getenv("GCS_DEFAULT_BUCKET", "crea-public"))
 library(googleCloudStorageR)
 
 locations <- rcrea::locations(keep_only_for_dashboard=T, with_meta=T, with_geometry=F, collect=F) %>%
