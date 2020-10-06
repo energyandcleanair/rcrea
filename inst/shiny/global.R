@@ -3,6 +3,8 @@ require(DT)
 require(shinyWidgets)
 library(shinycssloaders)
 library(countrycode)
+
+readRenviron(".Renviron")
 library(googleCloudStorageR)
 
 locations <- rcrea::locations(keep_only_for_dashboard=T, with_meta=T, with_geometry=F, collect=F) %>%
