@@ -203,3 +203,33 @@ utils.add_lockdown <- function(meas){
 utils.to_source_city <- function(source, city){
   lapply(source, function(x) city) %>% setNames(source)
 }
+
+utils.add_city_pop <- function(m){
+  m.pop <- m %>%
+    dplyr::distinct(region_id, country, geometry) %>%
+    dplyr::left_join(
+      tibble::tibble(maps::world.cities) %>%
+        sf::st_as_sf(coords=c("long", "lat"), crs=4326) %>%
+        tibble::tibble() %>%
+        dplyr::mutate(country=countrycode::countrycode(country.etc, origin="country.name","destination"="iso2c"),
+               region_id=tolower(name)) %>%
+        dplyr::select(region_id, country, pop, geometry.city=geometry),
+      by=c("region_id", "country")
+    )
+
+  dist <- function(g1,g2){
+    sf::st_distance(sf::st_centroid(g1), g2)[1] %>% as.numeric()
+  }
+
+  # Only keep the closest cities within 100km
+  m.pop %>%
+    dplyr::mutate(distance=purrr::map2_dbl(geometry, geometry.city, dist)) %>%
+    dplyr::group_by(region_id) %>%
+    dplyr::arrange(distance) %>%
+    dplyr::filter(dplyr::row_number()==1) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(distance<=1E5) %>%
+    dplyr::select(region_id, country, pop) %>%
+    dplyr::right_join(m, c("region_id", "country"))
+
+}

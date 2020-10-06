@@ -131,6 +131,33 @@ ui <- fluidPage(
                  )
             )
         ),
+
+        tabPanel("Trajectories", fluid = TRUE,
+                 sidebarLayout(
+                     sidebarPanel(
+                         width = 2,
+                         selectInput("trajs_country",
+                                     "Country:",
+                                     choices = c("IN","PK"),
+                                     multiple=F,
+                                     selected = "IN"
+                         ),
+                         uiOutput("selectInputTrajsCity"),
+                         uiOutput("selectInputTrajsDates")
+
+                         # downloadButton("trajs_download_jpg", "Download (.jpg)"),
+                     ),
+
+                     mainPanel(
+                         width=10,
+                         uiOutput("imageTrajs")  %>% withSpinner(color="#0dc5c1")
+                         # plotOutput("exc_status_map"),
+                         # DT::dataTableOutput("exc_status_table")
+                         # DT::dataTableOutput("trajs_table")
+                     )
+                 )
+        ),
+
         tabPanel("Download", fluid = TRUE,
                  sidebarLayout(
                      sidebarPanel(

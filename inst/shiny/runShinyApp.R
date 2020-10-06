@@ -22,10 +22,16 @@ deployShinyApp <- function() {
   library(rcrea)
 
   load_dot_env()
-  appDir <- getAppDir()
+  # appDir <- getAppDir()
 
   rsconnect::setAccountInfo(name='crea',
                             token=Sys.getenv("SHINYAPP_TOKEN"),
                             secret=Sys.getenv("SHINYAPP_SECRET"))
-  rsconnect::deployApp(appDir)
+
+  # We could deploy like this:
+  # rsconnect::deployApp(appDir)
+  # but it would miss the auth file that is not pushed to Github
+
+  rsconnect::deployApp("inst/shiny")
+
 }

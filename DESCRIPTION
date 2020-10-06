@@ -12,6 +12,7 @@ Imports:
     RPostgres,
     dbplyr,
     dplyr,
+    tidyr,
     purrr,
     sf,
     bit64,
@@ -36,7 +37,10 @@ Imports:
     directlabels,
     dbx,
     urltools,
-    RColorBrewer
+    RColorBrewer,
+    maps,
+    readr,
+    reshape2
 Depends:
     ggplot2
 Suggests: 

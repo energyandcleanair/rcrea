@@ -17,6 +17,11 @@ url <- "https://github.com/hubert-thieriot/crea_r_package"
 devtools::install_github(url)
 ```
 
+In `.Renviron`, the following variables need to be defined:
+-`GCS_AUTH_FILE="keys/gcs.shiny.auth.json"`
+
+This auth file needs to be manually copied in the `inst/shiny/keys` directory.
+
 ## Usage
 ### Shiny Application
 An online version is available on <https://crea.shinyapps.io/shiny/>.

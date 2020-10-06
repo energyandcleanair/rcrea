@@ -296,6 +296,14 @@ server <- function(input, output, session) {
     })
 
     output$processes_table <- DT::renderDataTable({
+
+        poll <- isolate(input$poll)
+        averaging <- isolate(input$averaging)
+        region <- isolate(input$region)
+        source_ <- isolate(input$source)
+        req(poll, averaging, region, source_)
+
+
         DT::datatable(data=processes %>%
                           dplyr::filter(id %in% meas()$process_id) %>%
                           dplyr::select(id, "Filtering"=filter, "Spatial aggregation"=agg_spatial, "Temporal aggregation"=agg_temp, "Deweathering"=deweather)
@@ -346,7 +354,7 @@ server <- function(input, output, session) {
 
         # Get exceedances status
         exceedances(country=country, city=city, year=year) %>%
-            mutate(status=cut(
+            dplyr::mutate(status=cut(
                 ifelse(exceedance_allowed_per_year==0,
                        exceedance_this_year, exceedance_this_year/exceedance_allowed_per_year),
                 breaks=exc_status_breaks,
@@ -425,13 +433,132 @@ server <- function(input, output, session) {
             )
     })
 
+    # Tab 3: Trajectories  -----------------------------------------------------
+
+    trajs <- reactive({
+        country <- input$trajs_country
+        # city <- input$trajs_city
+        req(country)
+
+        # Get list of trajectories available
+        gcs_get_bucket(trajs.bucket)
+        files <- gcs_list_objects(prefix=trajs.folder)
+        files.plots <- files %>%
+            dplyr::filter(stringr::str_detect(name, ".jpg$"))
+
+        cbind(name=files.plots$name, reshape2::colsplit(files.plots$name, "\\.",c('prefix', 'content','date','country','city','distance','n.fires','extension')) %>%
+            dplyr::select(-c(prefix,content, extension)))
+    })
+
+    trajs_date <- reactive({
+        city_ <- tolower(input$trajs_city)
+        req(city_)
+        trajs() %>%
+            dplyr::filter(tolower(city)==city_) %>%
+            dplyr::pull(date) %>% sort()
+    })
+
+    trajs_plot_url <- reactive({
+        date_ <- tolower(input$trajs_date)
+        city_ <- tolower(input$trajs_city)
+        country_ <- tolower(input$trajs_country)
+        req(date_, country_, city_)
+
+        url.short <- trajs() %>% dplyr::filter(tolower(country)==country_,
+                           date==date_,
+                           tolower(city)==city) %>%
+            dplyr::pull(name) %>% as.character()
+        paste("https://storage.googleapis.com", trajs.bucket, url.short, sep="/")
+
+    })
+
+
+
+    # Download
+    # output$trajs_download_jpg <- downloadHandler(
+    #     # filename = function() {
+    #     #     paste("trajectories.jpg", sep = "")
+    #     # },
+    #     # content = function(file) {
+    #     #     write.csv(exc(), file, row.names = FALSE)
+    #     # }
+    # )
+
+
+    # Output Elements --------------------------------------
+    output$selectInputTrajsCity <- renderUI({
+        country_ <- tolower(input$trajs_country)
+        req(country_)
+        cities <- unique(trajs() %>%
+                             dplyr::filter(tolower(country)==country_) %>%
+                             dplyr::pull(city))
+        # cities <- unique((locations %>% dplyr::filter(country==input$trajs_country))$city)
+        pickerInput("trajs_city","City", choices=cities, options = list(`actions-box` = TRUE), multiple = F)
+    })
+
+    output$selectInputTrajsDates <- renderUI({
+        dates <- trajs_date()
+        pickerInput("trajs_date","Date", choices=dates, options = list(`actions-box` = TRUE), multiple = F)
+    })
+
+    output$imageTrajs <- renderUI({
+        imgurl <- trajs_plot_url()
+        tags$img(src=imgurl, height=800)
+
+    })
+
+    # output$trajs_table <- DT::renderDataTable({
+    #     DT::datatable(data=trajs() %>% dplyr::select(
+    #                 city,
+    #                 date
+    #             ),
+    #
+    #                   # %>%
+    #                   #     dplyr::filter(aggregation_period %in% input$exc_aggregation_period) %>%
+    #                   #     dplyr::filter(poll %in% input$exc_poll) %>%
+    #                   #     dplyr::filter(standard_org %in% input$exc_standard_org) %>%
+    #                   #     dplyr::filter(status %in% input$exc_status) %>%
+    #                   #     dplyr::mutate(threshold_str=paste0(threshold," ", unit, " [", aggregation_period,"]")) %>%
+    #                   #     dplyr::select(
+    #                   #         city,
+    #                   #         poll,
+    #                   #         status,
+    #                   #         exceedance_this_year,
+    #                   #         exceedance_allowed_per_year,
+    #                   #         breach_date,
+    #                   #         threshold_str,
+    #                   #         standard_org,
+    #                   #     ),
+    #                   options = list(
+    #                       columnDefs = list(list(visible=FALSE, targets=c())),
+    #                       pageLength = 15,
+    #                       autoWidth = TRUE
+    #                       # selection = 'row',
+    #                       # callback = JS("table.on('click.dt', 'td', function() {
+    #                       #       var row_=table.cell(this).index().row;
+    #                       #       var col=table.cell(this).index().column;
+    #                       #       var rnd= Math.random();
+    #                       #       var data = [row_, col, rnd];
+    #                       #      Shiny.onInputChange('rows',data );
+    #                       #   });")
+    #                   ),
+    #                   rownames = FALSE
+    #     )
+    # })
+#
+#     observeEvent(input$rows, {
+#         print(input$rows)
+#         print(Sys.time())
+#
+#     })
+
 
 
     # output$exc_status_map <- renderPlot({
     #     rcrea::map_exceedance_status(exc_status()) + geom_sf(data=sf::st_as_sf(countries_map()), fill = NA)
     # })
 
-    # Tab 3 : Download -----------------------------------------------------
+    # Tab 4 : Download -----------------------------------------------------
     down <- reactive({
 
         # Take a dependency on input$down_refresh

@@ -28,6 +28,8 @@ CONN_PORT = '5432'
 pkg.globals <- new.env()
 pkg.globals$CON <- NULL
 
+sel <- dplyr::select
+
 poll_str <- function(poll){
 
   return(switch(poll,
