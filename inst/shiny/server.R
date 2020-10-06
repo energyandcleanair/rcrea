@@ -163,7 +163,7 @@ server <- function(input, output, session) {
     })
 
     output$selectInputProcess <- renderUI({
-        require(meas())
+        req(meas())
         #Select non-deweather / non-population-weighted by default: putting them first
         process_ids <- meas() %>%
             dplyr::distinct(process_id) %>%
@@ -303,9 +303,11 @@ server <- function(input, output, session) {
         source_ <- isolate(input$source)
         req(poll, averaging, region, source_)
 
+        meas_ <- meas()
+        req(meas_)
 
         DT::datatable(data=processes %>%
-                          dplyr::filter(id %in% meas()$process_id) %>%
+                          dplyr::filter(id %in% meas_$process_id) %>%
                           dplyr::select(id, "Filtering"=filter, "Spatial aggregation"=agg_spatial, "Temporal aggregation"=agg_temp, "Deweathering"=deweather)
                       ,
                       options = list(
