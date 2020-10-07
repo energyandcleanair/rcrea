@@ -506,8 +506,18 @@ server <- function(input, output, session) {
 
     output$imageTrajs <- renderUI({
         imgurl <- trajs_plot_url()
-        tags$img(src=imgurl[1], height=800) #TODO account for various met_types
+        # tags$img(src=imgurl[1], height=800) #TODO account for various met_types
 
+        image_output_list <-
+            lapply(1:length(imgurl),
+                   function(i)
+                   {
+                       tags$img(src=imgurl[i], height=800)
+                       # imagename = i
+                       # imageOutput(imagename)
+                   })
+
+        do.call(tagList, image_output_list)
     })
 
     # output$trajs_table <- DT::renderDataTable({
