@@ -506,7 +506,7 @@ server <- function(input, output, session) {
 
     output$imageTrajs <- renderUI({
         imgurl <- trajs_plot_url()
-        tags$img(src=imgurl, height=800)
+        tags$img(src=imgurl[1], height=800) #TODO account for various met_types
 
     })
 
