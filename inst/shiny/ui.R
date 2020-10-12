@@ -136,12 +136,7 @@ ui <- fluidPage(
                  sidebarLayout(
                      sidebarPanel(
                          width = 2,
-                         selectInput("trajs_country",
-                                     "Country:",
-                                     choices = c("IN","PK"),
-                                     multiple=F,
-                                     selected = "IN"
-                         ),
+                         uiOutput("selectInputTrajsCountry"),
                          uiOutput("selectInputTrajsCity"),
                          uiOutput("selectInputTrajsDates")
 

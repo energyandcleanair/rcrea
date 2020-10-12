@@ -436,11 +436,10 @@ server <- function(input, output, session) {
     })
 
     # Tab 3: Trajectories  -----------------------------------------------------
-
     trajs <- reactive({
-        country <- input$trajs_country
+        # country <- input$trajs_country
         # city <- input$trajs_city
-        req(country)
+        # req(country)
 
         # Get list of trajectories available
         gcs_get_bucket(trajs.bucket)
@@ -489,6 +488,13 @@ server <- function(input, output, session) {
 
 
     # Output Elements --------------------------------------
+    output$selectInputTrajsCountry <- renderUI({
+        countries <- unique(trajs() %>% dplyr::pull(country))
+        names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
+
+        pickerInput("trajs_country","Country", choices=countries, options = list(`actions-box` = TRUE), multiple = F)
+    })
+
     output$selectInputTrajsCity <- renderUI({
         country_ <- tolower(input$trajs_country)
         req(country_)
