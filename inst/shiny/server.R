@@ -447,8 +447,8 @@ server <- function(input, output, session) {
         files.plots <- files %>%
             dplyr::filter(stringr::str_detect(name, ".jpg$"))
 
-        cbind(name=files.plots$name, reshape2::colsplit(files.plots$name, "\\.",c('prefix', 'content','date','country','city','distance','n.fires','extension')) %>%
-            dplyr::select(-c(prefix,content, extension)))
+        cbind(name=files.plots$name, reshape2::colsplit(files.plots$name, "\\.",c('prefix', 'content','date','country','city','distance','hysplit_met','extension')) %>%
+            dplyr::select(-c(prefix, content, extension)))
     })
 
     trajs_date <- reactive({
