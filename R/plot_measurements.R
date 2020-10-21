@@ -48,6 +48,7 @@ plot_measurements <-function(meas,
   # Capitalize pollutants and regions for display
   meas$poll <- toupper(meas$poll)
   meas$region_id <- tools::toTitleCase(meas$region_id)
+  meas$region_name <- tools::toTitleCase(meas$region_name)
 
 
   # Deprecated argument(s)
