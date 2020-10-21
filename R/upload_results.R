@@ -47,12 +47,35 @@ create_new_process_id <- function(preferred_id=NULL){
 #'
 retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather, preferred_name=NULL){
 
+  safe_fromJSON <- function(x){
+    if(is.na(x)){return(NA)}
+    if(x=='null'){return(NULL)}
+    jsonlite::fromJSON(x)
+  }
+  equal_lists <- function(l1, l2) {
+
+    if(is.null(l1) && length(l2)==1 && is.null(l2[[1]])){return(T)}
+    if(is.null(l2) && length(l1)==1 && is.null(l1[[1]])){return(T)}
+
+    # Test it two named lists are equal, ignoring order
+    length(setdiff(l1,l2)) + length(setdiff(l2,l1)) ==0
+  }
+
   # Check existing process
   p=processes() %>% dplyr::collect() %>%
-    dplyr::filter(filter==filter,
-                  agg_spatial==!!agg_spatial,
-                  agg_temp==!!agg_temp,
-                  deweather==!!deweather) %>%
+    dplyr::mutate(
+      filter=purrr::map(filter, safe_fromJSON),
+      agg_spatial=purrr::map(agg_spatial, safe_fromJSON),
+      agg_temp=purrr::map(agg_temp, safe_fromJSON),
+      deweather=purrr::map(deweather, safe_fromJSON)) %>%
+    dplyr::mutate(
+      filter_equal=purrr::map_lgl(filter, equal_lists, l2=!!filter),
+      agg_spatial_equal=purrr::map_lgl(agg_spatial, equal_lists, l2=!!agg_spatial),
+      agg_temp_equal=purrr::map_lgl(agg_temp, equal_lists, l2=!!agg_temp),
+      deweather_equal=purrr::map_lgl(deweather, equal_lists, l2=!!deweather)) %>%
+    dplyr::filter(
+      filter_equal & agg_spatial_equal &agg_temp_equal & deweather_equal
+      ) %>%
     dplyr::select(id, filter, agg_spatial, agg_temp, deweather)
 
   if(nrow(p)==0){
