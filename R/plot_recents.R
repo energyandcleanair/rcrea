@@ -137,8 +137,10 @@ plot_recents <- function(
                                 "gadm1"= meas%>% dplyr::filter(region_id==subfile),
                                 "poll"= meas%>% dplyr::filter(poll==subfile)
         ) %>%
-          dplyr::mutate(region_id=tools::toTitleCase(region_id),
-                 year=lubridate::year(date)) #To match plot_measurements names
+          dplyr::mutate(
+            region_id=tools::toTitleCase(region_id),
+            region_name=tools::toTitleCase(region_name),
+            year=lubridate::year(date)) #To match plot_measurements names
 
         country <- unique(filtered_meas$country)
 
