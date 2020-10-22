@@ -154,13 +154,13 @@ plot_measurements <-function(meas,
                 "ts" = plt + geom_line(aes(size="1"), lineend="round", show.legend = show_color_legend) +
                   ylim(ymin, NA) +
                   scale_size_manual(values=c(0.8), guide = FALSE) +
-                  {if(color_by=="value")scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
-                  {if(color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
+                  {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
+                  {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
                 "yoy" = plt + geom_line(aes(size="1")) +
                   ylim(ymin, NA) +
                   scale_size_manual(values=c(0.8), guide = FALSE) +
-                  {if(color_by=="value")scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
-                  {if(color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
+                  {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
+                  {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
                 "heatmap" = plt +
                   geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'), fill='value_plot_cat'), color='white') +
                   scale_y_discrete() +
