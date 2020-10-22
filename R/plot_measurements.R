@@ -47,9 +47,9 @@ plot_measurements <-function(meas,
 
   # Capitalize pollutants and regions for display
   meas$poll <- toupper(meas$poll)
-  meas$region_id <- tools::toTitleCase(meas$region_id)
-  meas$region_name <- tools::toTitleCase(meas$region_name)
-
+  meas <- meas %>%
+    dplyr::mutate_at(intersect(c("region_id","region_name"), names(meas)),
+              tools::toTitleCase)
 
   # Deprecated argument(s)
   if(exists('running_days') && !is.null(running_days)){
