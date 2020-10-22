@@ -2,7 +2,7 @@
 
 cut_poll <- function(poll, value){
 
-  if(length(poll)==0){return(NULL)}
+  if(length(poll)==0){return(value)}
 
   # Transforms continuous to category value
   scale <- if(poll==rcrea::PM25){

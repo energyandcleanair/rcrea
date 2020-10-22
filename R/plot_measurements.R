@@ -122,7 +122,7 @@ plot_measurements <-function(meas,
   }
 
   # Add categorical variable
-  meas <- meas %>% dplyr::group_by(poll, unit) %>% dplyr::mutate(value_cat=cut_poll(unique(poll), value))
+  # meas <- meas %>% dplyr::group_by(poll, unit) %>% dplyr::mutate(value_cat=cut_poll(unique(poll), value))
 
   # Build plot
   if(!is.null(color_by) && !is.na(color_by)){
