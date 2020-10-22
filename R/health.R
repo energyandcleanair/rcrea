@@ -4,7 +4,6 @@ health.build.scenarios <- function(m,
                                    process_anomaly="anomaly_gbm_lag1_city_mad",
                                    process_observation="city_day_mad"){
 
-
   m.observation <- m %>%
     dplyr::filter(process_id==process_observation) %>%
     dplyr::mutate(scenario="observation") %>%
@@ -18,7 +17,6 @@ health.build.scenarios <- function(m,
               suffix=c(".anomaly", ".observation")
               ) %>%
     dplyr::mutate(value.counterfactual=value.observation-value.anomaly)
-
 
 }
 
@@ -114,7 +112,7 @@ health.impact <- function(meas, date_from="2020-01-01", date_to="2020-12-31"){
   #print breakdown of impacts by outcome for all cities
   health_details <- chgs %>%
     dplyr::filter(var %in% c('number_central', 'cost.USD_central')) %>%
-    dplyr::group_by(region_id=city, Outcome, Cause, Pollutant, var) %>%
+    dplyr::group_by(region_id=city, population, Outcome, Cause, Pollutant, var) %>%
     dplyr::summarise_at('avoided', sum, na.rm=T) %>%
     tidyr::spread(var, avoided) %>%
     dplyr::mutate(cost.mlnUSD = cost.USD_central/1e6) %>%
@@ -128,6 +126,6 @@ health.simplify <- function(health_details){
   #print out headline numbers by city
   health_details %>%
     dplyr::mutate(deaths=ifelse(Outcome=="deaths", number_central, 0)) %>%
-    dplyr::group_by(region_id) %>%
+    dplyr::group_by(region_id, population) %>%
     dplyr::summarise_at(c("cost.mlnUSD","deaths"), sum, na.rm=T)
 }

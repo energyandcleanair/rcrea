@@ -116,7 +116,7 @@ get.costs <- function(cities) {
     tidyr::gather(var, val, number, cost.USD, cost.LCU) %>%
     tidyr::unite(var, var, estimate) %>%
     tidyr::spread(var, val) %>%
-    dplyr::left_join(epi %>% dplyr::select(ISO3, country, population) %>% dplyr::distinct()) %>% #add country names and population
+    dplyr::left_join(epi.in %>% dplyr::distinct(ISO3, city_name, country, population), by=c("ISO3","city_name")) %>% #add country names and population
     dplyr::select(city_name, ISO3, country, population, Cause, Outcome, Pollutant, tidyselect::starts_with('number'), tidyselect::starts_with('cost'))
 
 }
