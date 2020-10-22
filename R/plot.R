@@ -1,6 +1,9 @@
 # Utils -------------
 
 cut_poll <- function(poll, value){
+
+  if(length(poll)==0){return(NULL)}
+
   # Transforms continuous to category value
   scale <- if(poll==rcrea::PM25){
     cut(value,c(0, 30, 60, 90, 120, 250, Inf), labels=c("Good", "Satisfactory","Moderate","Poor","Very Poor","Severe"))
