@@ -66,7 +66,8 @@ plot_recents <- function(
                   "mee"="Ministry of Ecology and Environment",
                   "csb"="Ministry of Environment and Urban Planning",
                   "jp"="Japan Atmospheric Environmental Regional Observation System",
-                  "airkorea"="Air Korea")
+                  "airkorea"="Air Korea",
+                  "defra"="DEFRA")
 
 
   if(is.null(meas_raw)){

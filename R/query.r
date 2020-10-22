@@ -170,7 +170,7 @@ locations <- function(country=NULL,
 #' @param poll Pollutant name (e.g. rcrea::CO, "co", rcrea::PM25, "pm25")
 #' @param date_from Beginning date of queried measurements ('yyyy-mm-dd')
 #' @param date_to End date of queried measurements ('yyyy-mm-dd')
-#' @param source Source of the data. e.g. cpcb, openaq, eea, airkorea, jp
+#' @param source Source of the data. e.g. cpcb, openaq, eea, airkorea, jp, defra
 #' @param average_by How to time-average results e.g. 'hour', day', 'week', 'month' or 'year'
 #' @param collect T/F Whether to collect results into local tibble (see \code{\link{dbplyr::collect}})
 #' @param with_metadata T/F Whether to add additional information columnes (e.g. city, country, location name, geometry). If True, query takes significantly more time
