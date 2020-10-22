@@ -21,7 +21,7 @@ deployShinyApp <- function() {
   devtools::install_github(url, force=T)
   library(rcrea)
 
-  load_dot_env()
+  try(dotenv::load_dot_env())
   # appDir <- getAppDir()
 
   rsconnect::setAccountInfo(name='crea',

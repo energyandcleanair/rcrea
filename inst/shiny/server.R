@@ -278,7 +278,7 @@ server <- function(input, output, session) {
         if(type %in% c('ts','yoy')){
             if(!is.null(scales)){
                 for (i_scale in 1:length(scales)){
-                    scale <- scales() %>% dplyr::filter(name == scales[i_scale]) %>% dplyr::filter(poll == poll)
+                    scale <- scales() %>% dplyr::filter(name == scales[i_scale]) %>% dplyr::filter(poll == !!poll)
 
                     if(plot_type %in% c('ts_year','yoy_year')){
                         date_from <- as.POSIXct("0000-01-01")
