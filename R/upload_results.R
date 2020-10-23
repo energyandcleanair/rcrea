@@ -69,10 +69,10 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
       agg_temp=purrr::map(agg_temp, safe_fromJSON),
       deweather=purrr::map(deweather, safe_fromJSON)) %>%
     dplyr::mutate(
-      filter_equal=purrr::map_lgl(filter, equal_lists, l2=!!filter),
-      agg_spatial_equal=purrr::map_lgl(agg_spatial, equal_lists, l2=!!agg_spatial),
-      agg_temp_equal=purrr::map_lgl(agg_temp, equal_lists, l2=!!agg_temp),
-      deweather_equal=purrr::map_lgl(deweather, equal_lists, l2=!!deweather)) %>%
+      filter_equal=purrr::map_lgl(filter, equal_lists, l2=!!safe_fromJSON(filter)),
+      agg_spatial_equal=purrr::map_lgl(agg_spatial, equal_lists, l2=!!safe_fromJSON(agg_spatial)),
+      agg_temp_equal=purrr::map_lgl(agg_temp, equal_lists, l2=!!safe_fromJSON(agg_temp)),
+      deweather_equal=purrr::map_lgl(deweather, equal_lists, l2=!!safe_fromJSON(deweather))) %>%
     dplyr::filter(
       filter_equal & agg_spatial_equal &agg_temp_equal & deweather_equal
       ) %>%
