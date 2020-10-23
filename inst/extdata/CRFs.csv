@@ -1,0 +1,14 @@
+Health_effect_name,Incidence,Exposure,RR_central,RR_low,RR_high,Conc.change,Counterfact,Unit,Units.multiplier
+New cases of asthma in children,Asthma.Inci.1to18,NO2,1.26,1.1,1.37,10,2,ppb,0.532
+Prevalence of asthma in children,Asthma.Prev.1to18,NO2,1.26,1.1,1.37,10,2,ppb,0.532
+"Asthma emergency room visits, children",exac.0to17,PM2.5,1.03,1.01,1.04,10,6,ug,1
+"Asthma emergency room visits, children",exac.0to17,O3_8h,1.02,1.01,1.02,10,2,ppb,0.5
+"Asthma emergency room visits, adults",exac.18to99,PM2.5,1.02,1.02,1.03,10,6,ug,1
+"Asthma emergency room visits, adults",exac.18to99,O3_8h,1.02,1.01,1.02,10,2,ppb,1
+Preterm births,PTB,PM2.5,1.15,1.07,1.16,10,8.8,ug,1
+Low birth weight births,LBW,PM2.5,1.1,1.03,1.18,10,4,ug,1
+"Deaths, chronic obstructive pulmonary disease",COPD_Deaths,O3_8h,1.12,1.08,1.16,10,35,ppb,0.5
+"Years of life lost, chronic obstructive pulmonary disease",COPD_YLLs,O3_8h,1.12,1.08,1.16,10,35,ppb,0.5
+"Deaths, non-communicable diseases and lower respiratory infections, adults",NCD.LRI_Deaths,NO2,1.037,1.021,1.08,10,20,ug,1
+"Years of life lost, non-communicable diseases and lower respiratory infections, adults",NCD.LRI_YLLs,NO2,1.037,1.021,1.08,10,20,ug,1
+"Work absences, days",Absences,PM2.5,1.046,1.039,1.053,10,0,ug,1

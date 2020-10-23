@@ -17,7 +17,7 @@ countries <- countries[!is.na(names(countries))]
 
 wholecountry_name <- '--- Whole Country ---'
 standards <- rcrea::standards(collect=T)
-sources <- c("cpcb", "openaq", "eea", "earthengine", "mee", "csb", "jp", "airkorea")
+sources <- c("cpcb", "openaq", "eea", "earthengine", "mee", "csb", "jp", "airkorea", "defra")
 polls <- c(rcrea::PM25, rcrea::PM10, rcrea::NO2, rcrea::O3, rcrea::SO2, rcrea::CO)
 
 noaveraging_name <- "none"
