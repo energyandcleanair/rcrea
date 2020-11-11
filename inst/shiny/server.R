@@ -5,6 +5,14 @@ library(shinyWidgets)
 
 server <- function(input, output, session) {
 
+    observe({
+        query <- parseQueryString(session$clientData$url_search)
+        if(!is.null(query$tab)) {
+            updateTabsetPanel(session, "tabSetPanel1",
+                              selected = query$tab)
+        }
+    })
+
     # Global Variables ---------------------------------------
     # Reactive Lists ------------------------------------------
     # Reactive Values ---------------------------------------

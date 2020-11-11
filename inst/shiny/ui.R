@@ -4,9 +4,9 @@ ui <- fluidPage(
     # Application title
     titlePanel(windowTitle="CREA - Air Quality Monitoring", title=div(img(src="crea_logo.svg", width=220))),
 
-    tabsetPanel(
+    tabsetPanel(id = "tabSetPanel1",
         # Measurements
-        tabPanel("Measurements", fluid = TRUE,
+        tabPanel("Measurements", value="measurements", fluid = TRUE,
             sidebarLayout(
                 sidebarPanel(
                     width = 2,
@@ -132,7 +132,7 @@ ui <- fluidPage(
 #             )
 #         ),
 
-        tabPanel("Trajectories", fluid = TRUE,
+        tabPanel("Trajectories", value="trajectories", fluid = TRUE,
                  sidebarLayout(
                      sidebarPanel(
                          width = 2,
