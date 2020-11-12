@@ -470,10 +470,6 @@ measurements <- function(country=NULL,
     # hence the rowwise
 
     if(nrow(result)>0){
-      if(Sys.getenv("TZ")==""){
-        warning("No locale timezone defined. Using GMT")
-        Sys.setenv(TZ="GMT")
-      }
       result <- result %>% dplyr::rowwise() %>% tidyr::replace_na(list('timezone'='UTC')) %>%
         dplyr::mutate(date=lubridate::force_tz(date,tzone=timezone))
     }

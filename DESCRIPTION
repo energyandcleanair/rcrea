@@ -21,7 +21,6 @@ Imports:
     shiny,
     shinyWidgets,
     DT,
-    lubridate,
     dotenv,
     gbm,
     DBI,
@@ -42,6 +41,8 @@ Imports:
     readr,
     reshape2,
     jsonlite
+Remotes:
+    tidyverse/lubridate
 Depends:
     ggplot2
 Suggests: 
