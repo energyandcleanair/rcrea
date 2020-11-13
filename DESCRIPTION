@@ -40,7 +40,8 @@ Imports:
     maps,
     readr,
     reshape2,
-    jsonlite
+    jsonlite,
+    uuid
 Remotes:
     tidyverse/lubridate
 Depends:
