@@ -102,7 +102,7 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
 #' @export
 #'
 #' @examples
-upsert_meas <- function(meas){
+upsert_meas_old <- function(meas){
 
   meas <- meas %>% dplyr::rename(pollutant=poll)
 
@@ -123,6 +123,58 @@ upsert_meas <- function(meas){
     }
 
     lapply(ms, upload_chunk)
+
+  }, error=function(err){
+    dbx::dbxDisconnect(db)
+    stop(paste("Upserting failed:",err))
+  })
+  dbx::dbxDisconnect(db)
+}
+
+
+upsert_meas <- function(meas){
+
+  meas <- meas %>% dplyr::rename(pollutant=poll)
+
+  required_cols <- c("date","pollutant","unit","region_id","process_id","source","value")
+  conflict_cols <- c("date","pollutant","unit","region_id","process_id","source")
+
+  if(!all(required_cols %in% colnames(meas))){
+    stop(paste("Missing columns ", paste(setdiff(required_cols, colnames(meas)))))
+  }
+
+  db <- db_writing()
+
+  tryCatch({
+
+    # We uplad the whole df in a temporary table
+    table.name <- paste0("temp_meas_",substr(uuid::UUIDgenerate(), 1, 8))
+
+    RPostgres::dbWriteTable(
+      conn=db,
+      name=table.name,
+      value=meas,
+      row.names = FALSE,
+      overwrite = FALSE,
+      append = FALSE,
+      field.types = NULL,
+      temporary = TRUE,
+      copy = TRUE
+    )
+
+    query <- sprintf(
+      "INSERT INTO measurements_new(%s)
+      SELECT %s FROM %s
+      ON CONFLICT (%s)
+      DO UPDATE SET value = EXCLUDED.value;",
+      paste(required_cols,collapse=","),
+      paste(required_cols,collapse=","),
+      table.name,
+      paste(conflict_cols,collapse=",")
+      )
+
+    dbx::dbxExecute(db, query)
+    RPostgres::dbRemoveTable(db, table.name) # Not sure this is required
 
   }, error=function(err){
     dbx::dbxDisconnect(db)
