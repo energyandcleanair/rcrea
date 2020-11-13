@@ -56,6 +56,33 @@ plot_recents <- function(
            "_",size,".png")
   }
 
+  build_title <- function(title, subfile_by, subfile, running){
+
+    switch(subfile_by,
+           "poll"=dplyr::coalesce(c(title,paste(rcrea::poll_str(subfile),"pollutant levels"))) %>%
+             sub("\\{poll\\}", rcrea::poll_str(subfile), .),
+           paste("Air pollutant concentrations in",subfile))
+  }
+
+  build_subtitle <- function(subtitle, subfile_by, subfile, running){
+    trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
+  }
+
+  build_caption <- function(caption, source){
+
+    if(is.null(caption)){
+      if(is.null(source)){
+        c <- "Source: CREA. {updated}"
+      }else{
+        c <- paste0("Source: CREA based on ", sources[[source]], ". {updated}")
+      }
+    }
+
+    sub("\\{updated\\}", paste("Updated on",format(Sys.Date(), format="%d %B %Y")), c)
+  }
+
+
+
   width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
@@ -116,21 +143,8 @@ plot_recents <- function(
                               "gadm1"=subfile
         )
 
-        title_full <- switch(subfile_by,
-                              "poll"=paste(rcrea::poll_str(subfile),"pollutant levels"),
-                              paste("Air pollutant concentrations in",subfile)
-        )
-        title_full <- dplyr::coalesce(c(title, title_full))
-        subtitle_full <- trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
 
-        if(is.null(source)){
-          caption_source <- "Source: CREA."
-        }else{
-          caption_source <- dplyr::coalesce(c(caption, paste0("Source: CREA based on ", sources[[source]], ".")))
-        }
 
-        caption_updated <- paste("Updated on",format(Sys.Date(), format="%d %B %Y"))
-        caption_full <- paste(caption_source, caption_updated)
 
         filtered_meas <- switch(subfile_by,
                                 "country"= meas%>% dplyr::filter(country==subfile),
@@ -190,9 +204,9 @@ plot_recents <- function(
         plt <- plt +
             theme(legend.position="right") +
             labs(
-              title=title_full,
-              subtitle=subtitle_full,
-              caption=caption_full)
+              title=build_title(title,subfile_by,subfile,running),
+              subtitle=build_subtitle(subtitle,subfile_by,subfile,running),
+              caption=build_caption(caption, source))
 
         if(min(meas$value, na.rm=T)<0){
           plt <- plt + geom_hline(yintercept=0)
