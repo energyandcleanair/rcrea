@@ -34,15 +34,17 @@ plot_recents <- function(
   color_by='region_id',
   subplot_by="poll",
   subfile_by="country",
+  type="ts",
   title=NULL,
   subtitle=NULL,
   caption=NULL,
   add_lockdown=F,
+  range=c("full","cut"), # cut: only up to current date
   size=c("s","m","l"),
   years=NULL){
 
 
-  build_filename <- function(source, subfile, full_cut, aggregate_level, running, size, add_lockdown){
+  build_filename <- function(source, subfile, full_cut, aggregate_level, running, size, add_lockdown, type){
 
     paste0(source,
            "_",
@@ -53,6 +55,7 @@ plot_recents <- function(
            full_cut,
            ifelse(running==0,"",running),
            ifelse(add_lockdown,"_lockdown",""),
+           ifelse(type=="ts","",paste0("_",gsub("-","",type))),
            "_",size,".png")
   }
 
@@ -64,8 +67,20 @@ plot_recents <- function(
            paste("Air pollutant concentrations in",subfile))
   }
 
-  build_subtitle <- function(subtitle, subfile_by, subfile, running){
-    trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
+  build_subtitle <- function(subtitle, subfile_by, subfile, running, type){
+    s <- trimws(paste(subtitle, if(running==0){NULL}else{paste0(running,"-day running average")}))
+    if(type %in% c("yoy","yoy-relative")){
+      s <- paste0(s, ", compared with last year")
+    }
+    return(s)
+  }
+
+  build_ylabel <- function(type){
+    if(type %in% c("yoy","yoy-relative")){
+      return("Change year-on-year")
+    }else{
+      return(NULL)
+    }
   }
 
   build_caption <- function(caption, source){
@@ -128,6 +143,8 @@ plot_recents <- function(
   }
 
   subfiles <- switch(subfile_by,
+                     "region_id"=unique(meas$region_id),
+                     "region_name"=unique(meas$region_name),
                      "country"=unique(meas$country),
                      "city"=unique(meas$region_name),
                      "gadm1"=unique(meas$region_id),
@@ -167,7 +184,8 @@ plot_recents <- function(
                                  color_by = color_by,
                                  subplot_by = subplot_by,
                                  running_maxNAs = running/3,
-                                 years=years
+                                 years=years,
+                                 type=type
                                  )
 
 
@@ -205,49 +223,57 @@ plot_recents <- function(
             theme(legend.position="right") +
             labs(
               title=build_title(title,subfile_by,subfile,running),
-              subtitle=build_subtitle(subtitle,subfile_by,subfile,running),
-              caption=build_caption(caption, source))
+              subtitle=build_subtitle(subtitle,subfile_by,subfile,running,type),
+              caption=build_caption(caption, source),
+              y=build_ylabel(type))
 
         if(min(meas$value, na.rm=T)<0){
           plt <- plt + geom_hline(yintercept=0)
         }
 
         if(!is.null(folder)){
+
+          dir.create(folder, showWarnings = F, recursive = T)
+
           for(s in size){
 
-            if(min(meas$value, na.rm=T)>=0){
+            if(min(meas$value, na.rm=T)>=0 & !stringr::str_starts(type, "yoy")){
               plt <- plt +scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]])))
             }
 
-            # Full version
-            filename_full <- build_filename(source=source,
-                                       subfile=subfile,
-                                       full_cut="full",
-                                       running=running,
-                                       size=s,
-                                       aggregate_level=aggregate_level,
-                                       add_lockdown=add_lockdown
-                                       )
+            if("full" %in% range){
+              # Full version
+              filename_full <- build_filename(source=source,
+                                              subfile=subfile,
+                                              full_cut="full",
+                                              running=running,
+                                              size=s,
+                                              aggregate_level=aggregate_level,
+                                              add_lockdown=add_lockdown,
+                                              type=type
+              )
 
-            ggsave(file.path(folder, filename_full),
-                   width=width[[s]], height=height[[s]],
-                   plot=plt)
-
-            # Version cut at current month end
-            cutdate <- lubridate::date(paste(lubridate::year(max(plt$data$date)),lubridate::month(lubridate::today()+lubridate::duration(1,"months")), 1, sep="-"))
-            filename_cut <- build_filename(source=source,
-                                           subfile=subfile,
-                                           full_cut="cut",
-                                           running=running,
-                                           size=s,
-                                           aggregate_level=aggregate_level,
-                                           add_lockdown=add_lockdown
-            )
-            ggsave(file.path(folder, filename_cut),
-                   width=width[[s]], height=height[[s]],
-                   plot=plt + scale_x_datetime(date_labels = "%b", limits=c(min(min(plt$data$date)), as.POSIXct(cutdate)))
-            )
-
+              ggsave(file.path(folder, filename_full),
+                     width=width[[s]], height=height[[s]],
+                     plot=plt)
+            }
+            if("cut" %in% range){
+              # Version cut at current month end
+              cutdate <- lubridate::date(paste(lubridate::year(max(plt$data$date)),lubridate::month(lubridate::today()+lubridate::duration(1,"months")), 1, sep="-"))
+              filename_cut <- build_filename(source=source,
+                                             subfile=subfile,
+                                             full_cut="cut",
+                                             running=running,
+                                             size=s,
+                                             aggregate_level=aggregate_level,
+                                             add_lockdown=add_lockdown,
+                                             type=type
+              )
+              ggsave(file.path(folder, filename_cut),
+                     width=width[[s]], height=height[[s]],
+                     plot=plt + scale_x_datetime(date_labels = "%b", limits=c(min(min(plt$data$date)), as.POSIXct(cutdate)))
+              )
+            }
           }
         }else{
           print(plt)

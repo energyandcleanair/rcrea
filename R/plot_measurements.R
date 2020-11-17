@@ -113,6 +113,9 @@ plot_measurements <-function(meas,
   if(type=='yoy'){
     meas <- utils.yoy(meas, "absolute")
   }
+  if(type=='yoy-relative'){
+    meas <- utils.yoy(meas, "relative")
+  }
 
   # Remove year for time series to overlap
   if('year' %in% color_by){
@@ -142,7 +145,7 @@ plot_measurements <-function(meas,
   units <- unique(meas$unit)
   ylabel <- ifelse(length(units)==1, units, "Concentration")
 
-  plt <- ggplot2::ggplot(meas, plt_aes, color="red") +
+  plt <- ggplot2::ggplot(meas %>% dplyr::filter(!is.na(value)), plt_aes, color="red") +
     labs(x='', y=ylabel,
          title=paste(''),
          subtitle = '',
@@ -157,7 +160,12 @@ plot_measurements <-function(meas,
                   {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
                   {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
                 "yoy" = plt + geom_line(aes(size="1")) +
-                  ylim(ymin, NA) +
+                  scale_size_manual(values=c(0.8), guide = FALSE) +
+                  {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
+                  {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
+                "yoy-relative" = plt + geom_line(aes(size="1")) +
+                  scale_y_continuous(labels=scales::percent) +
+                  geom_hline(yintercept = 0) +
                   scale_size_manual(values=c(0.8), guide = FALSE) +
                   {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
                   {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
@@ -180,7 +188,7 @@ plot_measurements <-function(meas,
     plt <- plt + scale_x_datetime(date_labels = "%b")
   }
 
-  if(!is.null(subplot_by) && (type %in% c('ts','yoy'))){
+  if(!is.null(subplot_by) && (type %in% c('ts','yoy', 'yoy-relative'))){
     facets <- if(length(units)==1){subplot_by}else{c(subplot_by,'unit')}
     scales = ifelse(all(subplot_by %in% c("region_id","region_name")),'fixed','free')
     plt <- switch(as.character(length(facets)),
