@@ -250,12 +250,12 @@ measurements <- function(country=NULL,
   process_id_ <- process_id #Index of process_id is not lowered
 
   # Connecting if required (if con is NULL or invalid)
-  con = connection(current_connection=con)
+  con = rcrea::connection(current_connection=con)
 
   # ------------------------------------------------
   # Look for processes that match user requirements
   #-------------------------------------------------
-  procs <- processes(con)
+  procs <- rcrea::processes(con)
 
   if(!is.null(aggregate_level)){
     procs <- procs %>% dplyr::filter(aggregate_level==region_type)

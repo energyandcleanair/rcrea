@@ -238,7 +238,7 @@ plot_recents <- function(
           for(s in size){
 
             if(min(meas$value, na.rm=T)>=0 & !stringr::str_starts(type, "yoy")){
-              plt <- plt +scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]])))
+              plt <- plt + scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]])))
             }
 
             if("full" %in% range){
