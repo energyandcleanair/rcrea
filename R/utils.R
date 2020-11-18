@@ -151,6 +151,20 @@ utils.rolling_average <- function(meas,
   return(meas)
 }
 
+utils.running_average <- function(m,
+                                  average_width,
+                                  average_by="day",
+                                  vars_to_avg="value",
+                                  group_by_cols=NULL,
+                                  min_values=NULL){
+  return(utils.rolling_average(m,
+                               average_by = average_by,
+                               average_width = average_width,
+                               vars_to_avg = vars_to_avg,
+                               group_by_cols = group_by_cols,
+                               min_values = min_values))
+}
+
 utils.unnest_json <-function(.data,.json_col, ...){
   # build character vector whose names are cols to be created and values columns
   # to be extracted
@@ -171,8 +185,8 @@ utils.add_lockdown <- function(meas){
     warning("Missing country information in measurements. Can't add Lockdown information")
     return(meas)
   }
-
-  lockdown <- read.csv(url('https://docs.google.com/spreadsheets/d/e/2PACX-1vTKMedY9Mzy7e81wWU95Ent79Liq7UwbUz0qTQbkSeAmFCPfqIVNbl1zs99bUOgsJUJbz53GxvBfeiP/pub?gid=0&single=true&output=csv')) %>%
+  lockdown <-readr::read_csv(system.file("extdata", "lockdowns.csv", package = "rcrea")) %>%
+  # lockdown <- read.csv(url('https://docs.google.com/spreadsheets/d/e/2PACX-1vTKMedY9Mzy7e81wWU95Ent79Liq7UwbUz0qTQbkSeAmFCPfqIVNbl1zs99bUOgsJUJbz53GxvBfeiP/pub?gid=0&single=true&output=csv'))
     dplyr::rename(source_lockdown=source)
   lockdown$movement <- strptime(lockdown$movement_national,"%Y%m%d")
   lockdown$school <- strptime(lockdown$school,"%Y%m%d")
