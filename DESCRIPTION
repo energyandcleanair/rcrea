@@ -41,7 +41,8 @@ Imports:
     readr,
     reshape2,
     jsonlite,
-    uuid
+    uuid,
+    stringi
 Remotes:
     tidyverse/lubridate
 Depends:

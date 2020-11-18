@@ -58,7 +58,7 @@ utils.yoy <- function(meas, mode="absolute"){
     res <- res %>%
       dplyr::mutate(
         unit = switch(mode,
-                      "absolute"= paste('Δ', meas$unit),
+                      "absolute"= paste(utils.Delta(), meas$unit),
                       "relative"= "-"
         )
       )
@@ -246,4 +246,8 @@ utils.add_city_pop <- function(m){
     dplyr::select(region_id, country, pop) %>%
     dplyr::right_join(m, c("region_id", "country"))
 
+}
+
+utils.Delta <- function(){
+  stringi::stri_unescape_unicode("\u0394")
 }

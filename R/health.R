@@ -11,7 +11,7 @@ health.build.scenarios <- function(m,
 
   m.full <- m %>%
     dplyr::filter(process_id==process_anomaly) %>%
-    dplyr::mutate(unit=stringr::str_replace(unit, "Δ ", "")) %>%
+    dplyr::mutate(unit=stringr::str_replace(unit, paste0(utils.Delta()," "), "")) %>%
     dplyr::left_join(m.observation,
               by=c("poll","unit","date","source","region_id"),
               suffix=c(".anomaly", ".observation")
