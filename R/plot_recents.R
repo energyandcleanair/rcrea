@@ -38,6 +38,7 @@ plot_recents <- function(
   title=NULL,
   subtitle=NULL,
   caption=NULL,
+  add_to_ggplot=NULL,
   add_lockdown=F,
   range=c("full","cut"), # cut: only up to current date
   size=c("s","m","l"),
@@ -229,6 +230,10 @@ plot_recents <- function(
 
         if(min(meas$value, na.rm=T)<0){
           plt <- plt + geom_hline(yintercept=0)
+        }
+
+        if(!is.null(add_to_ggplot)){
+          plt <- plt + add_to_ggplot
         }
 
         if(!is.null(folder)){
