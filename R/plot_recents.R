@@ -282,6 +282,7 @@ plot_recents <- function(
           }
         }else{
           print(plt)
+          return(plt)
         }
 
       }, error=function(err){
