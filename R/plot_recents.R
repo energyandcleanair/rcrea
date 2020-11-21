@@ -40,7 +40,7 @@ plot_recents <- function(
   caption=NULL,
   add_to_ggplot=NULL,
   add_lockdown=F,
-  range=c("full","cut"), # cut: only up to current date
+  range=c("full"), # cut: only up to current date
   size=c("s","m","l"),
   years=NULL){
 
