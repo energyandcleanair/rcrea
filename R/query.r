@@ -83,17 +83,17 @@ locations <- function(country=NULL,
     # Some sources were indicated, with or without cities
     for(source_ in names(source_city)){
       r <- l %>% dplyr::filter(tolower(source)==tolower(source_))
-      city_ <- tolower(source_city[[source]])
+      city_ <- tolower(source_city[[source_]])
       r <- switch(toString(length(city_)),
                   "0" = r, # NULL
                   "1" = r %>% dplyr::filter(tolower(city) == city_), # Single city name
                   r %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
       )
 
-      if(source==names(source_city)[1]){
+      if(source_==names(source_city)[1]){
         result <- r
       }else{
-        result <- union(result, r)
+        result <- dplyr::union(result, r)
       }
     }
   }else{

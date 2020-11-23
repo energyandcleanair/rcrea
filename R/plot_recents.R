@@ -120,6 +120,7 @@ plot_recents <- function(
                                 aggregate_level=aggregate_level,
                                 process_id=process_id,
                                 source=source,
+                                source_city=source_city,
                                 with_metadata = T)
   }
 
