@@ -190,6 +190,9 @@ plot_recents <- function(
                                  type=type
                                  )
 
+        if(subplot_by=="poll"){
+          filtered_meas$poll <- toupper(filtered_meas$poll)
+        }
 
         if(add_lockdown){
           plt <- plt +
