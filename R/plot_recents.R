@@ -35,6 +35,7 @@ plot_recents <- function(
   subplot_by="poll",
   subfile_by="country",
   type="ts",
+  percent=FALSE, # Use scales::percent
   title=NULL,
   subtitle=NULL,
   caption=NULL,
@@ -178,7 +179,6 @@ plot_recents <- function(
 
         country <- unique(filtered_meas$country)
 
-
         # Getting standard plot
         plt <- rcrea::plot_measurements(filtered_meas,
                                  poll=poll,
@@ -187,7 +187,8 @@ plot_recents <- function(
                                  subplot_by = subplot_by,
                                  running_maxNAs = running/3,
                                  years=years,
-                                 type=type
+                                 type=type,
+                                 percent=percent
                                  )
 
         if(subplot_by=="poll"){

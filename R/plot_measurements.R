@@ -9,7 +9,8 @@ plot_measurements <-function(meas,
                              subplot_by=NULL,
                              linetype_by=NULL,
                              years=NULL,
-                             type='ts'){
+                             type='ts',
+                             percent=F){
 
   poll_ <- tolower(poll)
   chg_colors <- c("#35416C", "#8CC9D0", "darkgray", "#CC0000", "#990000")
@@ -186,6 +187,10 @@ plot_measurements <-function(meas,
 
   if('year' %in% color_by){
     plt <- plt + scale_x_datetime(date_labels = "%b")
+  }
+
+  if(percent){
+    plt <- plt + scale_y_continuous(labels=scales::percent)
   }
 
   if(!is.null(subplot_by) && (type %in% c('ts','yoy', 'yoy-relative'))){
