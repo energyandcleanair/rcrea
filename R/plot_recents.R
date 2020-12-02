@@ -43,10 +43,11 @@ plot_recents <- function(
   add_lockdown=F,
   range=c("full"), # cut: only up to current date
   size=c("s","m","l"),
-  years=NULL){
+  years=NULL,
+  file_suffix=NULL){
 
 
-  build_filename <- function(source, subfile, full_cut, aggregate_level, running, size, add_lockdown, type){
+  build_filename <- function(source, subfile, full_cut, aggregate_level, running, size, add_lockdown, type, suffix){
 
     paste0(source,
            "_",
@@ -58,7 +59,9 @@ plot_recents <- function(
            ifelse(running==0,"",running),
            ifelse(add_lockdown,"_lockdown",""),
            ifelse(type=="ts","",paste0("_",gsub("-","",type))),
-           "_",size,".png")
+           "_",size,
+           ifelse(is.null(suffix),"",paste0("_",suffix)),
+           ".png")
   }
 
   build_title <- function(title, subfile_by, subfile, running){
@@ -260,7 +263,8 @@ plot_recents <- function(
                                               size=s,
                                               aggregate_level=aggregate_level,
                                               add_lockdown=add_lockdown,
-                                              type=type
+                                              type=type,
+                                              suffix=file_suffix
               )
 
               ggsave(file.path(folder, filename_full),
