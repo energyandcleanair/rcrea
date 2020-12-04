@@ -1,8 +1,4 @@
 library(testthat)
-library(lubridate)
-library(DBI)
-library(purrrlyr)
-
 
 # Testing CREA data vs official or semi-official sources
 test_that("Numbers match previous studies", {
