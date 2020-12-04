@@ -7,13 +7,13 @@ health.build.scenarios <- function(m,
   m.observation <- m %>%
     dplyr::filter(process_id==process_observation) %>%
     dplyr::mutate(scenario="observation") %>%
-    dplyr::select(poll, unit, date, source, region_id, value)
+    dplyr::select(poll, unit, date, source, location_id, value)
 
   m.full <- m %>%
     dplyr::filter(process_id==process_anomaly) %>%
     dplyr::mutate(unit=stringr::str_replace(unit, paste0(utils.Delta()," "), "")) %>%
     dplyr::left_join(m.observation,
-              by=c("poll","unit","date","source","region_id"),
+              by=c("poll","unit","date","source","location_id"),
               suffix=c(".anomaly", ".observation")
               ) %>%
     dplyr::mutate(value.counterfactual=value.observation-value.anomaly)
@@ -30,7 +30,7 @@ health.impact <- function(meas, date_from="2020-01-01", date_to="2020-12-31"){
     stop(paste("Missing columns:", paste(setdiff(c(required_cols), names(meas)), collapse=",")))
   }
 
-  na_pop <- unique(meas$region_id[is.na(meas$pop)])
+  na_pop <- unique(meas$location_id[is.na(meas$pop)])
   if(length(na_pop)){
     warning(paste0("Some cities do not have a population number: ", paste(na_pop, collapse=","),
                   ". They will be excluded from calculations."))
@@ -39,7 +39,7 @@ health.impact <- function(meas, date_from="2020-01-01", date_to="2020-12-31"){
   }
 
   # Capitalize city names
-  # meas$region_id <- tools::toTitleCase(meas$region_id)
+  # meas$location_id <- tools::toTitleCase(meas$location_id)
 
   # ISO2 -> ISO3
   meas$iso3 <- countrycode::countrycode(sourcevar = meas$country, origin="iso2c", destination="iso3c")
@@ -57,7 +57,7 @@ health.impact <- function(meas, date_from="2020-01-01", date_to="2020-12-31"){
     # filter(date > '2020-03-11' | (iso3 == 'CHN' & date > '2020-01-23')) %>%
     dplyr::filter(date >= date_from,
            date <= date_to) %>%
-    dplyr::group_by(poll, region_id, unit, iso3, latitude, longitude, pop) %>%
+    dplyr::group_by(poll, location_id, unit, iso3, latitude, longitude, pop) %>%
     dplyr::summarise(
       year.ratio=as.numeric(max(date)-min(date))/365,
       value.observation=mean(value.observation, na.rm=T),
@@ -76,7 +76,7 @@ health.impact <- function(meas, date_from="2020-01-01", date_to="2020-12-31"){
     dplyr::left_join(tibble::tibble(no2=NA, pm25=NA, pm10=NA, o3=NA)) %>%
     dplyr::mutate(pm25 = ifelse(is.na(pm25), pm10*.7, pm25)) %>%
     dplyr::rename(all_of(polls)) %>%
-    dplyr::select(scenario, city_name=region_id, ISO3=iso3, population=pop,
+    dplyr::select(scenario, city_name=location_id, ISO3=iso3, population=pop,
         names(polls))
 
 
@@ -112,7 +112,7 @@ health.impact <- function(meas, date_from="2020-01-01", date_to="2020-12-31"){
   #print breakdown of impacts by outcome for all cities
   health_details <- chgs %>%
     dplyr::filter(var %in% c('number_central', 'cost.USD_central')) %>%
-    dplyr::group_by(region_id=city, population, Outcome, Cause, Pollutant, var) %>%
+    dplyr::group_by(location_id=city, population, Outcome, Cause, Pollutant, var) %>%
     dplyr::summarise_at('avoided', sum, na.rm=T) %>%
     tidyr::spread(var, avoided) %>%
     dplyr::mutate(cost.mlnUSD = cost.USD_central/1e6) %>%
@@ -126,6 +126,6 @@ health.simplify <- function(health_details){
   #print out headline numbers by city
   health_details %>%
     dplyr::mutate(deaths=ifelse(Outcome=="deaths", number_central, 0)) %>%
-    dplyr::group_by(region_id, population) %>%
+    dplyr::group_by(location_id, population) %>%
     dplyr::summarise_at(c("cost.mlnUSD","deaths"), sum, na.rm=T)
 }

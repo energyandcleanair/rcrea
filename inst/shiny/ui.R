@@ -21,7 +21,7 @@ ui <- fluidPage(
                     uiOutput("selectInputCountry"),
                     selectInput("regionLevel",
                                 "Region Level:",
-                                choices = list("city"="city","county"="gadm2","state/province"="gadm1","country"="country"),
+                                choices = list("station"="station","city"="city"),
                                 multiple=F,
                                 selected = "city"
                     ),

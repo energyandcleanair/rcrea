@@ -21,6 +21,7 @@ test_that("plot recents with various configs", {
       source=source,
       city=city,
       poll=poll,
+      range="full",
       subfile_by=subfile_by,
       aggregate_level=aggregate_level,
       running_days=running_days
@@ -28,7 +29,7 @@ test_that("plot recents with various configs", {
     NA)
 
   f <- list.files(folder, pattern = "*.png", include.dirs = T, full.names = T, recursive = F)
-  expect_equal(length(f), 6 * length(running_days))
+  expect_equal(length(f), 3 * length(running_days))
   file.remove(f)
 
   expect_error(
@@ -56,7 +57,7 @@ test_that("plot recents with various configs", {
       poll=rcrea::NO2,
       process_id="anomaly_offsetted_gbm_lag1_city_mad",
       subfile_by="poll",
-      subplot_by = "region_id",
+      subplot_by = "location_id",
       aggregate_level="city",
       running_days=14,
     ),
@@ -72,7 +73,7 @@ test_that("plot recents with various configs", {
       city=city,
       poll=poll,
       subfile_by="poll",
-      subplot_by = "region_id",
+      subplot_by = "location_id",
       aggregate_level=aggregate_level,
       running_days=running_days,
       process_id="trend_gbm_lag1"

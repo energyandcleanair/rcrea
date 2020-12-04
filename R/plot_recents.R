@@ -31,7 +31,7 @@ plot_recents <- function(
   source_city=NULL, #If not null, replaces source and city list(source1=c(city1,city2), source2=c(city3,city4))
   process_id=NULL,
   running_days=c(0, 7, 14, 30),
-  color_by='region_id',
+  color_by='location_name',
   subplot_by="poll",
   subfile_by="country",
   type="ts",
@@ -148,19 +148,30 @@ plot_recents <- function(
     meas <- utils.add_lockdown(meas)
   }
 
+  # Ensure common language with earlier versions
+  if(!is.null(subfile_by)){
+    subfile_by <- recode(subfile_by,
+                         "region_id"="location_id",
+                         "region_name"="location_name",
+                         "region"="location_name",
+                         "pollutant"="poll",
+                         .missing=NULL
+    )
+  }
+
   subfiles <- switch(subfile_by,
-                     "region_id"=unique(meas$region_id),
-                     "region_name"=unique(meas$region_name),
+                     "location_id"=unique(meas$location_id),
+                     "location_name"=unique(meas$location_name),
                      "country"=unique(meas$country),
-                     "city"=unique(meas$region_name),
-                     "gadm1"=unique(meas$region_id),
+                     "city"=unique(meas$location_name),
+                     "gadm1"=unique(meas$location_id),
                      "poll"=unique(meas$poll))
 
   for(subfile in subfiles){
     for(running in running_days){
       tryCatch({
 
-        region_name <- switch(subfile_by,
+        location_name <- switch(subfile_by,
                               "country"= countrycode::countrycode(subfile, origin="iso2c", destination = "country.name"),
                               "city"=subfile,
                               "gadm1"=subfile
@@ -171,13 +182,13 @@ plot_recents <- function(
 
         filtered_meas <- switch(subfile_by,
                                 "country"= meas%>% dplyr::filter(country==subfile),
-                                "city"= meas%>% dplyr::filter(region_name==subfile),
-                                "gadm1"= meas%>% dplyr::filter(region_id==subfile),
+                                "city"= meas%>% dplyr::filter(location_name==subfile),
+                                "gadm1"= meas%>% dplyr::filter(location_id==subfile),
                                 "poll"= meas%>% dplyr::filter(poll==subfile)
         ) %>%
           dplyr::mutate(
-            region_id=tools::toTitleCase(region_id),
-            region_name=tools::toTitleCase(region_name),
+            location_id=tools::toTitleCase(location_id),
+            location_name=tools::toTitleCase(location_name),
             year=lubridate::year(date)) #To match plot_measurements names
 
         country <- unique(filtered_meas$country)
@@ -251,7 +262,7 @@ plot_recents <- function(
           for(s in size){
 
             if(min(meas$value, na.rm=T)>=0 & !stringr::str_starts(type, "yoy")){
-              plt <- plt + scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[size]])))
+              plt <- plt + scale_y_continuous(limits=c(0,NA), expand = expansion(mult = c(0, expand[[s]])))
             }
 
             if("full" %in% range){

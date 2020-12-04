@@ -26,17 +26,9 @@ server <- function(input, output, session) {
         req(input$regionLevel)
         req(input$country)
 
-        filtered_locations <- locations %>% dplyr::filter(source==input$source)
-        region_name_col <- switch(input$regionLevel,
-                                  "city"="city",
-                                  "gadm2"="name_2",
-                                  "gadm1"="name_1",
-                                  "country"="country_name")
-        region_id_col <- switch(input$regionLevel,
-                                "city"="city",
-                                "gadm2"="gid_2",
-                                "gadm1"="gid_1",
-                                "country"="country")
+        filtered_locations <- locations %>% dplyr::filter(source==input$source, level==input$regionLevel)
+        region_name_col <- "name"
+        region_id_col <- "id"
 
         l <- filtered_locations %>%
             dplyr::filter(country %in% input$country) %>%
@@ -77,7 +69,9 @@ server <- function(input, output, session) {
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        rcrea::measurements(country=country, location_id=region, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, aggregate_level=aggregate_level, source=source, with_metadata = F, deweathered=NULL, population_weighted = NULL)
+        rcrea::measurements(country=country, location_id=region, poll=poll, date_from=date_from, date_to=date_to,
+                            average_by=averaging, aggregate_level=aggregate_level, source=source,
+                            with_metadata = T, deweathered=NULL, population_weighted = NULL)
     })
 
     targets <- reactive({
@@ -218,8 +212,8 @@ server <- function(input, output, session) {
                "heatmap_w_text" = "heatmap_w_text")
 
         color_by <-  switch(plot_type,
-                            "ts" = switch(input$overlayCities+1, NULL, "region_id"),
-                            "yoy" = switch(input$overlayCities+1, NULL, "region_id"),
+                            "ts" = switch(input$overlayCities+1, NULL, "location_name"),
+                            "yoy" = switch(input$overlayCities+1, NULL, "location_name"),
                             "ts_year" = "year",
                             "yoy_year" = "year",
                             "heatmap" = NULL,
@@ -228,18 +222,18 @@ server <- function(input, output, session) {
         subplot_by <-  switch(plot_type,
                             "ts" = switch(input$overlayCities+1,
                                           c(if(length(poll)>1) "poll" else NULL,
-                                            if(length(region)>1) "region_id" else NULL),
+                                            if(length(region)>1) "location_name" else NULL),
                                           if(length(poll)>1) "poll" else NULL
                                           ),
                             "yoy" = switch(input$overlayCities+1,
                                           c(if(length(poll)>1) "poll" else NULL,
-                                            if(length(region)>1) "region_id" else NULL),
+                                            if(length(region)>1) "location_name" else NULL),
                                           if(length(poll)>1) "poll" else NULL
                             ),
                             "ts_year" = c(if(length(poll)>1) "poll" else NULL,
-                                          if(length(region)>1) "region_id" else NULL),
+                                          if(length(region)>1) "location_name" else NULL),
                             "yoy_year" = c(if(length(poll)>1) "poll" else NULL,
-                                          if(length(region)>1) "region_id" else NULL),
+                                          if(length(region)>1) "location_name" else NULL),
                             "heatmap" = NULL,
                             "heatmap_w_text" = NULL)
 
@@ -252,7 +246,7 @@ server <- function(input, output, session) {
 
         # Replace region ids with region name
         id_to_name <- setNames(names(region_choices_),tolower(unname(region_choices_)))
-        meas_plot_data <- meas_plot_data %>% dplyr::mutate(region_id=id_to_name[region_id])
+        # meas_plot_data <- meas_plot_data %>% dplyr::mutate(location_name=id_to_name[region_id])
         if(nrow(meas_plot_data)==0) return()
 
         meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
@@ -603,8 +597,9 @@ server <- function(input, output, session) {
         date_to <- lubridate::ymd(years[2]*10000+1231)
 
         # Get measurements
-        rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to, average_by=averaging, source=source, with_metadata = F) %>%
-            dplyr::select(region_id, date, poll, unit, source, timezone, process_id) %>%
+        rcrea::measurements(country=country, city=city, poll=poll, date_from=date_from, date_to=date_to,
+                            average_by=averaging, source=source, with_metadata = T) %>%
+            dplyr::select(location_id, location_name, date, poll, unit, source, timezone, process_id) %>%
             dplyr::arrange(desc(date))
     })
 

@@ -18,7 +18,7 @@ filter_sanity_raw <- function(result){
   result <- result %>%
     # dplyr::filter(value >= 0) %>%
     #dplyr::filter(!is.na(location_id)) %>%
-    dplyr::filter(!is.na(date)) %>%
+    dplyr::filter(!is.na(date)) %>%a
     dplyr::filter(!is.na(poll))  %>%
     dplyr::filter(value < 1500 | poll==CO)
   # result <- result %>% filter(parameter != 'o3' || value > -9999)
@@ -26,9 +26,9 @@ filter_sanity_raw <- function(result){
 }
 
 
-processes <- function(con=NULL){
+processes <- function(con=NULL, collect=T){
   con = if(!is.null(con)) con else connection()
-  tbl_safe(con, "processes") %>%
+  p <- tbl_safe(con, "processes") %>%
     utils.unnest_json("filter",
                       filter_type = "type") %>%
     utils.unnest_json("agg_spatial",
@@ -36,32 +36,165 @@ processes <- function(con=NULL){
                       weighting = "weighting") %>%
     utils.unnest_json("agg_temp",
                       period = "period")
+
+  if(collect){
+    p <- p %>% collect()
+  }
+
+  return(p)
 }
 
-locations <- function(country=NULL,
-                      city=NULL,
-                      id=NULL,
-                      type=NULL,
-                      source=NULL,
-                      source_city=NULL,
-                      collect=TRUE,
-                      keep_only_for_dashboard=F,
-                      with_geometry=TRUE,
-                      with_meta=FALSE,
-                      with_tz=NULL, #Deprecated
-                      con=NULL){
 
-  if(!is.null(with_tz)){
-    with_meta = with_tz
-    warning('with_tz argument has been replaced by with_meta')
+
+cities <- function(
+  id=NULL,
+  name=NULL,
+  country=NULL, #ISO2
+  source=NULL,
+  with_metadata=F,
+  with_geometry=F,
+  with_source=F, #Cities do not have source. But if with_source=T, then we'll add a row for each source that has this city
+  collect=T,
+  con=NULL
+){
+
+  # Connecting
+  con = if(!is.null(con)) con else connection()
+  c <- tbl_safe(con, "cities")
+
+  # Filter: id
+  if(!is.null(id)){
+    c <- c %>% dplyr::filter(id %in% !!tolower(id))
+  }
+
+  # Filter: name
+  if(!is.null(name)){
+    c <- c %>% dplyr::filter(tolower(name) %in% !!tolower(name))
+  }
+
+  # Filter: country
+  if(!is.null(country)){
+    c <- c %>% dplyr::filter(country_id %in% !!toupper(country))
+  }
+
+  # Filter: source
+  if(!is.null(source) | with_source){
+    # Cities don't have a source field, but we look
+    # for stations of that source and extract
+    source_stations <- stations(source=source, con=con, collect=F)
+    c <- c %>% dplyr::inner_join(source_stations %>% select(id=city_id, source) %>% distinct())
+  }
+
+  c <- c %>% rename(country=country_id)
+
+  # Keeping only interesting columns
+  cols <- c("id", "level", "name", "country")
+  cols <- if(with_geometry)  c(cols, "geometry") else cols
+  cols <- if(with_metadata) c(cols, "timezone", "name_local", "gadm1_id") else cols
+  cols <- if(with_source) c(cols, "source") else cols
+  c <- c %>% dplyr::select_at(cols)
+
+  if(collect){
+    c <- c %>% collect()
+    if(with_geometry){
+      c <- c %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
+    }
+  }
+
+  return(c)
+}
+
+
+stations <- function(
+  id=NULL,
+  source=NULL,
+  city=NULL, #city name
+  country=NULL, #ISO2
+  type=NULL,
+  with_metadata=F,
+  with_geometry=F,
+  collect=T,
+  con=NULL
+){
+
+  # Connecting
+  con = if(!is.null(con)) con else connection()
+  s <- tbl_safe(con, "stations")
+
+  # Filter: source
+  if(!is.null(source)){
+    s <- s %>% filter(source==!!tolower(source))
+  }
+
+  # Filter: country
+  if(!is.null(country)){
+    s <- s %>% dplyr::filter(country_id %in% !!toupper(country))
+  }
+
+  # Filter: type
+  if(!is.null(type)){
+    s <- s %>% filter(type==!!tolower(type))
+  }
+
+  # Filter: city
+  if(!is.null(city)){
+   c <- cities(name=city, country=country, con=con, collect=F)
+   # Don't use source or it will be circular
+   s <- s %>% inner_join(c %>% dplyr::select(city_id=id))
+  }
+
+  if(with_metadata){
+    s <- s %>% inner_join(cities(con=con, collect=F) %>% select(city_id=id, city_name=name))
+  }
+
+  s <- s %>% rename(country=country_id)
+
+  # Keeping only interesting columns
+  cols <- c("id", "level", "city_id", "country", "source")
+  cols <- if(with_geometry)  c(cols, "geometry") else cols
+  cols <- if(with_metadata) c(cols, "name", "timezone", "type", "city_name") else cols
+  s <- s %>% dplyr::select_at(cols)
+
+  if(collect){
+    s <- s %>% collect()
+    if(with_geometry){
+      s <- s %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
+    }
+  }
+
+  return(s)
+}
+
+
+locations <- function(
+  level, #"city" or "station",
+  id=NULL, #station_id or city_id depending on level
+
+  # Other indirect search parameters
+  country=NULL,
+  city=NULL, #name
+  type=NULL,
+  source=NULL,
+  source_city=NULL, #Nested source:[city]
+
+  # Query parameters
+  collect=TRUE,
+  with_geometry=TRUE,
+  with_metadata=FALSE,
+  keep_with_measurements_only=FALSE, #Only keep locations that actually have measurements
+  con=NULL){
+
+  if(length(setdiff(level, c("station","city")))){
+    stop("level should be either 'station' or 'city' or both")
+  }
+
+  if("city" %in% level & !is.null(type)){
+    warning("type is ignored when level=='city'")
+    source <- NULL
   }
 
   if(!is.null(source) & !is.null(source_city)){
     warning("Cannot define both source and source_city. Overwriting with source_city")
-  }
-
-  if(!is.null(city) & !is.null(source_city)){
-    warning("Cannot define both city and source_city. Overwriting with source_city")
   }
 
   if(is.null(source_city) & !is.null(source)){
@@ -69,88 +202,54 @@ locations <- function(country=NULL,
     city <- NULL
   }
 
-  # Variable names must be different to column names
-  country_ <- tolower(country)
-  id_ <- tolower(id)
-  type_ <- tolower(type)
-
-  # Connecting
+  result <- NULL
   con = if(!is.null(con)) con else connection()
-  l <- tbl_safe(con, "locations") # Old version without explicit geomoetry column
 
-  # Apply filters
-  if(!is.null(source_city)){
-    # Some sources were indicated, with or without cities
-    for(source_ in names(source_city)){
-      r <- l %>% dplyr::filter(tolower(source)==tolower(source_))
-      city_ <- tolower(source_city[[source_]])
-      r <- switch(toString(length(city_)),
-                  "0" = r, # NULL
-                  "1" = r %>% dplyr::filter(tolower(city) == city_), # Single city name
-                  r %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
-      )
 
-      if(source_==names(source_city)[1]){
-        result <- r
-      }else{
-        result <- dplyr::union(result, r)
+  if("station" %in% level){
+    if(!is.null(source_city)){
+      # Some sources were indicated, with or without cities
+      for(source_ in names(source_city)){
+        r <- stations(id=id, source=source_, city=source_city[[source_]], country=country, type=type,
+                           with_metadata=with_metadata, with_geometry=with_geometry, collect=F,
+                           con=con)
+        result <- ifelse(is.null(result), r, dplyr::union(result, r))
       }
+    }else{
+      result <- stations(id=id, source=source, city=city, country=country, type=type,
+                    with_metadata=with_metadata, with_geometry=with_geometry, collect=F,
+                    con=con)
     }
-  }else{
-    # No source indicated, only cities
-    city_ <- tolower(city)
-    result <- switch(toString(length(city_)),
-                "0" = l, # NULL
-                "1" = l %>% dplyr::filter(tolower(city) == city_), # Single city name
-                l %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
-    )
   }
 
+  if("city" %in% level){
+    if(!is.null(source_city)){
+      # Some sources were indicated, with or without cities
+      for(source_ in names(source_city)){
+        r <- cities(id=id, name=source_city[[source_]], country=country,
+                    source=source_, with_metadata=with_metadata, with_geometry=with_geometry,
+                    with_source=T,
+                    collect=F, con=con) %>%
+          mutate(city_name=name)
 
-  result <- switch(toString(length(country_)),
-              "0" = result, # NULL
-              "1" = result %>% dplyr::filter(tolower(country) == country_), # Single country name
-              result %>% dplyr::filter(tolower(country) %in% country_) # Vector of country names
-  )
+        result <- if(is.null(result)){r}else{dplyr::union(result, r)}
+      }
+    }else{
+      r <- cities(id=id, name=city, country=country, source=source,
+                  with_metadata=with_metadata, with_source=T,
+                  with_geometry=with_geometry, collect=F,
+                  con=con) %>%
+        mutate(city_name=name)
 
-#
-#   result <- switch(toString(length(city_)),
-#                    "0" = result, # NULL
-#                    "1" = result %>% dplyr::filter(tolower(city) == city_), # Single city name
-#                    result %>% dplyr::filter(tolower(city) %in% city_) # Vector of city names
-#   )
-#
-#   result <- switch(toString(length(source_)),
-#                    "0" = result, # NULL
-#                    "1" = result %>% dplyr::filter(tolower(source) == source_),
-#                    result %>% dplyr::filter(tolower(source) %in% source_)
-#   )
-
-  result <- switch(toString(length(id_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(id) == id_), # Single station id
-                   result %>% dplyr::filter(tolower(id) %in% id_) # Vector of station ids
-  )
-
-  result <- switch(toString(length(type_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(type) == type_), # Single station id
-                   result %>% dplyr::filter(tolower(type) %in% type_) # Vector of station ids
-  )
-
-  if(keep_only_for_dashboard){
-    result <- result %>% dplyr::filter(show_in_dashboard==TRUE)
+      result <- if(is.null(result)){r}else{dplyr::union(result, r)}
+    }
   }
 
-  # Keeping only interesting columns
-  cols <- c("id", "name", "city", "country", "country_name", "gid_1", "name_1", "gid_2", "name_2")
-  cols <- if(with_geometry)  c(cols, "geometry") else cols
-  cols <- if(with_meta) c(cols, 'timezone', "last_scraped_data", "source", "last_updated", "type") else cols
+  if(keep_with_measurements_only){
+    # Only fast enough if location_id is indexed
+    result <- result %>% inner_join(tbl_safe(con, "measurements") %>% distinct(location_id) %>% select(id=location_id))
+  }
 
-  result <- result %>% dplyr::select_at(cols)
-
-
-  # Whether to collect the query i.e. actually run the query
   if(collect){
     result <- result %>% dplyr::collect()
     if(with_geometry){
@@ -199,7 +298,7 @@ measurements <- function(country=NULL,
                          user_filter=NULL,
                          with_metadata=FALSE,
                          with_geometry=FALSE,
-                         aggregate_level='city',
+                         aggregate_level='city', # city or station
                          deweathered=F,
                          population_weighted=F,
                          con=NULL) {
@@ -216,8 +315,8 @@ measurements <- function(country=NULL,
     aggregate_level <- "station"
   }
 
-  if(!aggregate_level %in% c('station','city','gadm1','gadm2','country')){
-    stop("'aggregate_level' should be either 'location/station','city','gadm1','gadm2' or 'country'")
+  if(!aggregate_level %in% c('station','city')){
+    stop("'aggregate_level' should be either 'station' or 'city'")
   }
 
   if(!is.null(source) & best_source_only){
@@ -242,20 +341,13 @@ measurements <- function(country=NULL,
   # If location_id specified, we have to keep it
   # aggregate_at_city_level <- aggregate_at_city_level & is.null(location_id)
 
-
-  # Note: variable names must be different to column names for dbplyr filters to work
-  poll_ <- tolower(poll)
-  country_ <- tolower(country)
-  location_id_ <- tolower(location_id)
-  process_id_ <- process_id #Index of process_id is not lowered
-
   # Connecting if required (if con is NULL or invalid)
   con = rcrea::connection(current_connection=con)
 
   # ------------------------------------------------
   # Look for processes that match user requirements
   #-------------------------------------------------
-  procs <- rcrea::processes(con)
+  procs <- rcrea::processes(con=con, collect=F)
 
   if(!is.null(aggregate_level)){
     procs <- procs %>% dplyr::filter(aggregate_level==region_type)
@@ -277,7 +369,7 @@ measurements <- function(country=NULL,
         (!is.null(weighting) & population_weighted))
   }
 
-  if(!is.null(process_id_)){
+  if(!is.null(process_id)){
     procs <- switch(toString(length(process_id_)),
            "0" = procs, # NULL
            "1" = procs %>% dplyr::filter(id == process_id_), # Single value
@@ -290,9 +382,7 @@ measurements <- function(country=NULL,
     }
   }
 
-
   procs %>% dplyr::filter("\"weighting\": \"gpw\"" %in% agg_spatial) %>% dplyr::select(agg_spatial)
-
 
   if(nrow(procs %>% dplyr::collect())==0){
     stop("No pre-processing found corresponding to required data. Are you at the right aggregation level (cities don't have population-weighted average) ?")
@@ -300,16 +390,8 @@ measurements <- function(country=NULL,
     # return(NULL)
   }
 
-  value_cols <- c("date","poll","unit","region_id","process_id","source","timezone","value")
-  meta_cols <- if(with_metadata){
-    switch(aggregate_level,
-           "station" = c("region_name","country"),
-           "city" = c("region_name","country"),
-           "gadm1" = c("region_name","country"),
-           "gadm2" = c("region_name","country",'gid_1', 'name_1'),
-           "country" = c("region_name","country"),
-           c("region_name","country"))
-  }else{c()}
+  value_cols <- c("location_id","location_name","process_id","date","poll","unit","source","value")
+  meta_cols <- if(with_metadata) c("timezone","country") else c()
 
   if(with_geometry){
     meta_cols <- c(meta_cols, "geometry")
@@ -320,74 +402,25 @@ measurements <- function(country=NULL,
   # Perform actions
   #-----------------------
   # Prepare locations
-  locs <- locations(source=source,
-                    city=city,
-                    source_city=source_city,
-                    country=country,
-                    type=location_type,
-                    with_meta=T,
-                    collect=F,
-                    con = con) %>%
-    dplyr::rename(location_id=id, location=name)
+  locs <- locations(
+    level=aggregate_level,
+    source=source,
+    city=city,
+    source_city=source_city,
+    country=country,
+    type=location_type,
+    with_metadata=T,
+    collect=F,
+    con = con) %>%
+
+    dplyr::rename(location_id=id, location_name=name)
 
 
-  loc_id_col <- switch(aggregate_level,
-                       "station" = "location_id",
-                       "city" = "city",
-                       "gadm1" = "gid_1",
-                       "gadm2" = "gid_2",
-                       "country" = "country"
-  )
-
-  # Filtering by region_id (can be location_ids or gids...)
+  # Filtering by location_id (can be station_id or city_id)
   # https://github.com/tidyverse/dbplyr/issues/296
-  if(!is.null(location_id_) & length(location_id_)>0){
-    quo <- switch(toString(length(location_id_)),
-                  "0" = NULL,
-                  "1" = dplyr:::apply_filter_syms(dplyr::any_vars(lower(.) == location_id_), syms(loc_id_col)),
-                  quo <- dplyr:::apply_filter_syms(dplyr::any_vars(lower(.) %in% location_id_), syms(loc_id_col))
-    )
-    if(!is.null(quo)){
-      locs <- locs %>% dplyr::filter(!!dbplyr::partial_eval(quo, loc_id_col))
-    }
+  if(!is.null(location_id) & length(location_id)>0){
+    locs <- locs %>% filter(location_id %in% !!tolower(location_id))
   }
-
-
-  # Group locations by aggregation_level
-  locs_group_by <- switch(aggregate_level,
-                          "station" = NULL,
-                          "city" = c("country", "city","source"),
-                          "gadm1" = c("country", "gid_1", "name_1","source"),
-                          "gadm2" = c("country", "gid_1", "name_1", "gid_2", "name_2","source"),
-                          "country" = c("country","source"),
-                          NULL
-  )
-
-  region_id_col <- switch(aggregate_level,
-                          "station" = "location_id",
-                          "city" = "city",
-                          "gadm1" = "gid_1",
-                          "gadm2" = "gid_2",
-                          "country" = "country"
-  )
-
-  region_name_col <- switch(aggregate_level,
-                            "station" = "location",
-                            "city" = "city",
-                            "gadm1" = "name_1",
-                            "gadm2" = "name_2",
-                            "country" = "country")
-
-  if(!is.null(locs_group_by)){
-    locs <- locs %>% dplyr::group_by_at(locs_group_by) %>%
-      dplyr::summarise(geometry=ST_Union(geometry),
-                       timezone= sql("mode() within group (order by timezone)")) %>%
-      dplyr::ungroup()
-  }
-
-  locs <- locs %>%
-    dplyr::mutate_at(region_id_col, .funs = list(region_id = ~(.))) %>%
-    dplyr::mutate_at(region_name_col, .funs = list(region_name = ~(.)))
 
   # Use best source if asked
   # EEA is best for Europe
@@ -397,24 +430,20 @@ measurements <- function(country=NULL,
   if(best_source_only){
     locs <- locs %>%
       dplyr::mutate(source_ranking=switch(source,"eea"=1,"mee"=1,"cpcb"=1,"csb"=1,"jp"=1,"airkorea"=1, "openaq"=2, 3)) %>%
-      dplyr::group_by(region_id) %>%
+      dplyr::group_by(location_id) %>%
       dplyr::filter(source_ranking==min(source_ranking, na.rm=T))
   }
 
   # Take measurements at these locations
-  result <- tbl_safe(con, "measurements_new")
-  # result <- switch(toString(length(source_)),
-  #                  "0" = result, # NULL
-  #                  "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
-  #                  result %>% dplyr::filter(tolower(source) %in% source_) # Vector
-  # )
+  result <- tbl_safe(con, "measurements")
 
-  locs_meas_group_by <- c("region_id","source")
+  m_l_joining_cols <- ifelse(is.null(source) & is.null(source_city) & aggregate_level=="city",
+                             c("location_id"),
+                             c("location_id","source"))
 
   result <- result %>%
-    dplyr::mutate(region_id=tolower(region_id)) %>%
-    dplyr::right_join(locs %>% dplyr::mutate(region_id=tolower(region_id)),
-                      by=locs_meas_group_by, suffix = c("_remove", ""))
+    dplyr::right_join(locs,
+                      by=m_l_joining_cols, suffix = c("_remove", ""))
 
   # R package uses 'poll' whilst db is using 'pollutant'
   result <- result %>% dplyr::rename(poll = pollutant)
@@ -423,39 +452,25 @@ measurements <- function(country=NULL,
   result <- procs %>% dplyr::select(process_id=id) %>% dplyr::left_join(result, by=c("process_id"))
 
   # Filtering based on user request
-  result <- switch(toString(length(poll_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(tolower(poll) == poll_), # Single value
-                   result %>% dplyr::filter(tolower(poll) %in% poll_) # Vector
-  )
+  if(!is.null(poll)){
+    result <- result %>% dplyr::filter(poll %in% !!poll)
+  }
 
-  result <- switch(toString(length(date_from)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(date >= date_from)
-  )
+  if(!is.null(date_from)){
+    result <- result %>% dplyr::filter(date >= date_from)
+  }
 
-  result <- switch(toString(length(date_to)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(date <= date_to)
-  )
-#
-#   result <- switch(toString(length(source_)),
-#                    "0" = result, # NULL
-#                    "1" = result %>% dplyr::filter(tolower(source) == source_), # Single value
-#                    result %>% dplyr::filter(tolower(source) %in% source_) # Vector
-#   )
+  if(!is.null(date_to)){
+    result <- result %>% dplyr::filter(date <= date_to)
+  }
 
-  result <- switch(toString(length(process_id_)),
-                   "0" = result, # NULL
-                   "1" = result %>% dplyr::filter(process_id == process_id_), # Single value
-                   result %>% dplyr::filter(process_id %in% process_id_) # Vector
-  )
-
+  if(!is.null(process_id)){
+    result <- result %>% dplyr::filter(process_id %in% !!process_id)
+  }
 
   if(!is.null(user_filter)){
     result <- user_filter(result)
   }
-
 
   # Whether to collect the query i.e. actually run the query
   if(collect){
@@ -468,7 +483,6 @@ measurements <- function(country=NULL,
     # Localize time
     # We can't use purrr:map since it won't deal with datetime objects
     # hence the rowwise
-
     if(nrow(result)>0){
       result <- result %>% dplyr::rowwise() %>% tidyr::replace_na(list('timezone'='UTC')) %>%
         dplyr::mutate(date=lubridate::force_tz(date,tzone=timezone))

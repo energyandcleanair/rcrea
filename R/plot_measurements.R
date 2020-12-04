@@ -4,7 +4,7 @@ plot_measurements <-function(meas,
                              running_width=NULL,
                              running_days=NULL,
                              running_maxNAs=NULL,
-                             color_by='region_id',
+                             color_by='location_id', #location_id, location_name, poll
                              average_by='day',
                              subplot_by=NULL,
                              linetype_by=NULL,
@@ -12,8 +12,29 @@ plot_measurements <-function(meas,
                              type='ts',
                              percent=F){
 
-  poll_ <- tolower(poll)
   chg_colors <- c("#35416C", "#8CC9D0", "darkgray", "#CC0000", "#990000")
+
+
+  # Ensure common language with earlier versions
+  if(!is.null(color_by)){
+    color_by <- recode(color_by,
+                       "region_id"="location_id",
+                       "region_name"="location_name",
+                       "region"="location_name",
+                       "pollutant"="poll",
+                       .missing=NULL
+    )
+  }
+
+  if(!is.null(subplot_by)){
+    subplot_by <- recode(subplot_by,
+                       "region_id"="location_id",
+                       "region_name"="location_name",
+                       "region"="location_name",
+                       "pollutant"="poll",
+                       .missing=NULL
+    )
+  }
 
 
   # Testing the charts make sense (i.e. not averaging different pollutants)
@@ -21,36 +42,23 @@ plot_measurements <-function(meas,
     stop("You need to specify pollutant to display")
   }
 
-  if(('location' %in% c(subplot_by, color_by) && is.na(unique(meas$location)))){
-    warning("location information missing. Run measurements query with keep_location_id=T")
+  if(('location_name' %in% c(subplot_by, color_by) && is.na(unique(meas$location_name)))){
+    warning("location_name information missing. Run measurements query with with_meta=T")
   }
 
-  if(('location_id' %in% c(subplot_by, color_by) && is.na(unique(meas$location_id)))){
-    warning("location information missing. Run measurements query with keep_location_id=T")
+  if(!is.null(subplot_by) && !(subplot_by %in% c("location_id","location_name","poll"))){
+    stop("subplot_by can only be 'NULL', 'location_id', 'location_name' or 'poll'")
   }
 
-  if(!is.null(subplot_by) && !(subplot_by %in% c("region_id","region_name","poll"))){
-    stop("subplot_by can only be 'NULL', 'region_name', 'region_id' or 'poll'")
-  }
-
-  if(!is.null(color_by) && !(color_by %in% c("region_id","year", "value", "poll"))){
-    stop("color_by can only be 'NULL', 'region_id', 'year', 'value' or 'poll")
+  if(!is.null(color_by) && !(color_by %in% c("location_id", "location_name", "year", "value", "poll"))){
+    stop("color_by can only be NULL, 'location_id', 'location_name', 'year', 'value' or 'poll'")
   }
 
 
   # Select pollutants
-  meas <- switch(toString(length(poll_)),
-                 "0" = meas, # NULL
-                 "1" = meas %>% dplyr::filter(poll==poll_),
-                 meas %>% dplyr::filter(poll %in% poll_)
-  )
-
-
-  # Capitalize pollutants and regions for display
-  meas$poll <- toupper(meas$poll)
-  meas <- meas %>%
-    dplyr::mutate_at(intersect(c("region_id","region_name"), names(meas)),
-              tools::toTitleCase)
+  if(!is.null(poll)){
+    meas <- meas %>% dplyr::filter(poll %in% !!poll)
+  }
 
   # Deprecated argument(s)
   if(exists('running_days') && !is.null(running_days)){
@@ -64,11 +72,14 @@ plot_measurements <-function(meas,
   }
 
   # Take mean over relevant grouping (at least city, date and pollutant)
-  group_by_cols <- union(c('region_id', 'poll', 'unit', 'process_id'), union(setdiff(color_by,c("year","value")), setdiff(subplot_by,c("year","value"))))
+  group_by_cols <- union(c('location_id', 'poll', 'unit', 'process_id'),
+                         union(setdiff(color_by,c("year","value")),
+                               setdiff(subplot_by,c("year","value"))))
 
   if(!is.null(average_by)){
     meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
   }
+
   meas <- meas %>% dplyr::group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = mean(value))
 
   # Make date axis homogeneous i.e. a row for every day / month / year
@@ -78,10 +89,7 @@ plot_measurements <-function(meas,
     dplyr::summarize(date=list(seq(min(date), max(date), by=paste(average_by)) %>%
                                  trunc(units=average_by))) %>%
     tidyr::unnest(cols=c(date))
-  # df_placeholder <- transform(df_placeholder, date_str=format(date, "%Y-%m-%d"))
 
-  # meas <- transform(meas, date_str=format(date, "%Y-%m-%d"))
-  # meas <- subset(meas, select = -c(date))
   meas <- merge(meas, df_placeholder, all=TRUE)
 
   # Apply running average if need be
@@ -103,8 +111,6 @@ plot_measurements <-function(meas,
     if(!is.null(years)){
       meas <- meas %>% dplyr::filter(lubridate::year(date) %in% years)
     }
-    # meas <- meas %>% dplyr::arrange(date) %>% dplyr::group_by_at(group_by_cols)  %>%
-    #   dplyr::mutate(value_plot=zoo::rollapply(value, width=running_width, FUN=function(x) mean(x, na.rm=TRUE), align='right',fill=NA))
   }
 
   if(nrow(meas %>% dplyr::filter(!is.na(value)))==0){
@@ -125,9 +131,6 @@ plot_measurements <-function(meas,
     lubridate::year(meas$date) <- 0
   }
 
-  # Add categorical variable
-  # meas <- meas %>% dplyr::group_by(poll, unit) %>% dplyr::mutate(value_cat=cut_poll(unique(poll), value))
-
   # Build plot
   if(!is.null(color_by) && !is.na(color_by)){
     plt_aes <- aes_string(x='date', y='value', color=color_by)
@@ -146,6 +149,17 @@ plot_measurements <-function(meas,
   units <- unique(meas$unit)
   ylabel <- ifelse(length(units)==1, units, "Concentration")
 
+  # Add categorical variable
+  if(stringr::str_starts(type,"heatmap")){
+    meas <- meas %>% dplyr::group_by(poll, unit) %>% dplyr::mutate(value_cat=cut_poll(unique(poll), value))
+  }
+
+  # Capitalize pollutants and regions for display
+  meas$poll <- toupper(meas$poll)
+  meas <- meas %>%
+    dplyr::mutate_at(intersect(c("location_id","location_name"), names(meas)),
+                     tools::toTitleCase)
+
   plt <- ggplot2::ggplot(meas %>% dplyr::filter(!is.na(value)), plt_aes, color="red") +
     labs(x='', y=ylabel,
          title=paste(''),
@@ -154,6 +168,9 @@ plot_measurements <-function(meas,
     theme_crea()
   ymin <- min(min(meas$value, na.rm=T),0)
   maxabs <- max(abs(meas$value), na.rm=T)
+
+
+
   plt <- switch(type,
                 "ts" = plt + geom_line(aes(size="1"), lineend="round", show.legend = show_color_legend) +
                   ylim(ymin, NA) +
@@ -171,15 +188,15 @@ plot_measurements <-function(meas,
                   {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
                   {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
                 "heatmap" = plt +
-                  geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'), fill='value_plot_cat'), color='white') +
+                  geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'location_id'), fill='value_cat'), color='white') +
                   scale_y_discrete() +
                   scale_fill_poll(NULL, poll) +
                   theme(legend.position = "right"),
                 "heatmap_w_text" = plt +
-                  geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'), fill='value_plot_cat'), color='white') +
+                  geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'location_id'), fill='value_cat'), color='white') +
                   scale_y_discrete(expand=c(0,0)) +
                   scale_fill_poll(NULL, poll) +
-                  geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'region_id'),
+                  geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'location_id'),
                                         label="paste(sprintf('%.0f', value_plot))"), size=3, color='black') + theme(axis.text.x = element_text()) +
                   labs(x='', y='', subtitle=expression('[' * mu * 'g/m'^3*']'), title=paste(poll_str(poll), 'concentration'))
   )
@@ -195,7 +212,7 @@ plot_measurements <-function(meas,
 
   if(!is.null(subplot_by) && (type %in% c('ts','yoy', 'yoy-relative'))){
     facets <- if(length(units)==1){subplot_by}else{c(subplot_by,'unit')}
-    scales = ifelse(all(subplot_by %in% c("region_id","region_name")),'fixed','free')
+    scales = ifelse(all(subplot_by %in% c("location_id","location_name")),'fixed','free')
     plt <- switch(as.character(length(facets)),
                   "2"= plt + facet_grid(formula(paste0(facets[1]," ~ ",facets[2])), scales=scales),
                   "3"= plt + facet_grid(formula(paste0(facets[1]," ~ ",paste(facets[2:3],collapse="+"))), scales=scales),

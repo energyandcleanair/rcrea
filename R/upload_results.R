@@ -18,7 +18,6 @@ create_new_process_id <- function(preferred_id=NULL){
 
   existing_ids <- processes() %>%
     dplyr::distinct(id) %>%
-    dplyr::collect() %>%
     dplyr::pull(id)
 
   id <- id_0
@@ -62,7 +61,7 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
   }
 
   # Check existing process
-  p=processes() %>% dplyr::collect() %>%
+  p=processes() %>%
     dplyr::mutate(
       filter=purrr::map(filter, safe_fromJSON),
       agg_spatial=purrr::map(agg_spatial, safe_fromJSON),
@@ -107,7 +106,7 @@ upsert_meas_old <- function(meas){
   meas <- meas %>% dplyr::rename(pollutant=poll)
 
 
-  required_cols <- c("date","pollutant","unit","region_id","process_id","source","value")
+  required_cols <- c("date","pollutant","unit","location_id","process_id","source","value")
   if(!all(required_cols %in% colnames(meas))){
     stop(paste("Missing columns ", paste(setdiff(required_cols, colnames(meas)))))
   }
@@ -119,7 +118,7 @@ upsert_meas_old <- function(meas){
 
     upload_chunk <- function(m){
       dbx::dbxUpsert(db, "measurements_new", m %>% dplyr::select(all_of(required_cols)),
-                     where_cols=c('date', 'pollutant', 'unit', 'process_id', 'region_id', 'source'))
+                     where_cols=c('date', 'pollutant', 'unit', 'process_id', 'location_id', 'source'))
     }
 
     lapply(ms, upload_chunk)
@@ -136,8 +135,8 @@ upsert_meas <- function(meas){
 
   meas <- meas %>% dplyr::rename(pollutant=poll)
 
-  required_cols <- c("date","pollutant","unit","region_id","process_id","source","value")
-  conflict_cols <- c("date","pollutant","unit","region_id","process_id","source")
+  required_cols <- c("date","pollutant","unit","location_id","process_id","source","value")
+  conflict_cols <- c("date","pollutant","unit","location_id","process_id","source")
 
   if(!all(required_cols %in% colnames(meas))){
     stop(paste("Missing columns ", paste(setdiff(required_cols, colnames(meas)))))
@@ -163,7 +162,7 @@ upsert_meas <- function(meas){
     )
 
     query <- sprintf(
-      "INSERT INTO measurements_new(%s)
+      "INSERT INTO measurements(%s)
       SELECT %s FROM %s
       ON CONFLICT (%s)
       DO UPDATE SET value = EXCLUDED.value;",
@@ -183,30 +182,31 @@ upsert_meas <- function(meas){
   dbx::dbxDisconnect(db)
 }
 
-#' Upsert locations in crea database
+#' #' Upsert locations in crea database
+#'  OBSOLETE
+#' #'
+#' #' @param meas
+#' #'
+#' #' @return
+#' #' @export
+#' #'
+#' #' @examples
+#' upsert_locations <- function(locs){
 #'
-#' @param meas
+#'   required_cols <- c("id","name","city","country","timezone","source","geometry","type")
+#'   if(!all(required_cols %in% colnames(locs))){
+#'     stop(paste("Missing columns ", paste(setdiff(required_cols, colnames(locs)))))
+#'   }
 #'
-#' @return
-#' @export
-#'
-#' @examples
-upsert_locations <- function(locs){
-
-  required_cols <- c("id","name","city","country","timezone","source","geometry","type")
-  if(!all(required_cols %in% colnames(locs))){
-    stop(paste("Missing columns ", paste(setdiff(required_cols, colnames(locs)))))
-  }
-
-  db <- db_writing()
-  tryCatch({
-    dbx::dbxUpsert(db, "locations", locs %>% dplyr::select(all_of(required_cols)),
-                   where_cols=c('id'))
-  }, error=function(err){
-    dbx::dbxDisconnect(db)
-    stop(paste("Upserting failed:",err))
-  })
-  dbx::dbxDisconnect(db)
-}
+#'   db <- db_writing()
+#'   tryCatch({
+#'     dbx::dbxUpsert(db, "locations", locs %>% dplyr::select(all_of(required_cols)),
+#'                    where_cols=c('id'))
+#'   }, error=function(err){
+#'     dbx::dbxDisconnect(db)
+#'     stop(paste("Upserting failed:",err))
+#'   })
+#'   dbx::dbxDisconnect(db)
+#' }
 
 

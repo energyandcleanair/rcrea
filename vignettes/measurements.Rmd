@@ -43,7 +43,7 @@ Getting data at the location level (i.e. more granular than city).
 ```{r}
 meas_stations <- rcrea::measurements(city=c('Jaipur','Mumbai'),
                                     aggregate_at_city_level = F, # To keep it at 'location' (i.e. station) level
-                                    with_metadata = T # To also collect geometry
+                                    with_geometry = T # To also collect geometry
                                     )
 meas_stations
 ```
