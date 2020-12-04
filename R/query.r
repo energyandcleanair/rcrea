@@ -395,7 +395,7 @@ measurements <- function(country=NULL,
   # Perform actions
   #-----------------------
   # Prepare locations
-  locs <- locations(
+  locs <- rcrea::locations(
     level=aggregate_level,
     source=source,
     city=city,
@@ -405,7 +405,6 @@ measurements <- function(country=NULL,
     with_metadata=T,
     collect=F,
     con = con) %>%
-
     dplyr::rename(location_id=id, location_name=name)
 
 
