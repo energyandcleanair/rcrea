@@ -63,7 +63,7 @@ weather.isd.join.using_worldmet <- function(meas, measurements_averaged_by='day'
                                                                                         otherwise = NA)
   ))
 
-  locs_weather <- locs_weather %>% select(city, timezone, weather) %>% filter(!is.na(weather)) %>% tidyr::unnest(weather)
+  locs_weather <- locs_weather %>% dplyr::select(city, timezone, weather) %>% filter(!is.na(weather)) %>% tidyr::unnest(weather)
 
   # Create local date time to merge with measurements that are in local time
   locs_weather <- locs_weather %>%
@@ -150,7 +150,7 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   # Collect if not already collected
   if(is.na(nrow(meas))){
     message("Collecting measurements")
-    meas <- meas %>% collect()
+    meas <- meas %>% dplyr::collect()
     message("Done")
   }
 
@@ -186,7 +186,7 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
 
   locs_ghcnd <- locs %>% mutate(ghcnd = purrr::pmap(list(id, latitude, longitude), ~find_station_(...))) %>%
     select(-c(latitude, longitude, id)) %>%
-    tidyr::unnest(cols=c(ghcnd)) %>% rename(ghcnd_id=id)
+    tidyr::unnest(cols=c(ghcnd)) %>% dplyr::rename(ghcnd_id=id)
 
   # Add weather data and unnest
   get_data_ <- function(ghcnd_id){
@@ -194,8 +194,8 @@ weather.ghcnd.join <- function(meas, weather_radius_km=50){
   }
   locs_weather <- locs_ghcnd %>% mutate(weather = pmap(list(ghcnd_id),~get_data_(...)))  %>%
     tidyr::unnest(cols=weather) %>%
-    select(city, date, prcp) %>%
-    rename(day=date)
+    dplyr::select(city, date, prcp) %>%
+    dplyr::rename(day=date)
 
   locs_weather <- locs_weather %>% group_by(city, day) %>% summarize(precip_ghcnd=mean(prcp, na.rm = T))
 
@@ -212,7 +212,7 @@ weather.sirad.join <- function(meas){
   # Collect if not already collected
   if(is.na(nrow(meas))){
     message("Collecting measurements")
-    meas <- meas %>% collect()
+    meas <- meas %>% dplyr::collect()
     message("Done")
   }
 

@@ -6,7 +6,7 @@ filter_sanity_daily <- function(result){
     dplyr::filter(!is.na(date)) %>%
     dplyr::filter(!is.na(poll))  %>%
     dplyr::filter(avg_day < 1500 | poll==CO)
-  # result <- result %>% filter(parameter != 'o3' || value > -9999)
+  # result <- result %>% dplyr::filter(parameter != 'o3' || value > -9999)
   return(result)
 }
 
@@ -19,7 +19,7 @@ filter_sanity_raw <- function(result){
     dplyr::filter(!is.na(date)) %>%a
     dplyr::filter(!is.na(poll))  %>%
     dplyr::filter(value < 1500 | poll==CO)
-  # result <- result %>% filter(parameter != 'o3' || value > -9999)
+  # result <- result %>% dplyr::filter(parameter != 'o3' || value > -9999)
   return(result)
 }
 
@@ -36,7 +36,7 @@ processes <- function(con=NULL, collect=T){
                       period = "period")
 
   if(collect){
-    p <- p %>% collect()
+    p <- p %>% dplyr::collect()
   }
 
   return(p)
@@ -80,10 +80,10 @@ cities <- function(
     # Cities don't have a source field, but we look
     # for stations of that source and extract
     source_stations <- stations(source=source, con=con, collect=F)
-    c <- c %>% dplyr::inner_join(source_stations %>% select(id=city_id, source) %>% distinct())
+    c <- c %>% dplyr::inner_join(source_stations %>% dplyr::select(id=city_id, source) %>% dplyr::distinct())
   }
 
-  c <- c %>% rename(country=country_id)
+  c <- c %>% dplyr::rename(country=country_id)
 
   # Keeping only interesting columns
   cols <- c("id", "level", "name", "country")
@@ -93,7 +93,7 @@ cities <- function(
   c <- c %>% dplyr::select_at(cols)
 
   if(collect){
-    c <- c %>% collect()
+    c <- c %>% dplyr::collect()
     if(with_geometry){
       c <- c %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
     }
@@ -121,7 +121,7 @@ stations <- function(
 
   # Filter: source
   if(!is.null(source)){
-    s <- s %>% filter(source==!!tolower(source))
+    s <- s %>% dplyr::filter(source==!!tolower(source))
   }
 
   # Filter: country
@@ -131,21 +131,21 @@ stations <- function(
 
   # Filter: type
   if(!is.null(type)){
-    s <- s %>% filter(type==!!tolower(type))
+    s <- s %>% dplyr::filter(type==!!tolower(type))
   }
 
   # Filter: city
   if(!is.null(city)){
    c <- cities(name=city, country=country, con=con, collect=F)
    # Don't use source or it will be circular
-   s <- s %>% inner_join(c %>% dplyr::select(city_id=id))
+   s <- s %>% dplyr::inner_join(c %>% dplyr::select(city_id=id))
   }
 
   if(with_metadata){
-    s <- s %>% inner_join(cities(con=con, collect=F) %>% select(city_id=id, city_name=name))
+    s <- s %>% dplyr::inner_join(cities(con=con, collect=F) %>% dplyr::select(city_id=id, city_name=name))
   }
 
-  s <- s %>% rename(country=country_id)
+  s <- s %>% dplyr::rename(country=country_id)
 
   # Keeping only interesting columns
   cols <- c("id", "level", "city_id", "country", "source")
@@ -154,7 +154,7 @@ stations <- function(
   s <- s %>% dplyr::select_at(cols)
 
   if(collect){
-    s <- s %>% collect()
+    s <- s %>% dplyr::collect()
     if(with_geometry){
       s <- s %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
     }
@@ -228,7 +228,7 @@ locations <- function(
                     source=source_, with_metadata=with_metadata, with_geometry=with_geometry,
                     with_source=T,
                     collect=F, con=con) %>%
-          mutate(city_name=name)
+          dplyr::mutate(city_name=name)
 
         result <- if(is.null(result)){r}else{dplyr::union(result, r)}
       }
@@ -237,7 +237,7 @@ locations <- function(
                   with_metadata=with_metadata, with_source=T,
                   with_geometry=with_geometry, collect=F,
                   con=con) %>%
-        mutate(city_name=name)
+        dplyr::mutate(city_name=name)
 
       result <- if(is.null(result)){r}else{dplyr::union(result, r)}
     }
@@ -245,7 +245,7 @@ locations <- function(
 
   if(keep_with_measurements_only){
     # Only fast enough if location_id is indexed
-    result <- result %>% inner_join(tbl_safe(con, "measurements") %>% distinct(location_id) %>% select(id=location_id))
+    result <- result %>% dplyr::inner_join(tbl_safe(con, "measurements") %>% dplyr::distinct(location_id) %>% dplyr::select(id=location_id))
   }
 
   if(collect){
@@ -405,13 +405,14 @@ measurements <- function(country=NULL,
     with_metadata=T,
     collect=F,
     con = con) %>%
+
     dplyr::rename(location_id=id, location_name=name)
 
 
   # Filtering by location_id (can be station_id or city_id)
   # https://github.com/tidyverse/dbplyr/issues/296
   if(!is.null(location_id) & length(location_id)>0){
-    locs <- locs %>% filter(location_id %in% !!tolower(location_id))
+    locs <- locs %>% dplyr::filter(location_id %in% !!tolower(location_id))
   }
 
   # Use best source if asked

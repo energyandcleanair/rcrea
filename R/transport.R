@@ -23,7 +23,7 @@ transport.tomtom_congestion <- function(cities, frequency="daily"){
   data <- do.call(dplyr::bind_rows, datas[!is.na(datas)])
 
   if(frequency=="weekly"){
-    data <- data %>% rename(date=weekStart)
+    data <- data %>% dplyr::rename(date=weekStart)
   }
   data$date <- as.POSIXct(data$date)
   return(data)
