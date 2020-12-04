@@ -26,6 +26,7 @@ importFrom(dplyr,"vars")
 importFrom(dplyr,"all_vars")
 importFrom(dplyr,"any_vars")
 importFrom(dplyr,"rowwise")
+importFrom(dplyr,"recode")
 
 
 exportPattern("^[[:alpha:]]+")
