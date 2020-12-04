@@ -1,5 +1,3 @@
-source('R/setup.r')
-
 filter_sanity_daily <- function(result){
   # Filters out measurements that are obviously wrong
   result <- result %>%
@@ -370,12 +368,7 @@ measurements <- function(country=NULL,
   }
 
   if(!is.null(process_id)){
-    procs <- switch(toString(length(process_id_)),
-           "0" = procs, # NULL
-           "1" = procs %>% dplyr::filter(id == process_id_), # Single value
-           procs %>% dplyr::filter(id %in% process_id_)
-           )
-
+    procs <- procs %>% dplyr::filter(id %in% !!process_id)
     aggregate_level <- procs %>% dplyr::distinct(region_type) %>% dplyr::pull()
     if(length(aggregate_level)>1){
       stop("Can only specify process_id with similar aggregation_level")
