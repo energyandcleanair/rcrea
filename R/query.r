@@ -390,8 +390,8 @@ measurements <- function(country=NULL,
     # return(NULL)
   }
 
-  value_cols <- c("location_id","location_name","process_id","date","poll","unit","source","value")
-  meta_cols <- if(with_metadata) c("timezone","country") else c()
+  value_cols <- c("location_id","location_name","process_id","date","poll","unit","source","value","timezone")
+  meta_cols <- if(with_metadata) c("country") else c()
 
   if(with_geometry){
     meta_cols <- c(meta_cols, "geometry")
