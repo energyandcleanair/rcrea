@@ -129,6 +129,11 @@ stations <- function(
     s <- s %>% dplyr::filter(country_id %in% !!toupper(country))
   }
 
+  # Filter: id
+  if(!is.null(id)){
+    s <- s %>% dplyr::filter(id %in% !!tolower(id))
+  }
+
   # Filter: type
   if(!is.null(type)){
     s <- s %>% dplyr::filter(type==!!tolower(type))
@@ -211,7 +216,7 @@ locations <- function(
         r <- stations(id=id, source=source_, city=source_city[[source_]], country=country, type=type,
                            with_metadata=with_metadata, with_geometry=with_geometry, collect=F,
                            con=con)
-        result <- ifelse(is.null(result), r, dplyr::union(result, r))
+        result <- if(is.null(result)){r}else{dplyr::union(result, r)}
       }
     }else{
       result <- stations(id=id, source=source, city=city, country=country, type=type,
@@ -396,6 +401,7 @@ measurements <- function(country=NULL,
   #-----------------------
   # Prepare locations
   locs <- rcrea::locations(
+    id=location_id,
     level=aggregate_level,
     source=source,
     city=city,
