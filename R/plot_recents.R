@@ -150,7 +150,7 @@ plot_recents <- function(
 
   # Ensure common language with earlier versions
   if(!is.null(subfile_by)){
-    subfile_by <- recode(subfile_by,
+    subfile_by <- dplyr::recode(subfile_by,
                          "region_id"="location_id",
                          "region_name"="location_name",
                          "region"="location_name",

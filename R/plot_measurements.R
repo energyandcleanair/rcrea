@@ -17,7 +17,7 @@ plot_measurements <-function(meas,
 
   # Ensure common language with earlier versions
   if(!is.null(color_by)){
-    color_by <- recode(color_by,
+    color_by <- dplyr::recode(color_by,
                        "region_id"="location_id",
                        "region_name"="location_name",
                        "region"="location_name",
@@ -27,7 +27,7 @@ plot_measurements <-function(meas,
   }
 
   if(!is.null(subplot_by)){
-    subplot_by <- recode(subplot_by,
+    subplot_by <- dplyr::recode(subplot_by,
                        "region_id"="location_id",
                        "region_name"="location_name",
                        "region"="location_name",
