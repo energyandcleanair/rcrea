@@ -66,10 +66,15 @@ plot_recents <- function(
 
   build_title <- function(title, subfile_by, subfile, running){
 
-    switch(subfile_by,
-           "poll"=dplyr::coalesce(title,paste(rcrea::poll_str(subfile),"pollutant levels")) %>%
-             sub("\\{poll\\}", rcrea::poll_str(subfile), .),
-           paste("Air pollutant concentrations in",subfile))
+    if(subfile_by=="poll"){
+      title_ <- ifelse(is.null(title),
+                       paste(rcrea::poll_str(subfile),"pollutant levels"),
+                       sub("\\{poll\\}", rcrea::poll_str(subfile), title)
+                       )
+      return(title_)
+    }
+
+    return(paste("Air pollutant concentrations in",subfile))
   }
 
   build_subtitle <- function(subtitle, subfile_by, subfile, running, type){
