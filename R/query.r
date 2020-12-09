@@ -112,6 +112,7 @@ stations <- function(
   with_metadata=F,
   with_geometry=F,
   collect=T,
+  keep_with_measurements_only=FALSE, #Only keep locations that actually have measurements
   con=NULL
 ){
 
@@ -144,6 +145,11 @@ stations <- function(
    c <- cities(name=city, country=country, con=con, collect=F)
    # Don't use source or it will be circular
    s <- s %>% dplyr::inner_join(c %>% dplyr::select(city_id=id))
+  }
+
+  if(keep_with_measurements_only){
+    # Only fast enough if location_id is indexed
+    s <- s %>% dplyr::inner_join(tbl_safe(con, "measurements") %>% dplyr::distinct(location_id) %>% dplyr::select(id=location_id))
   }
 
   if(with_metadata){
