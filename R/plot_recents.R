@@ -67,7 +67,7 @@ plot_recents <- function(
   build_title <- function(title, subfile_by, subfile, running){
 
     switch(subfile_by,
-           "poll"=dplyr::coalesce(c(title,paste(rcrea::poll_str(subfile),"pollutant levels"))) %>%
+           "poll"=dplyr::coalesce(title,paste(rcrea::poll_str(subfile),"pollutant levels")) %>%
              sub("\\{poll\\}", rcrea::poll_str(subfile), .),
            paste("Air pollutant concentrations in",subfile))
   }
@@ -92,13 +92,15 @@ plot_recents <- function(
 
     if(is.null(caption)){
       if(is.null(source)){
-        c <- "Source: CREA. {updated}"
+        caption_ <- "Source: CREA. {updated}"
       }else{
-        c <- paste0("Source: CREA based on ", sources[[source]], ". {updated}")
+        caption_ <- paste0("Source: CREA based on ", sources[[source]], ". {updated}")
       }
+    }else{
+      caption_ <- caption
     }
 
-    sub("\\{updated\\}", paste("Updated on",format(Sys.Date(), format="%d %B %Y")), c)
+    sub("\\{updated\\}", paste("Updated on",format(Sys.Date(), format="%d %B %Y")), caption_)
   }
 
 
