@@ -25,7 +25,7 @@ plot_recents <- function(
   folder=NULL,
   poll=NULL,
   unit=NULL,
-  aggregate_level="country",
+  aggregate_level="city",
   country=NULL,
   city=NULL,
   source_city=NULL, #If not null, replaces source and city list(source1=c(city1,city2), source2=c(city3,city4))
