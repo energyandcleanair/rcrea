@@ -191,6 +191,7 @@ plot_measurements <-function(meas,
                   geom_raster(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'location_id'), fill='value_cat'), color='white') +
                   scale_y_discrete() +
                   scale_fill_poll(NULL, poll) +
+                  labs(y=NULL) +
                   theme(legend.position = "right"),
                 "heatmap_w_text" = plt +
                   geom_tile(aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'location_id'), fill='value_cat'), color='white') +
@@ -198,7 +199,7 @@ plot_measurements <-function(meas,
                   scale_fill_poll(NULL, poll) +
                   geom_text( aes_string(x='date', y=ifelse(!is.null(subplot_by), subplot_by, 'location_id'),
                                         label="paste(sprintf('%.0f', value_plot))"), size=3, color='black') + theme(axis.text.x = element_text()) +
-                  labs(x='', y='', subtitle=expression('[' * mu * 'g/m'^3*']'), title=paste(poll_str(poll), 'concentration'))
+                  labs(x=NULL, y=NULL, subtitle=expression('[' * mu * 'g/m'^3*']'), title=paste(poll_str(poll), 'concentration'))
   )
 
 

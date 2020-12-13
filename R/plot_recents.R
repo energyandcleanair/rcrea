@@ -39,12 +39,23 @@ plot_recents <- function(
   title=NULL,
   subtitle=NULL,
   caption=NULL,
+  date_from="2015-01-01",
   add_to_ggplot=NULL,
   add_lockdown=F,
   range=c("full"), # cut: only up to current date
   size=c("s","m","l"),
   years=NULL,
   file_suffix=NULL){
+
+
+  if(is.null(source) && !is.null(meas_raw) && length(unique(meas_raw$source))==1){
+    source <- unique(meas_raw$source)
+  }
+
+  if(is.null(poll) && !is.null(meas_raw) && length(unique(meas_raw$poll))==1){
+    poll <- unique(meas_raw$poll)
+  }
+
 
 
   build_filename <- function(source, subfile, full_cut, aggregate_level, running, size, add_lockdown, type, suffix){
@@ -85,11 +96,11 @@ plot_recents <- function(
     return(s)
   }
 
-  build_ylabel <- function(type){
+  build_ylabel <- function(type, unit){
     if(type %in% c("yoy","yoy-relative")){
       return("Change year-on-year")
     }else{
-      return(NULL)
+      return(unit)
     }
   }
 
@@ -130,6 +141,7 @@ plot_recents <- function(
                                 poll=poll,
                                 aggregate_level=aggregate_level,
                                 process_id=process_id,
+                                date_from=date_from,
                                 source=source,
                                 source_city=source_city,
                                 with_metadata = T)
@@ -137,6 +149,10 @@ plot_recents <- function(
 
   if(!is.null(unit)){
     meas_raw <- meas_raw %>% dplyr::filter(unit %in% !!unit)
+  }else{
+    if(length(unique(meas_raw$unit))==1){
+      unit <- unique(meas_raw$unit)
+    }
   }
 
   if(is.null(poll)){
@@ -252,7 +268,7 @@ plot_recents <- function(
               title=build_title(title,subfile_by,subfile,running),
               subtitle=build_subtitle(subtitle,subfile_by,subfile,running,type),
               caption=build_caption(caption, source),
-              y=build_ylabel(type))
+              y=build_ylabel(type, unit))
 
         if(min(meas$value, na.rm=T)<0){
           plt <- plt + geom_hline(yintercept=0)
@@ -308,7 +324,6 @@ plot_recents <- function(
             }
           }
         }else{
-          print(plt)
           return(plt)
         }
 
