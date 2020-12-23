@@ -199,11 +199,11 @@ locations <- function(
 
   if("city" %in% level & !is.null(type)){
     warning("type is ignored when level=='city'")
-    source <- NULL
   }
 
   if(!is.null(source) & !is.null(source_city)){
     warning("Cannot define both source and source_city. Overwriting with source_city")
+    source <- NULL
   }
 
   if(is.null(source_city) & !is.null(source)){
@@ -362,6 +362,11 @@ measurements <- function(country=NULL,
     procs <- procs %>% dplyr::filter(aggregate_level==region_type)
   }
 
+  if(!is.null(location_type) & aggregate_level!="station"){
+    procs <- procs %>%
+      dplyr::filter(sql('agg_spatial::text') %like% !!paste0("%\"station_type\": \"",location_type,"\"%"))
+  }
+
   if(!is.null(average_by)){
     procs <- procs %>% dplyr::filter(average_by==period)
   }
@@ -386,7 +391,7 @@ measurements <- function(country=NULL,
     }
   }
 
-  procs %>% dplyr::filter("\"weighting\": \"gpw\"" %in% agg_spatial) %>% dplyr::select(agg_spatial)
+  # procs %>% dplyr::filter("\"weighting\": \"gpw\"" %in% agg_spatial) %>% dplyr::select(agg_spatial)
 
   if(nrow(procs %>% dplyr::collect())==0){
     stop("No pre-processing found corresponding to required data. Are you at the right aggregation level (cities don't have population-weighted average) ?")
@@ -397,7 +402,9 @@ measurements <- function(country=NULL,
   value_cols <- c("location_id","location_name","process_id","date","poll","unit","source","value","timezone","country")
   meta_cols <- if(with_metadata) c() else c() # useless now...
 
-  if(with_geometry){
+  # Attach geometry
+  # If collect, we attach it after, too slow to download otherwise
+  if(with_geometry & !collect){
     meta_cols <- c(meta_cols, "geometry")
   }
 
@@ -442,6 +449,10 @@ measurements <- function(country=NULL,
   # Take measurements at these locations
   result <- tbl_safe(con, "measurements")
 
+  if(!is.null(source)){
+    result <- result %>% dplyr::filter(source %in% !!source)
+  }
+
   m_l_joining_cols <- ifelse(is.null(source) & is.null(source_city) & aggregate_level=="city",
                              c("location_id"),
                              c("location_id","source"))
@@ -482,6 +493,7 @@ measurements <- function(country=NULL,
     result <- result %>% dplyr::select(all_of(c(value_cols, meta_cols))) %>% dplyr::collect()
 
     if(with_geometry){
+      result <- result %>% dplyr::left_join(locs %>% dplyr::select(location_id, geometry) %>% collect())
       result <- result %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
     }
 

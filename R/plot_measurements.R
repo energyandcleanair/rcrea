@@ -10,7 +10,8 @@ plot_measurements <-function(meas,
                              linetype_by=NULL,
                              years=NULL,
                              type='ts',
-                             percent=F){
+                             percent=F,
+                             date_from=NULL){
 
   chg_colors <- c("#35416C", "#8CC9D0", "darkgray", "#CC0000", "#990000")
 
@@ -80,7 +81,7 @@ plot_measurements <-function(meas,
     meas <- dplyr::mutate(meas, date=lubridate::floor_date(date, average_by))
   }
 
-  meas <- meas %>% dplyr::group_by_at(union(group_by_cols, 'date'))  %>% dplyr::summarise(value = mean(value))
+  meas <- meas %>% dplyr::group_by_at(union(group_by_cols, 'date')) %>% dplyr::summarise(value = mean(value))
 
   # Make date axis homogeneous i.e. a row for every day / month / year
   df_placeholder <- meas %>%
@@ -111,6 +112,10 @@ plot_measurements <-function(meas,
     if(!is.null(years)){
       meas <- meas %>% dplyr::filter(lubridate::year(date) %in% years)
     }
+  }
+
+  if(!is.null(date_from)){
+    meas <- meas %>% dplyr::filter(date >= date_from)
   }
 
   if(nrow(meas %>% dplyr::filter(!is.na(value)))==0){

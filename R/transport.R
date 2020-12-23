@@ -3,7 +3,7 @@ transport.tomtom_congestion <- function(cities, frequency="daily"){
 
   c <-  cities %>% dplyr::distinct(city, country)
   c$iso3 <- countrycode::countrycode(c$country, origin="iso2c", destination = "iso3c")
-  c$url <- paste0("https://api.midway.tomtom.com/ranking/",frequency,"Stats/",c$iso3,"_",tolower(c$city))
+  c$url <- paste0("https://api.midway.tomtom.com/ranking/",frequency,"Stats/",c$iso3,"_",tolower(gsub(" ","-",c$city)))
 
   get_data <- function(city, country, url){
     print(url)

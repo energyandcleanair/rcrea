@@ -177,7 +177,32 @@ utils.unnest_json <-function(.data,.json_col, ...){
   dplyr::tbl(.data$src$con, dbplyr::sql(query))
 }
 
+utils.lockdown_stages <- function(iso2s){
 
+  iso3s <- countrycode::countrycode(iso2s, "iso2c", "iso3c")
+
+  oxgrt <- read.csv(url("https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/OxCGRT_latest.csv"))
+  oxgrt$date <- strptime(oxgrt$Date,"%Y%m%d")
+
+  d <- oxgrt %>%
+    dplyr::filter(CountryCode %in% iso3s) %>%
+    dplyr::mutate(
+      # This is where we define phases
+      lockdown=C6_Stay.at.home.requirements>1,
+      restriction=C7_Restrictions.on.internal.movement>1) %>%
+    dplyr::select(CountryCode, date, lockdown, restriction) %>%
+    tidyr::pivot_longer(c(lockdown, restriction), names_to="indicator", values_to="value")
+
+  d %>% dplyr::group_by(CountryCode, indicator) %>%
+    dplyr::arrange(date) %>%
+    dplyr::mutate(phase=cumsum(c(1, diff(value) != 0))) %>%
+    dplyr::filter(value==T) %>%
+    dplyr::group_by(CountryCode, indicator, phase) %>%
+    dplyr::summarise(date_from=min(date), date_to=max(date)) %>%
+    dplyr::mutate(country=countrycode::countrycode(CountryCode, "iso3c", "iso2c")) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-c(CountryCode, phase))
+}
 
 utils.add_lockdown <- function(meas){
 
@@ -220,15 +245,15 @@ utils.to_source_city <- function(source, city){
 
 utils.add_city_pop <- function(m){
   m.pop <- m %>%
-    dplyr::distinct(location_id, country, geometry) %>%
+    dplyr::distinct(location_id, location_name, country, geometry) %>%
     dplyr::left_join(
       tibble::tibble(maps::world.cities) %>%
         sf::st_as_sf(coords=c("long", "lat"), crs=4326) %>%
         tibble::tibble() %>%
         dplyr::mutate(country=countrycode::countrycode(country.etc, origin="country.name","destination"="iso2c"),
-                      location_id=tolower(location_name)) %>%
-        dplyr::select(location_id, country, pop, geometry.city=geometry),
-      by=c("location_id", "country")
+                      location_name=name) %>%
+        dplyr::select(location_name, country, pop, geometry.city=geometry),
+      by=c("location_name", "country")
     )
 
   dist <- function(g1,g2){

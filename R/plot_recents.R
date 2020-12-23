@@ -85,6 +85,10 @@ plot_recents <- function(
       return(title_)
     }
 
+    if(!is.null(title)){
+      return(title)
+    }
+
     return(paste("Air pollutant concentrations in",subfile))
   }
 
@@ -141,11 +145,23 @@ plot_recents <- function(
                                 poll=poll,
                                 aggregate_level=aggregate_level,
                                 process_id=process_id,
-                                date_from=date_from,
+                                date_from=lubridate::date(date_from)-max(running_days),
                                 source=source,
                                 source_city=source_city,
                                 with_metadata = T)
+  }else{
+    if(!is.null(process_id)){
+      meas_raw <- meas_raw %>% dplyr::filter(process_id==!!process_id)
+    }
   }
+
+  if(!is.null(date_from)){
+    meas_raw <- meas_raw %>%
+      dplyr::filter(date >= lubridate::date(date_from)-max(running_days))
+  }else{
+    date_from <- min(meas_raw$date, na.rm=T)
+  }
+
 
   if(!is.null(unit)){
     meas_raw <- meas_raw %>% dplyr::filter(unit %in% !!unit)
@@ -209,10 +225,13 @@ plot_recents <- function(
                                 "gadm1"= meas%>% dplyr::filter(location_id==subfile),
                                 "poll"= meas%>% dplyr::filter(poll==subfile)
         ) %>%
+          #To match plot_measurements names
           dplyr::mutate(
             location_id=tools::toTitleCase(location_id),
             location_name=tools::toTitleCase(location_name),
-            year=lubridate::year(date)) #To match plot_measurements names
+            year=lubridate::year(date)) %>%
+          dplyr::filter(date >= lubridate::date(date_from)-running)
+
 
         country <- unique(filtered_meas$country)
 
@@ -225,7 +244,8 @@ plot_recents <- function(
                                  running_maxNAs = running/3,
                                  years=years,
                                  type=type,
-                                 percent=percent
+                                 percent=percent,
+                                 date_from=date_from
                                  )
 
         if(subplot_by=="poll"){

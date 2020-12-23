@@ -72,7 +72,7 @@ CREAtheme.scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.ord
 
 theme_crea <- function(base_size=11, ...) {
   (ggthemes::theme_calc(base_size=base_size) +
-     theme(#title = element_text(family='SourceSansPro'),
+     ggplot2::theme(#title = element_text(family='SourceSansPro'),
            plot.title = element_text(size=rel(1.5), face='bold', color=unname(CREAtheme.pal_crea['Dark.blue'])),
            plot.subtitle = element_text(face='italic', color='black'),
            plot.caption = element_text(face='italic', color=CREAtheme.pal_crea['Dark.blue']),

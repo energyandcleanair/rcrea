@@ -54,7 +54,7 @@ health.impact <- function(meas, date_from="2020-01-01", date_to="2020-12-31"){
   unit_factor <- data.frame(unit="ppm", poll=c("no2","o3"), unit_factor=c(1.88e3, 1.96e3))
 
   m.mean <- meas %>%
-    # filter(date > '2020-03-11' | (iso3 == 'CHN' & date > '2020-01-23')) %>%
+    # dplyr::filter(date > '2020-03-11' | (iso3 == 'CHN' & date > '2020-01-23')) %>%
     dplyr::filter(date >= date_from,
            date <= date_to) %>%
     dplyr::group_by(poll, location_id, unit, iso3, latitude, longitude, pop) %>%
@@ -127,5 +127,7 @@ health.simplify <- function(health_details){
   health_details %>%
     dplyr::mutate(deaths=ifelse(Outcome=="deaths", number_central, 0)) %>%
     dplyr::group_by(location_id, population) %>%
-    dplyr::summarise_at(c("cost.mlnUSD","deaths"), sum, na.rm=T)
+    dplyr::summarise_at(c("cost.mlnUSD","deaths"), sum, na.rm=T) %>%
+    dplyr::mutate(cost.mlnUSD.perpax=cost.mlnUSD/population,
+           deaths.perpax=deaths/population)
 }
