@@ -314,11 +314,11 @@ measurements <- function(country=NULL,
 
 
   # Check input
-  # Accept both NA and NULL
-  location_id <- if(!is.null(location_id) && is.na(location_id)) NULL else location_id
-  city <- if(!is.null(city) && length(city)==1 && is.na(city)) NULL else city
-  country <- if(!is.null(country) && is.na(country)) NULL else country
-  process_id <- if(!is.null(process_id) && is.na(process_id)) NULL else process_id
+  # Accept both NA, NULL and empty
+  location_id <- if(!is.null(location_id) && (length(location_id)==1) && is.na(location_id)) NULL else location_id
+  city <- if(!is.null(city) && (length(city)==1) && is.na(city)) NULL else city
+  country <- if(!is.null(country) && (length(country)==1) && is.na(country)) NULL else country
+  process_id <- if(!is.null(process_id)  && (length(process_id)==1) && is.na(process_id)) NULL else process_id
 
   if(aggregate_level=="location"){
     aggregate_level <- "station"
