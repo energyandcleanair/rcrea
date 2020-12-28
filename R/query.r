@@ -362,7 +362,7 @@ measurements <- function(country=NULL,
     procs <- procs %>% dplyr::filter(aggregate_level==region_type)
   }
 
-  if(!is.null(location_type) & aggregate_level!="station"){
+  if(!is.null(location_type) && !is.null(aggregate_level) && (aggregate_level!="station")){
     procs <- procs %>%
       dplyr::filter(sql('agg_spatial::text') %like% !!paste0("%\"station_type\": \"",location_type,"\"%"))
   }

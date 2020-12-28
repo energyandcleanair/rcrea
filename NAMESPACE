@@ -10,7 +10,6 @@ importFrom(dplyr,"group_by")
 
 
 
-
 exportPattern("^[[:alpha:]]+")
 export("%>%")
 
