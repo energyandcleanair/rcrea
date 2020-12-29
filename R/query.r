@@ -400,7 +400,7 @@ measurements <- function(country=NULL,
   }
 
   value_cols <- c("location_id","location_name","process_id","date","poll","unit","source","value","timezone","country")
-  meta_cols <- if(with_metadata) c() else c() # useless now...
+  meta_cols <- if(with_metadata) c("gadm1_id") else c()
 
   # Attach geometry
   # If collect, we attach it after, too slow to download otherwise
@@ -453,7 +453,7 @@ measurements <- function(country=NULL,
     result <- result %>% dplyr::filter(source %in% !!source)
   }
 
-  m_l_joining_cols <- ifelse(is.null(source) & is.null(source_city) & aggregate_level=="city",
+  m_l_joining_cols <- ifelse(is.null(source) && is.null(source_city) && aggregate_level=="city",
                              c("location_id"),
                              c("location_id","source"))
 
