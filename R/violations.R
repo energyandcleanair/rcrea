@@ -1,8 +1,3 @@
-violations.count <- function(group){
-  group %>%
-    filter(value > threshold) %>%
-    nrow()
-}
 
 violations.guidelines <- function(){
   jsonlite::fromJSON(system.file("extdata", "standards.json", package = "rcrea")) %>%
@@ -57,11 +52,17 @@ violations <- function(source, city,
                        aggregation_function,
                        organization, standard_id))
 
+  count_violations <- function(group){
+    group %>%
+      filter(value > threshold) %>%
+      nrow()
+  }
+
   m %>%
     group_by(location_id, process_id, poll, unit, source,
              year=lubridate::year(date), frequency,
              standard_id, exceedance_allowed_per_year) %>%
-    summarise(n_violations=violations.count(dplyr::cur_data()))
+    summarise(n_violations=count_violations(dplyr::cur_data()))
 
 }
 
