@@ -18,8 +18,7 @@ violations <- function(source, city,
   l <- rcrea::locations(source=source,
                         country=country,
                         city=city,
-                        level=level,
-                        with_metadata = T)
+                        level=level)
 
   m.hour <- rcrea::measurements(source=source,
                                 country=country,
@@ -86,7 +85,10 @@ violations <- function(source, city,
     summarise(n_violations=count_violations(dplyr::cur_data())) %>%
     ungroup()
 
-  m.violations %>% left_join(l)
+  m.violations %>%
+    left_join(l %>% rename(location_id=id),
+              ) %>% View()
+
 
 }
 
