@@ -80,7 +80,7 @@
     "pollutant": "co",
     "threshold": 10000,
     "unit": "µg/m3",
-    "exceedance_allowed_per_year": 35,
+    "exceedance_allowed_per_year": 0,
     "aggregation_period": "8-hour",
     "aggregation_function": "mean",
     "organization": "EU",
@@ -131,7 +131,7 @@
     "reference": "link",
     "comment": ""
   },
-  {
+   {
     "pollutant": "pm10",
     "threshold": 50,
     "unit": "µg/m3",
@@ -327,6 +327,105 @@
     "aggregation_function": "mean",
     "organization": "NAAQS",
     "reference": "http://www.indiaenvironmentportal.org.in/files/826.pdf",
+    "comment": ""
+  },
+  {
+    "pollutant": "pm10",
+    "threshold": 50,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 35,
+    "aggregation_period": "24-hour",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
+    "comment": ""
+  },
+  {
+    "pollutant": "pm10",
+    "threshold": 40,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 0,
+    "aggregation_period": "year",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
+    "comment": ""
+  },
+{
+    "pollutant": "pm25",
+    "threshold": 25,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 0,
+    "aggregation_period": "year",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
+    "comment": ""
+  },
+  {
+    "pollutant": "no2",
+    "threshold": 200,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 18,
+    "aggregation_period": "1-hour",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
+    "comment": ""
+  },
+  {
+    "pollutant": "no2",
+    "threshold": 40,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 0,
+    "aggregation_period": "year",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
+    "comment": ""
+  },
+  {
+    "pollutant": "o3",
+    "threshold": 100,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 10,
+    "aggregation_period": "8-hour",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
+    "comment": ""
+  },
+  {
+    "pollutant": "so2",
+    "threshold": 350,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 24,
+    "aggregation_period": "1-hour",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
+    "comment": ""
+  },
+  {
+    "pollutant": "so2",
+    "threshold": 125,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 3,
+    "aggregation_period": "24-hour",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
+    "comment": ""
+  },
+  {
+    "pollutant": "co",
+    "threshold": 10000,
+    "unit": "µg/m3",
+    "exceedance_allowed_per_year": 0,
+    "aggregation_period": "8-hour",
+    "aggregation_function": "mean",
+    "organization": "UK",
+    "reference": "https://uk-air.defra.gov.uk/assets/documents/Air_Quality_Objectives_Update.pdf",
     "comment": ""
   }
 ]

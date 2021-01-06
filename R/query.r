@@ -153,7 +153,7 @@ stations <- function(
   }
 
   if(with_metadata){
-    s <- s %>% dplyr::inner_join(cities(con=con, collect=F) %>% dplyr::select(city_id=id, city_name=name))
+    s <- s %>% dplyr::inner_join(cities(con=con, collect=F, with_metadata=T) %>% dplyr::select(city_id=id, city_name=name, gadm1_id))
   }
 
   s <- s %>% dplyr::rename(country=country_id)
@@ -161,7 +161,7 @@ stations <- function(
   # Keeping only interesting columns
   cols <- c("id", "level", "city_id", "country", "source")
   cols <- if(with_geometry)  c(cols, "geometry") else cols
-  cols <- if(with_metadata) c(cols, "name", "timezone", "type", "city_name") else cols
+  cols <- if(with_metadata) c(cols, "name", "timezone", "type", "city_name", "gadm1_id") else cols
   s <- s %>% dplyr::select_at(cols)
 
   if(collect){

@@ -6,20 +6,23 @@ violations.guidelines <- function(){
 }
 
 
-violations <- function(source, city,
+violations <- function(source,
                        date_from, date_to,
-                       frequency=c("hour","day","year"),
+                       city=NULL,
                        level="city",
                        country=NULL,
                        location_type=NULL,
                        poll=NULL,
                        orgs=c("EU", "WHO")){
 
+  # Locations
   l <- rcrea::locations(source=source,
                         country=country,
                         city=city,
-                        level=level)
+                        level=level,
+                        with_metadata=T)
 
+  # Hourly measurements
   m.hour <- rcrea::measurements(source=source,
                                 country=country,
                                 aggregate_level = level,
@@ -32,12 +35,14 @@ violations <- function(source, city,
     mutate(frequency="1-hour",
            aggregation_function="mean")
 
+  # 8-hour running average (mainly for O3)
   m.8hour <- rcrea::utils.running_average(m.hour,
                                        average_width = 8,
                                        average_by = "hour") %>%
     mutate(frequency="8-hour",
            aggregation_function="mean")
 
+  # Daily averages
   m.day <- rcrea::measurements(source=source,
                                 country=country,
                                 city=city,
@@ -50,6 +55,7 @@ violations <- function(source, city,
     mutate(frequency="24-hour",
            aggregation_function="mean")
 
+  # Yearly averages (from daily ones)
   m.year <- m.day %>%
     mutate(date=lubridate::floor_date(date, unit='year')) %>%
     group_by_at(setdiff(names(.), "date")) %>%
@@ -59,8 +65,10 @@ violations <- function(source, city,
            aggregation_function="mean")
 
 
-  guidelines <- violations.guidelines()
+  # Standards / Guidelines from json file
+  guidelines <- violations.guidelines() %>% filter(organization %in% !!orgs)
 
+  # Joining altogether
   m <- bind_rows(m.hour, m.8hour, m.day, m.year) %>%
     filter(!is.na(date)) %>%
     dplyr::inner_join(guidelines %>%
@@ -72,23 +80,20 @@ violations <- function(source, city,
                        organization, standard_id),
                 by=c("poll","unit","frequency","aggregation_function"))
 
-  count_violations <- function(group){
-    group %>%
-      filter(value > threshold) %>%
-      nrow()
-  }
 
+  # Keeping violations only
   m.violations <- m %>%
-    group_by(location_id, process_id, poll, unit, source,
-             year=lubridate::year(date), frequency,
-             standard_id, exceedance_allowed_per_year) %>%
-    summarise(n_violations=count_violations(dplyr::cur_data())) %>%
-    ungroup()
+    mutate(exceedance=value>threshold) %>%
+    filter(exceedance) %>%
+    group_by(year=lubridate::year(date), location_id, standard_id) %>%
+    arrange(date) %>%
+    mutate(exceedance_this_year=row_number()) %>%
+    mutate(violation=exceedance_this_year>exceedance_allowed_per_year)
+
+
+  meta_cols <- if(level=="city") c("location_id"="id", "gadm1_id") else c("location_id"="id", "city_id", "city_name", "gadm1_id")
 
   m.violations %>%
-    left_join(l %>% rename(location_id=id),
-              ) %>% View()
-
-
+           left_join(l %>% select_at(meta_cols))
 }
 

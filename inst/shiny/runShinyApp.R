@@ -17,14 +17,16 @@ deployShinyApp <- function() {
   if(!require(rsconnect)) install.packages('reconnect')
   if(!require(dotenv)) install.packages('dotenv')
   if(!require(devtools)) install.packages('devtools')
+
   url <- "https://github.com/energyandcleanair/rcrea"
   devtools::install_github(url, force=T)
   library(rcrea)
 
   try(dotenv::load_dot_env())
+  try(readRenviron(".Renviron"))
   # appDir <- getAppDir()
 
-  rsconnect::setAccountInfo(name='crea',
+  rsconnect::setAccountInfo(name=Sys.getenv("SHINYAPP_ACCOUNT"),
                             token=Sys.getenv("SHINYAPP_TOKEN"),
                             secret=Sys.getenv("SHINYAPP_SECRET"))
 
@@ -32,6 +34,8 @@ deployShinyApp <- function() {
   # rsconnect::deployApp(appDir)
   # but it would miss the auth file that is not pushed to Github
 
-  rsconnect::deployApp("inst/shiny")
+  rsconnect::deployApp("inst/shiny",
+                       appName="airquality",
+                       account = Sys.getenv("SHINYAPP_ACCOUNT"))
 
 }
