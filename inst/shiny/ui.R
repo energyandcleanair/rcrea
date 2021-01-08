@@ -37,7 +37,7 @@ ui <- fluidPage(
                                 choices = averagings,
                                 selected = "day"
                     ),
-                    sliderInput("years", "Year", min=2010, max=2020, value=c(2018, 2020), step=1, sep = "", ticks = F
+                    sliderInput("years", "Year", min=2010, max=2021, value=c(2018, 2021), step=1, sep = "", ticks = F
                     ),
                     actionButton("meas_refresh", "Refresh Measurements"),
                     h4("Display options"),

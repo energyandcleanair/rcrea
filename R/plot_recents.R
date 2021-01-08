@@ -137,6 +137,7 @@ plot_recents <- function(
                   "jp"="Japan Atmospheric Environmental Regional Observation System",
                   "airkorea"="Air Korea",
                   "defra"="DEFRA",
+                  "aurn"="AURN",
                   "airvisual"="AirVisual")
 
 
