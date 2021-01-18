@@ -19,7 +19,7 @@ deployShinyApp <- function() {
   if(!require(devtools)) install.packages('devtools')
 
   url <- "https://github.com/energyandcleanair/rcrea"
-  devtools::install_github(url, force=T)
+  devtools::install_github(url, force=T, upgrade="never")
   library(rcrea)
 
   try(dotenv::load_dot_env())
@@ -36,6 +36,7 @@ deployShinyApp <- function() {
 
   rsconnect::deployApp("inst/shiny",
                        appName="airquality",
-                       account = Sys.getenv("SHINYAPP_ACCOUNT"))
+                       account = Sys.getenv("SHINYAPP_ACCOUNT"),
+                       forceUpdate = TRUE)
 
 }

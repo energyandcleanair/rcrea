@@ -458,7 +458,7 @@ server <- function(input, output, session) {
         req(city_)
         trajs() %>%
             dplyr::filter(tolower(city)==city_) %>%
-            dplyr::pull(date) %>% sort()
+            dplyr::pull(date) %>% sort(decreasing=T)
     })
 
     trajs_plot_url <- reactive({
