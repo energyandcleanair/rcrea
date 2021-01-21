@@ -114,7 +114,7 @@ plot_recents <- function(
       if(is.null(source)){
         caption_ <- "Source: CREA. {updated}"
       }else{
-        caption_ <- paste0("Source: CREA based on ", sources[[source]], ". {updated}")
+        caption_ <- paste0("Source: CREA based on ", rcrea::source_str(source), ". {updated}")
       }
     }else{
       caption_ <- caption
@@ -128,17 +128,7 @@ plot_recents <- function(
   width <- list("s"=8,"m"=12,"l"=16)
   height <- list("s"=6,"m"=9,"l"=12)
   expand <- list("s"=0.15, "m"=0.1, "l"=0.05)
-  sources <- list("eea"="European Environment Agency",
-                  "openaq"="OpenAQ",
-                  "earthengine"="Sentinel-5P TROPOMI OFFL NO2",
-                  "cpcb"="Central Pollution Control Board",
-                  "mee"="Ministry of Ecology and Environment",
-                  "csb"="Ministry of Environment and Urban Planning",
-                  "jp"="Japan Atmospheric Environmental Regional Observation System",
-                  "airkorea"="Air Korea",
-                  "defra"="DEFRA",
-                  "aurn"="AURN",
-                  "airvisual"="AirVisual")
+
 
 
   if(is.null(meas_raw)){

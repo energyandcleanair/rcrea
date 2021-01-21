@@ -32,7 +32,7 @@ sel <- dplyr::select
 
 poll_str <- function(poll){
 
-  return(switch(poll,
+  return(dplyr::recode(poll,
          "co" = "CO",
          "pm25" = "PM2.5",
          "no2" = "NO2",
@@ -40,6 +40,24 @@ poll_str <- function(poll){
          "pm10" = "PM10",
          "so2" = "SO2"
   ))
+}
+
+source_str <- function(source){
+
+  return(dplyr::recode(source,
+                       "eea"="European Environment Agency",
+                        "openaq"="OpenAQ",
+                        "earthengine"="Sentinel-5P TROPOMI OFFL NO2",
+                        "cpcb"="Central Pollution Control Board",
+                        "mee"="Ministry of Ecology and Environment",
+                        "csb"="Ministry of Environment and Urban Planning",
+                        "jp"="Japan Atmospheric Environmental Regional Observation System",
+                        "airkorea"="Air Korea",
+                        "defra"="DEFRA",
+                        "aurn"="AURN",
+                        "airvisual"="AirVisual",
+                       .default = toupper(source)
+                       ))
 }
 
 connection_str <- function(){
