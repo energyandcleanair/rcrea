@@ -453,9 +453,13 @@ measurements <- function(country=NULL,
     result <- result %>% dplyr::filter(source %in% !!source)
   }
 
-  m_l_joining_cols <- ifelse(is.null(source) && is.null(source_city) && aggregate_level=="city",
-                             c("location_id"),
-                             c("location_id","source"))
+  m_l_joining_cols <- if(is.null(source) && is.null(source_city) && aggregate_level=="city"){
+    c("location_id")
+  }else{
+    c("location_id","source")
+  }
+
+
 
   result <- result %>%
     dplyr::right_join(locs,
