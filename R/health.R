@@ -24,7 +24,7 @@ health.build.scenarios <- function(m,
 health.impact <- function(meas, date_from="2020-01-01", date_to="2020-12-31"){
 
   required_cols <- c("value.counterfactual","value.observation", "country", "geometry", "pop")
-  polls <- c("NO2" = "no2", "PM2.5"="pm25", "PM10"="pm10", "O3" ="o3")
+  polls <- c("NO2" = "no2", "PM2.5"="pm25", "PM10"="pm10", "O3" ="o3", "O3_8h"="o3_8h")
 
   if(length(setdiff(c(required_cols), names(meas)))){
     stop(paste("Missing columns:", paste(setdiff(c(required_cols), names(meas)), collapse=",")))
