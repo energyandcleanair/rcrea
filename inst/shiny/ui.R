@@ -15,7 +15,7 @@ ui <- fluidPage(
                                 "Source:",
                                 choices = unique(sources),
                                 multiple=F,
-                                selected = "openaaq"
+                                selected = "openaaq_government"
                     ),
 
                     uiOutput("selectInputCountry"),
