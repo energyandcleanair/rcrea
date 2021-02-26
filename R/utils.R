@@ -177,31 +177,42 @@ utils.unnest_json <-function(.data,.json_col, ...){
   dplyr::tbl(.data$src$con, dbplyr::sql(query))
 }
 
-utils.lockdown_stages <- function(iso2s){
+#' Get lockdown and internal movement restriction stages in certain regions
+#'
+#' @param region_ids either iso2s of countries or for subnational level, ISO2_STATEID e.g. US_CA
+#'
+#' @return
+#' @export
+#'
+#' @examples
+utils.lockdown_stages <- function(region_ids=NULL){
 
-  iso3s <- countrycode::countrycode(iso2s, "iso2c", "iso3c")
+
 
   oxgrt <- read.csv(url("https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/OxCGRT_latest.csv"))
   oxgrt$date <- strptime(oxgrt$Date,"%Y%m%d")
+  oxgrt$CountryCode <- countrycode::countrycode(oxgrt$CountryCode, "iso3c", "iso2c")
 
   d <- oxgrt %>%
-    dplyr::filter(CountryCode %in% iso3s) %>%
+    dplyr::filter(
+      (CountryCode %in% region_ids & Jurisdiction=="NAT_TOTAL") |
+      (RegionCode %in% region_ids & Jurisdiction=="STATE_TOTAL")) %>%
+    dplyr::mutate(region_id=ifelse(Jurisdiction=="NAT_TOTAL",CountryCode,RegionCode)) %>%
     dplyr::mutate(
       # This is where we define phases
-      lockdown=C6_Stay.at.home.requirements>1,
-      restriction=C7_Restrictions.on.internal.movement>1) %>%
-    dplyr::select(CountryCode, date, lockdown, restriction) %>%
-    tidyr::pivot_longer(c(lockdown, restriction), names_to="indicator", values_to="value")
+      lockdown=C6_Stay.at.home.requirements,
+      restriction=C7_Restrictions.on.internal.movement) %>%
+    dplyr::select(region_id, date, lockdown, restriction) %>%
+    tidyr::pivot_longer(c(lockdown, restriction), names_to="indicator", values_to="level")
 
-  d %>% dplyr::group_by(CountryCode, indicator) %>%
+  d %>% dplyr::group_by(region_id, indicator) %>%
     dplyr::arrange(date) %>%
-    dplyr::mutate(phase=cumsum(c(1, diff(value) != 0))) %>%
-    dplyr::filter(value==T) %>%
-    dplyr::group_by(CountryCode, indicator, phase) %>%
+    dplyr::mutate(phase=cumsum(c(1, diff(level) != 0))) %>%
+    dplyr::filter(level>0) %>%
+    dplyr::group_by(region_id, indicator, level, phase) %>%
     dplyr::summarise(date_from=min(date), date_to=max(date)) %>%
-    dplyr::mutate(country=countrycode::countrycode(CountryCode, "iso3c", "iso2c")) %>%
     dplyr::ungroup() %>%
-    dplyr::select(-c(CountryCode, phase))
+    dplyr::select(-c(phase))
 }
 
 utils.add_lockdown <- function(meas){

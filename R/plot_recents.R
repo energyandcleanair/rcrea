@@ -203,7 +203,9 @@ plot_recents <- function(
       tryCatch({
 
         location_name <- switch(subfile_by,
-                              "country"= countrycode::countrycode(subfile, origin="iso2c", destination = "country.name"),
+                              "country"= countrycode::countrycode(subfile,
+                                                                  origin="iso2c",
+                                                                  destination="country.name"),
                               "city"=subfile,
                               "gadm1"=subfile
         )
