@@ -39,4 +39,5 @@ processes <- rcrea::processes()
 
 # trajectories ------------------------------------------------------------
 trajs.bucket <- "crea-public"
-trajs.folder <- "data/trajectories/plots"
+trajs.bucket_base_url <- "https://storage.googleapis.com/crea-public/"
+trajs.folder <- "data/trajectories"

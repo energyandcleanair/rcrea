@@ -20,6 +20,7 @@ Imports:
     ggnewscale,
     shiny,
     shinyWidgets,
+    leaflet,
     DT,
     dotenv,
     gbm,

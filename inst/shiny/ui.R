@@ -1,3 +1,6 @@
+library(leaflet)
+library(plotly)
+
 ui <- fluidPage(
     theme = "theme.css",
 
@@ -67,7 +70,7 @@ ui <- fluidPage(
                 )
             )
         ),
-#
+
 #         tabPanel("Exceedances", fluid = TRUE,
 #              sidebarLayout(
 #                  sidebarPanel(
@@ -132,26 +135,55 @@ ui <- fluidPage(
 #             )
 #         ),
 
-        tabPanel("Trajectories", value="trajectories", fluid = TRUE,
-                 sidebarLayout(
-                     sidebarPanel(
-                         width = 2,
-                         uiOutput("selectInputTrajsCountry"),
-                         uiOutput("selectInputTrajsCity"),
-                         uiOutput("selectInputTrajsDates")
+            tabPanel("Trajectories", value="trajectories", fluid = TRUE, height="20%",
+                     sidebarLayout(
+                         mainPanel(
+                             width=9,
+                             leafletOutput("maptrajs", height = "calc(100%)")  %>% withSpinner(color="#0dc5c1"),
+                             absolutePanel(left=10,
+                                           top=10,
+                                           width=120,
+                                           htmlOutput("trajsInfos", height="120px")
 
-                         # downloadButton("trajs_download_jpg", "Download (.jpg)"),
-                     ),
+                             ),
+                             absolutePanel(bottom = 10, right = "10%", width="80%",
+                                           uiOutput("selectInputTrajsDates", height = "30px")
+                             )
+                             # uiOutput("imageTrajs")  %>% withSpinner(color="#0dc5c1")
+                             # plotOutput("exc_status_map"),
+                             # DT::dataTableOutput("exc_status_table")
+                             # DT::dataTableOutput("trajs_table")
+                         ),
+                         sidebarPanel(
+                             width = 3,
+                             uiOutput("selectInputTrajsCountry"),
+                             uiOutput("selectInputTrajsCity"),
+                             plotlyOutput("trajsChartPoll")  %>% withSpinner(color="#0dc5c1")
+                             # verbatimTextOutput("trajsLogs"),
+                         )
 
-                     mainPanel(
-                         width=10,
-                         uiOutput("imageTrajs")  %>% withSpinner(color="#0dc5c1")
-                         # plotOutput("exc_status_map"),
-                         # DT::dataTableOutput("exc_status_table")
-                         # DT::dataTableOutput("trajs_table")
                      )
-                 )
-        )
+            )
+        # tabPanel("Trajectories", value="trajectories", fluid = TRUE,
+        #          sidebarLayout(
+        #              sidebarPanel(
+        #                  width = 2,
+        #                  uiOutput("selectInputTrajsCountry"),
+        #                  uiOutput("selectInputTrajsCity"),
+        #                  uiOutput("selectInputTrajsDates")
+        #
+        #                  # downloadButton("trajs_download_jpg", "Download (.jpg)"),
+        #              ),
+        #
+        #              mainPanel(
+        #                  width=10,
+        #                  uiOutput("imageTrajs")  %>% withSpinner(color="#0dc5c1")
+        #                  # plotOutput("exc_status_map"),
+        #                  # DT::dataTableOutput("exc_status_table")
+        #                  # DT::dataTableOutput("trajs_table")
+        #              )
+        #          )
+        # )
 #
 #         tabPanel("Download", fluid = TRUE,
 #                  sidebarLayout(

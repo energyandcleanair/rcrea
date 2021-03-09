@@ -2,6 +2,9 @@ require(rcrea)
 library(lubridate)
 library(scales)
 library(shinyWidgets)
+library(leaflet)
+library(creatrajs)
+library(plotly)
 
 server <- function(input, output, session) {
 
@@ -204,12 +207,12 @@ server <- function(input, output, session) {
         }
 
         type <- switch(plot_type,
-               "ts" = "ts",
-               "ts_year" = "ts",
-               "yoy" = "yoy",
-               "yoy_year" = "yoy",
-               "heatmap" = "heatmap",
-               "heatmap_w_text" = "heatmap_w_text")
+                       "ts" = "ts",
+                       "ts_year" = "ts",
+                       "yoy" = "yoy",
+                       "yoy_year" = "yoy",
+                       "heatmap" = "heatmap",
+                       "heatmap_w_text" = "heatmap_w_text")
 
         color_by <-  switch(plot_type,
                             "ts" = switch(input$overlayCities+1, NULL, "location_name"),
@@ -220,22 +223,22 @@ server <- function(input, output, session) {
                             "heatmap_w_text" = NULL)
 
         subplot_by <-  switch(plot_type,
-                            "ts" = switch(input$overlayCities+1,
-                                          c(if(length(poll)>1) "poll" else NULL,
+                              "ts" = switch(input$overlayCities+1,
+                                            c(if(length(poll)>1) "poll" else NULL,
+                                              if(length(region)>1) "location_name" else NULL),
+                                            if(length(poll)>1) "poll" else NULL
+                              ),
+                              "yoy" = switch(input$overlayCities+1,
+                                             c(if(length(poll)>1) "poll" else NULL,
+                                               if(length(region)>1) "location_name" else NULL),
+                                             if(length(poll)>1) "poll" else NULL
+                              ),
+                              "ts_year" = c(if(length(poll)>1) "poll" else NULL,
                                             if(length(region)>1) "location_name" else NULL),
-                                          if(length(poll)>1) "poll" else NULL
-                                          ),
-                            "yoy" = switch(input$overlayCities+1,
-                                          c(if(length(poll)>1) "poll" else NULL,
-                                            if(length(region)>1) "location_name" else NULL),
-                                          if(length(poll)>1) "poll" else NULL
-                            ),
-                            "ts_year" = c(if(length(poll)>1) "poll" else NULL,
-                                          if(length(region)>1) "location_name" else NULL),
-                            "yoy_year" = c(if(length(poll)>1) "poll" else NULL,
-                                          if(length(region)>1) "location_name" else NULL),
-                            "heatmap" = NULL,
-                            "heatmap_w_text" = NULL)
+                              "yoy_year" = c(if(length(poll)>1) "poll" else NULL,
+                                             if(length(region)>1) "location_name" else NULL),
+                              "heatmap" = NULL,
+                              "heatmap_w_text" = NULL)
 
 
 
@@ -258,7 +261,7 @@ server <- function(input, output, session) {
             meas_plot <- meas_plot + scale_x_datetime(limits=c(min(month_date),max(month_date)),
                                                       breaks = seq(min(month_date),max(month_date), "1 month"),
                                                       labels=scales::date_format("%b", tz=attr(min(month_date),"tz"))
-                                                      )
+            )
         }
 
         # Adding target lines if any
@@ -266,9 +269,9 @@ server <- function(input, output, session) {
             for (i_target in 1:length(target)){
                 target <- targets() %>% dplyr::filter(short_name == targets[i_target])
                 target_line <- rcrea::partial_plot_target(poll=poll, target=target, country=country, city=region, location_id=NULL,
-                                                           average_by=averaging,
-                                                           date_from = min(meas()$date), date_to = max(meas()$date),
-                                                           type=type, color_by=color_by)
+                                                          average_by=averaging,
+                                                          date_from = min(meas()$date), date_to = max(meas()$date),
+                                                          type=type, color_by=color_by)
 
                 if(!is.null(target_line)){
                     meas_plot <- meas_plot + target_line
@@ -394,41 +397,41 @@ server <- function(input, output, session) {
     })
 
     output$exc_table <- DT::renderDataTable({
-         DT::datatable(data=exc() %>%
-            dplyr::filter(aggregation_period %in% input$exc_aggregation_period) %>%
-            dplyr::filter(poll %in% input$exc_poll) %>%
-            dplyr::filter(standard_org %in% input$exc_standard_org) %>%
-            dplyr::filter(status %in% input$exc_status) %>%
-            dplyr::mutate(threshold_str=paste0(threshold," ", unit, " [", aggregation_period,"]")) %>%
-            dplyr::select(
-                city,
-                poll,
-                status,
-                exceedance_this_year,
-                exceedance_allowed_per_year,
-                breach_date,
-                threshold_str,
-                standard_org,
-            ),
-            options = list(
-                columnDefs = list(list(visible=FALSE, targets=c())),
-                pageLength = 15,
-                autoWidth = TRUE,
-                rowCallback = JS(
-                    "function(row, data) {",
-                    "var n_exc = data[3];",
-                    "var str_exc = n_exc < 1 ? (n_exc * 100).toFixed(0).toString() + '%' :  Math.floor(n_exc).toString() + ' times';",
-                    "$('td:eq(3)', row).html(str_exc);",
-                    "}"
-                    )
-                # callback = JS("var tips = ['tooltip1', 'tooltip2', 'tooltip3', 'tooltip4', 'tooltip5'],
-                #             firstRow = $('#exc_status_table thead tr th');
-                #             for (var i = 0; i < tips.length; i++) {
-                #               $(firstRow[i]).attr('title', tips[i]);
-                #             }")
-         ),
-         rownames = FALSE,
-         ) %>%
+        DT::datatable(data=exc() %>%
+                          dplyr::filter(aggregation_period %in% input$exc_aggregation_period) %>%
+                          dplyr::filter(poll %in% input$exc_poll) %>%
+                          dplyr::filter(standard_org %in% input$exc_standard_org) %>%
+                          dplyr::filter(status %in% input$exc_status) %>%
+                          dplyr::mutate(threshold_str=paste0(threshold," ", unit, " [", aggregation_period,"]")) %>%
+                          dplyr::select(
+                              city,
+                              poll,
+                              status,
+                              exceedance_this_year,
+                              exceedance_allowed_per_year,
+                              breach_date,
+                              threshold_str,
+                              standard_org,
+                          ),
+                      options = list(
+                          columnDefs = list(list(visible=FALSE, targets=c())),
+                          pageLength = 15,
+                          autoWidth = TRUE,
+                          rowCallback = JS(
+                              "function(row, data) {",
+                              "var n_exc = data[3];",
+                              "var str_exc = n_exc < 1 ? (n_exc * 100).toFixed(0).toString() + '%' :  Math.floor(n_exc).toString() + ' times';",
+                              "$('td:eq(3)', row).html(str_exc);",
+                              "}"
+                          )
+                          # callback = JS("var tips = ['tooltip1', 'tooltip2', 'tooltip3', 'tooltip4', 'tooltip5'],
+                          #             firstRow = $('#exc_status_table thead tr th');
+                          #             for (var i = 0; i < tips.length; i++) {
+                          #               $(firstRow[i]).attr('title', tips[i]);
+                          #             }")
+                      ),
+                      rownames = FALSE,
+        ) %>%
             formatDate(c(6), "toLocaleDateString") %>%
             formatStyle(
                 'status',
@@ -438,45 +441,213 @@ server <- function(input, output, session) {
     })
 
     # Tab 3: Trajectories  -----------------------------------------------------
-    trajs <- reactive({
-        # country <- input$trajs_country
-        # city <- input$trajs_city
-        # req(country)
 
+    # trajs_logs<-reactiveValues()
+
+    trajs_files <- reactive({
+        # trajs_logs[["log"]] <- "aaa"
         # Get list of trajectories available
         gcs_get_bucket(trajs.bucket)
-        files <- gcs_list_objects(prefix=trajs.folder)
-        files.plots <- files %>%
-            dplyr::filter(stringr::str_detect(name, ".jpg$"))
+        files <- gcs_list_objects(prefix=paste0(trajs.folder,"/"),
+                                  detail = "summary",
+                                  delimiter = "/")
+        files.trajs <- files %>%
+            dplyr::filter(stringr::str_detect(name, ".trajs.RDS$"))
 
-        cbind(name=files.plots$name,
-              reshape2::colsplit(files.plots$name, "\\.",c('prefix', 'content','date','country','city','distance','height','hysplit_met','extension')) %>%
-            dplyr::select(-c(prefix, content, extension)))
+        tibble::tibble(
+            gcs_name=files.trajs$name,
+            location_id=gsub(".trajs.RDS",
+                             "",
+                             basename(files.trajs$name)))
     })
 
-    trajs_date <- reactive({
-        city_ <- tolower(input$trajs_city)
-        req(city_)
+    trajs_locations <- reactive({
+        req(trajs_files())
+        rcrea::locations(id=unique(trajs_files()$location_id),
+                         level="city",
+                         with_metadata = T) %>%
+            dplyr::left_join(trajs_files(),
+                             by=c("id"="location_id")) %>%
+            dplyr::distinct(id, name, country, gcs_name)
+    })
+
+    trajs_location_id <- reactive({
+        req(input$trajs_city)
+        req(input$trajs_country)
+
+        trajs_locations() %>%
+            dplyr::filter(country==input$trajs_country,
+                          name==input$trajs_city) %>%
+            dplyr::pull(id)
+    })
+
+    trajs <- reactive({
+        req(trajs_location_id())
+
+        gcs_name <- trajs_locations() %>%
+            dplyr::filter(id==trajs_location_id()) %>%
+            dplyr::pull(gcs_name)
+
+        gcs_url <- paste0(trajs.bucket_base_url, gcs_name)
+        readRDS(url(gcs_url))
+    })
+
+    trajs_dates <- reactive({
+        req(trajs())
         trajs() %>%
-            dplyr::filter(tolower(city)==city_) %>%
             dplyr::pull(date) %>%
             unique() %>%
             sort(decreasing=T)
     })
 
-    trajs_plot_url <- reactive({
+    trajs_fires_all <- reactive({
+        req(trajs_location_id())
+
+        gcs_url <- paste0(trajs.bucket_base_url,
+                          trajs.folder,"/",
+                          trajs_location_id(),
+                          ".fires.RDS")
+        tryCatch({
+            readRDS(url(gcs_url))
+        }, error=function(c){
+            return(NULL)
+        })
+    })
+
+    trajs_fire <- reactive({
+        req(trajs_fires_all())
+        req(input$trajs_date)
+
+        trajs_fires_all() %>%
+            dplyr::filter(lubridate::date(acq_date)==input$trajs_date)
+    })
+
+    trajs_meas_dew <- reactive({
+        req(trajs_location_id())
+        gcs_url <- paste0(trajs.bucket_base_url,
+                          trajs.folder,"/",
+                          trajs_location_id(),
+                          ".dew.RDS")
+        tryCatch({
+           readRDS(url(gcs_url))
+        }, error=function(c){
+            return(NULL)
+        })
+    })
+
+    trajs_meas_obs <- reactive({
+        req(trajs_meas_dew())
+        m.dew <- trajs_meas_dew()
+
+        # Get observations
+        rcrea::measurements(location_id=trajs_location_id(),
+                            date_from="2017-01-01",
+                            deweathered = F,
+                            # process_id="city_day_mad",
+                            source=m.dew$source[1],
+                            poll=m.dew$poll[1])
+    })
+
+    trajs_meas_date_details <- reactive({
+
+        req(trajs_meas_dew())
+        req(trajs_meas_obs())
+        req(input$trajs_date)
+
+        poll <- rcrea::poll_str(trajs_meas_obs()$poll[1])
+        unit <- trajs_meas_obs()$unit[1]
+
+        m.cf <- trajs_meas_dew() %>%
+            dplyr::filter(output %in% c("counterfactual_nofire","counterfactual_nofire_yday")) %>%
+            tidyr::unnest(normalised) %>%
+            dplyr::filter(date==input$trajs_date) %>%
+            dplyr::select(predicted, predicted_nofire)
+
+        m.obs <- trajs_meas_obs() %>%
+            dplyr::filter(input$trajs_date==date)
+
+        if(nrow(m.cf)!=1 || nrow(m.obs)!=1){
+            warning("Couldn't find measurements (or found too many)")
+            return(NULL)
+        }
+
+        return(list(
+            "poll"=poll,
+            "unit"=unit,
+            "observed"=m.obs$value[1],
+            "predicted"=m.cf$predicted[1],
+            "predicted_nofire"=m.cf$predicted_nofire[1]
+            ))
+
+
+
+        m.dew <- trajs_meas_dew()
+
+        # Get observations
+        rcrea::measurements(location_id=trajs_location_id(),
+                            date_from="2017-01-01",
+                            deweathered = F,
+                            # process_id="city_day_mad",
+                            source=m.dew$source[1],
+                            poll=m.dew$poll[1])
+    })
+
+    # trajs_meas <- reactive({
+    #     req(trajs_location_id())
+    #     gcs_url <- paste0(trajs.bucket_base_url,
+    #                       trajs.folder,"/",
+    #                       trajs_location_id(),
+    #                       ".dew.RDS")
+    #     tryCatch({
+    #         m.dew <-  readRDS(url(gcs_url))
+    #
+    #         # Get observations
+    #         rcrea::measurements(location_id=trajs_location_id(),
+    #                             date_from="2017-01-01",
+    #                             deweathered = F,
+    #                             # process_id="city_day_mad",
+    #                             source=m.dew$source[1],
+    #                             poll=m.dew$poll[1])
+    #     }, error=function(c){
+    #         return(NULL)
+    #     })
+    # })
+
+    # trajs_plot_url <- reactive({
+    #     date_ <- tolower(input$trajs_date)
+    #     city_ <- tolower(input$trajs_city)
+    #     country_ <- tolower(input$trajs_country)
+    #     req(date_, country_, city_)
+    #
+    #     url.short <- trajs_files() %>%
+    #         dplyr::filter(tolower(country)==country_,
+    #                        date==date_,
+    #                        tolower(city)==city_) %>%
+    #         dplyr::pull(name) %>% as.character()
+    #     paste("https://storage.googleapis.com", trajs.bucket, url.short, sep="/")
+    #
+    # })
+
+    trajs_points <- reactive({
+        req(trajs())
+        req(input$trajs_date)
+
         date_ <- tolower(input$trajs_date)
-        city_ <- tolower(input$trajs_city)
-        country_ <- tolower(input$trajs_country)
-        req(date_, country_, city_)
 
-        url.short <- trajs() %>%
-            dplyr::filter(tolower(country)==country_,
-                           date==date_,
-                           tolower(city)==city_) %>%
-            dplyr::pull(name) %>% as.character()
-        paste("https://storage.googleapis.com", trajs.bucket, url.short, sep="/")
+        trajs() %>%
+            dplyr::filter(date==date_) %>%
+            tidyr::unnest(trajs, names_sep=".") %>%
+            dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
+    })
 
+    trajs_buffer <- reactive({
+        req(trajs())
+        req(input$trajs_date)
+
+        date_ <- tolower(input$trajs_date)
+
+        creatrajs::trajs.buffer(trajs()[trajs()$date==date_,"trajs"][[1]][[1]],
+                                buffer_km=10)
     })
 
 
@@ -494,93 +665,172 @@ server <- function(input, output, session) {
 
     # Output Elements --------------------------------------
     output$selectInputTrajsCountry <- renderUI({
-        countries <- unique(trajs() %>% dplyr::pull(country))
-        names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
+        countries <- trajs_locations()$country %>% unique()
+        names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name',
+                                              custom_match = list(XK='Kosovo')))
 
         pickerInput("trajs_country","Country", choices=countries, options = list(`actions-box` = TRUE), multiple = F)
     })
 
     output$selectInputTrajsCity <- renderUI({
-        country_ <- tolower(input$trajs_country)
-        req(country_)
-        cities <- unique(trajs() %>%
-                             dplyr::filter(tolower(country)==country_) %>%
-                             dplyr::pull(city))
-        # cities <- unique((locations %>% dplyr::filter(country==input$trajs_country))$city)
+        req(input$trajs_country)
+        cities <- trajs_locations() %>%
+            dplyr::filter(country==input$trajs_country) %>%
+            dplyr::pull(name) %>%
+            unique()
         pickerInput("trajs_city","City", choices=cities, options = list(`actions-box` = TRUE), multiple = F)
     })
 
     output$selectInputTrajsDates <- renderUI({
-        dates <- trajs_date()
-        pickerInput("trajs_date","Date", choices=dates, options = list(`actions-box` = TRUE), multiple = F)
+        dates <- trajs_dates()
+        # pickerInput("trajs_date","Date", choices=dates, options = list(`actions-box` = TRUE), multiple = F)
+        # dateInput("trajs_date","Date", min=min(dates), max=max(dates))
+        sliderInput("trajs_date",
+                    NULL,
+                    min = as.Date(min(dates),"%Y-%m-%d"),
+                    max = as.Date(max(dates),"%Y-%m-%d"),
+                    value=as.Date(max(dates)),
+                    timeFormat="%Y-%m-%d",
+                    ticks=T,
+                    width="100%")
     })
 
-    output$imageTrajs <- renderUI({
-        imgurl <- trajs_plot_url()
-        # tags$img(src=imgurl[1], height=800) #TODO account for various met_types
+    # output$trajsLogs <- renderText({
+    #     req(trajs_logs)
+    #     trajs_logs[["log"]]
+    #     })
 
-        image_output_list <-
-            lapply(1:length(imgurl),
-                   function(i)
-                   {
-                       tags$img(src=imgurl[i], height=800)
-                       # imagename = i
-                       # imageOutput(imagename)
-                   })
+    output$trajsInfos <- renderUI({
+        req(trajs_location_id())
+        req(input$trajs_date)
+        req(trajs_meas_date_details())
 
-        do.call(tagList, image_output_list)
+        l <- trajs_locations() %>%
+            dplyr::filter(id==trajs_location_id())
+        d <- trajs_meas_details()
+
+        HTML(paste0("<b>",l$name,"</b>",
+                    "<br/>",
+                    input$trajs_date,"<br/>",
+                    d[["poll"]], " [", d[["unit"]],"] ",
+                    "Observed: ", d[["observed"]], "<br/>",
+                    "Predicted: ", d[["predicted"]], "<br/>",
+                    "Predicted (nofire): ", d[["predicted_nofire"]], "<br/>"
+                    ))
     })
 
-    # output$trajs_table <- DT::renderDataTable({
-    #     DT::datatable(data=trajs() %>% dplyr::select(
-    #                 city,
-    #                 date
-    #             ),
+    output$trajsChartPoll <- renderPlotly({
+
+        req(trajs_meas_obs())
+        req(input$trajs_date)
+
+        poll <- rcrea::poll_str(trajs_meas_obs()$poll[1])
+        unit <- trajs_meas_obs()$unit[1]
+
+        # selected <- which(trajs_meas_obs()$date==input$trajs_date)
+        trajs_meas_obs() %>%
+            plot_ly(
+                x = ~date,
+                y = ~value
+                # selectedpoints=as.list(selected),
+                ) %>%
+            plotly::add_lines() %>%
+            plotly::layout(yaxis = list(title=sprintf("%s [%s]",poll, unit)),
+                   xaxis = list(title=NULL))
+    })
+
+
+    output$maptrajs <- renderLeaflet({
+        leaflet(options = leafletOptions(preferCanvas = TRUE,
+                                         zoomControl = FALSE)) %>%
+            # addProviderTiles(providers$Stamen.TonerLite,
+            #                  options = providerTileOptions(noWrap = TRUE)
+            # )
+            addProviderTiles('Stamen.Terrain', group="Terrain") %>%
+            addProviderTiles('Esri.WorldImagery', group="Satellite") %>%
+            addProviderTiles('OpenStreetMap', group = "OpenStreetMap") %>%
+            # addProviderTiles("CartoDB.PositronOnlyLabels", group="Satellite") %>%
+            # addProviderTiles('Esri.Topographic', group="Topographic") %>%
+            # addProviderTiles('Esri.Terrain', group="Terrain") %>%
+            addProviderTiles(providers$CartoDB.Positron, group="Light") %>%
+            # addProviderTiles("Esri.NatGeoWorldMap", group="NatGeo") %>%
+            addLayersControl(
+                baseGroups = c("Terrain", "Satellite", "OpenStreetMap", "Light"),
+                overlayGroups = c("Labels", "Trajectories", "Active fires"),
+                options = layersControlOptions(collapsed = FALSE)
+            )
+    })
+
+    # Incremental changes to the map. Each independent set of things that can change
+    # should be managed in its own observer.
+    observe({
+
+        req(trajs_points())
+        req(trajs_fire())
+
+        map <- leafletProxy("maptrajs") %>%
+            clearShapes() %>%
+            clearMarkers
+
+        trajs <- trajs_points() %>%
+            dplyr::arrange(run, date)
+
+        fires <- trajs_fire()
+
+        for(run in unique(trajs$run)){
+            map <- addPolylines(map,
+                                lng= ~ lon,
+                                lat= ~ lat,
+                                data = trajs[trajs$run==run,],
+                                group = "Trajectories",
+                                weight = 3)
+        }
+
+        if(!is.null(fires)){
+            map <- addCircleMarkers(map,
+                                    radius=5,
+                                    color="red",
+                                    stroke=F,
+                                    opacity=0.7,
+                                    group = "Active fires",
+                                    data = fires)
+        }
+
+        map
+    })
+
+    observe({
+
+        req(trajs())
+        t<-trajs() %>%
+            tidyr::unnest(trajs, names_sep=".") %>%
+            dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
+
+        buffer <- 0.5
+        leafletProxy("maptrajs") %>%
+            fitBounds(max(t$lon) + buffer,
+                      max(t$lat) + buffer,
+                      min(t$lon) - buffer,
+                      min(t$lat) - buffer)
+    })
+
+
+    # output$imageTrajs <- renderUI({
+    #     imgurl <- trajs_plot_url()
+    #     # tags$img(src=imgurl[1], height=800) #TODO account for various met_types
     #
-    #                   # %>%
-    #                   #     dplyr::filter(aggregation_period %in% input$exc_aggregation_period) %>%
-    #                   #     dplyr::filter(poll %in% input$exc_poll) %>%
-    #                   #     dplyr::filter(standard_org %in% input$exc_standard_org) %>%
-    #                   #     dplyr::filter(status %in% input$exc_status) %>%
-    #                   #     dplyr::mutate(threshold_str=paste0(threshold," ", unit, " [", aggregation_period,"]")) %>%
-    #                   #     dplyr::select(
-    #                   #         city,
-    #                   #         poll,
-    #                   #         status,
-    #                   #         exceedance_this_year,
-    #                   #         exceedance_allowed_per_year,
-    #                   #         breach_date,
-    #                   #         threshold_str,
-    #                   #         standard_org,
-    #                   #     ),
-    #                   options = list(
-    #                       columnDefs = list(list(visible=FALSE, targets=c())),
-    #                       pageLength = 15,
-    #                       autoWidth = TRUE
-    #                       # selection = 'row',
-    #                       # callback = JS("table.on('click.dt', 'td', function() {
-    #                       #       var row_=table.cell(this).index().row;
-    #                       #       var col=table.cell(this).index().column;
-    #                       #       var rnd= Math.random();
-    #                       #       var data = [row_, col, rnd];
-    #                       #      Shiny.onInputChange('rows',data );
-    #                       #   });")
-    #                   ),
-    #                   rownames = FALSE
-    #     )
+    #     image_output_list <-
+    #         lapply(1:length(imgurl),
+    #                function(i)
+    #                {
+    #                    tags$img(src=imgurl[i], height=800)
+    #                    # imagename = i
+    #                    # imageOutput(imagename)
+    #                })
+    #
+    #     do.call(tagList, image_output_list)
     # })
-#
-#     observeEvent(input$rows, {
-#         print(input$rows)
-#         print(Sys.time())
-#
-#     })
 
-
-
-    # output$exc_status_map <- renderPlot({
-    #     rcrea::map_exceedance_status(exc_status()) + geom_sf(data=sf::st_as_sf(countries_map()), fill = NA)
-    # })
 
     # Tab 4 : Download -----------------------------------------------------
     down <- reactive({
@@ -631,7 +881,7 @@ server <- function(input, output, session) {
                               "$('td:eq(1)', row).html(str_datetime);",
                               "}"
                           )
-                          ),
+                      ),
                       rownames = FALSE
         ) # %>% formatDate(c(2), format_date_str)
     })

@@ -13,9 +13,9 @@ importFrom(dplyr,"summarise")
 importFrom(dplyr,"arrange")
 importFrom(dplyr,"desc")
 importFrom(dplyr,"row_number")
+importFrom(dplyr,"pull")
 
 
 
 exportPattern("^[[:alpha:]]+")
 export("%>%")
-
