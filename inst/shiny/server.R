@@ -3,7 +3,7 @@ library(lubridate)
 library(scales)
 library(shinyWidgets)
 library(leaflet)
-library(creatrajs)
+# library(creatrajs)
 library(plotly)
 
 server <- function(input, output, session) {
@@ -640,16 +640,16 @@ server <- function(input, output, session) {
             dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
     })
 
-    trajs_buffer <- reactive({
-        req(trajs())
-        req(input$trajs_date)
-
-        date_ <- tolower(input$trajs_date)
-
-        creatrajs::trajs.buffer(trajs()[trajs()$date==date_,"trajs"][[1]][[1]],
-                                buffer_km=10)
-    })
-
+    # trajs_buffer <- reactive({
+    #     req(trajs())
+    #     req(input$trajs_date)
+    #
+    #     date_ <- tolower(input$trajs_date)
+    #
+    #     creatrajs::trajs.buffer(trajs()[trajs()$date==date_,"trajs"][[1]][[1]],
+    #                             buffer_km=10)
+    # })
+    #
 
 
     # Download
