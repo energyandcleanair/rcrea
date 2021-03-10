@@ -679,7 +679,7 @@ server <- function(input, output, session) {
         HTML(paste0("<b>",l$name,"</b>",
                     "<br/>",
                     input$trajs_date,"<br/>",
-                    d[["poll"]], " [", d[["unit"]],"] ",
+                    d[["poll"]], " [", d[["unit"]],"] ","<br/>",
                     "Observed: ", round(d[["observed"]]), " ",d[["unit"]], "<br/>",
                     "Predicted: ", round(d[["predicted"]]), " ",d[["unit"]], "<br/>",
                     "Predicted (nofire): ", round(d[["predicted_nofire"]]), " ",d[["unit"]], "<br/>"

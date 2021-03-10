@@ -142,7 +142,7 @@ ui <- fluidPage(
                              leafletOutput("maptrajs", height = "calc(100%)")  %>% withSpinner(color="#0dc5c1"),
                              absolutePanel(left=10,
                                            top=10,
-                                           width=120,
+                                           width=160,
                                            htmlOutput("trajsInfos", height="120px")
 
                              ),
