@@ -158,7 +158,8 @@ ui <- fluidPage(
                              width = 3,
                              uiOutput("selectInputTrajsCountry"),
                              uiOutput("selectInputTrajsCity"),
-                             plotlyOutput("trajsChartPoll")  %>% withSpinner(color="#0dc5c1")
+                             plotlyOutput("trajsChartPoll")  %>% withSpinner(color="#0dc5c1"),
+                             plotlyOutput("trajsChartFire")  %>% withSpinner(color="#0dc5c1")
                              # verbatimTextOutput("trajsLogs"),
                          )
 

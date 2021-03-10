@@ -514,6 +514,20 @@ server <- function(input, output, session) {
         })
     })
 
+    trajs_weather <- reactive({
+        req(trajs_location_id())
+
+        gcs_url <- paste0(trajs.bucket_base_url,
+                          trajs.folder,"/",
+                          trajs_location_id(),
+                          ".weather.RDS")
+        tryCatch({
+            readRDS(url(gcs_url))
+        }, error=function(c){
+            return(NULL)
+        })
+    })
+
     trajs_fire <- reactive({
         req(trajs_fires_all())
         req(input$trajs_date)
@@ -522,12 +536,12 @@ server <- function(input, output, session) {
             dplyr::filter(lubridate::date(acq_date)==input$trajs_date)
     })
 
-    trajs_meas_dew <- reactive({
+    trajs_meas_all <- reactive({
         req(trajs_location_id())
         gcs_url <- paste0(trajs.bucket_base_url,
                           trajs.folder,"/",
                           trajs_location_id(),
-                          ".dew.RDS")
+                          ".meas.RDS")
         tryCatch({
            readRDS(url(gcs_url))
         }, error=function(c){
@@ -535,61 +549,14 @@ server <- function(input, output, session) {
         })
     })
 
-    trajs_meas_obs <- reactive({
-        req(trajs_meas_dew())
-        m.dew <- trajs_meas_dew()
+    trajs_meas_date <- reactive({
 
-        # Get observations
-        rcrea::measurements(location_id=trajs_location_id(),
-                            date_from="2017-01-01",
-                            deweathered = F,
-                            # process_id="city_day_mad",
-                            source=m.dew$source[1],
-                            poll=m.dew$poll[1])
-    })
-
-    trajs_meas_date_details <- reactive({
-
-        req(trajs_meas_dew())
-        req(trajs_meas_obs())
+        req(trajs_meas_all())
         req(input$trajs_date)
 
-        poll <- rcrea::poll_str(trajs_meas_obs()$poll[1])
-        unit <- trajs_meas_obs()$unit[1]
+        trajs_meas_all() %>%
+            dplyr::filter(date==input$trajs_date)
 
-        m.cf <- trajs_meas_dew() %>%
-            dplyr::filter(output %in% c("counterfactual_nofire","counterfactual_nofire_yday")) %>%
-            tidyr::unnest(normalised) %>%
-            dplyr::filter(date==input$trajs_date) %>%
-            dplyr::select(predicted, predicted_nofire)
-
-        m.obs <- trajs_meas_obs() %>%
-            dplyr::filter(input$trajs_date==date)
-
-        if(nrow(m.cf)!=1 || nrow(m.obs)!=1){
-            warning("Couldn't find measurements (or found too many)")
-            return(NULL)
-        }
-
-        return(list(
-            "poll"=poll,
-            "unit"=unit,
-            "observed"=m.obs$value[1],
-            "predicted"=m.cf$predicted[1],
-            "predicted_nofire"=m.cf$predicted_nofire[1]
-            ))
-
-
-
-        m.dew <- trajs_meas_dew()
-
-        # Get observations
-        rcrea::measurements(location_id=trajs_location_id(),
-                            date_from="2017-01-01",
-                            deweathered = F,
-                            # process_id="city_day_mad",
-                            source=m.dew$source[1],
-                            poll=m.dew$poll[1])
     })
 
     # trajs_meas <- reactive({
@@ -703,41 +670,59 @@ server <- function(input, output, session) {
     output$trajsInfos <- renderUI({
         req(trajs_location_id())
         req(input$trajs_date)
-        req(trajs_meas_date_details())
+        req(trajs_meas_date())
 
         l <- trajs_locations() %>%
             dplyr::filter(id==trajs_location_id())
-        d <- trajs_meas_details()
+        d <- trajs_meas_date()
 
         HTML(paste0("<b>",l$name,"</b>",
                     "<br/>",
                     input$trajs_date,"<br/>",
                     d[["poll"]], " [", d[["unit"]],"] ",
-                    "Observed: ", d[["observed"]], "<br/>",
-                    "Predicted: ", d[["predicted"]], "<br/>",
-                    "Predicted (nofire): ", d[["predicted_nofire"]], "<br/>"
+                    "Observed: ", round(d[["observed"]]), " ",d[["unit"]], "<br/>",
+                    "Predicted: ", round(d[["predicted"]]), " ",d[["unit"]], "<br/>",
+                    "Predicted (nofire): ", round(d[["predicted_nofire"]]), " ",d[["unit"]], "<br/>"
                     ))
     })
 
     output$trajsChartPoll <- renderPlotly({
 
-        req(trajs_meas_obs())
+        req(trajs_meas_all())
         req(input$trajs_date)
 
-        poll <- rcrea::poll_str(trajs_meas_obs()$poll[1])
-        unit <- trajs_meas_obs()$unit[1]
+        poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
+        unit <- trajs_meas_all()$unit[1]
 
         # selected <- which(trajs_meas_obs()$date==input$trajs_date)
-        trajs_meas_obs() %>%
+        trajs_meas_all() %>%
             plot_ly(
                 x = ~date,
-                y = ~value
+                y = ~observed
                 # selectedpoints=as.list(selected),
                 ) %>%
             plotly::add_lines() %>%
             plotly::layout(yaxis = list(title=sprintf("%s [%s]",poll, unit)),
                    xaxis = list(title=NULL))
     })
+
+    output$trajsChartFire <- renderPlotly({
+
+        req(trajs_weather())
+
+
+        # selected <- which(trajs_meas_obs()$date==input$trajs_date)
+        trajs_weather() %>%
+            plot_ly(
+                x = ~date,
+                y = ~fire_count
+                # selectedpoints=as.list(selected),
+            ) %>%
+            plotly::add_lines() %>%
+            plotly::layout(yaxis = list(title="Fire count"),
+                           xaxis = list(title=NULL))
+    })
+
 
 
     output$maptrajs <- renderLeaflet({
