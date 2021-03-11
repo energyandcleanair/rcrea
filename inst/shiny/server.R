@@ -489,7 +489,7 @@ server <- function(input, output, session) {
             dplyr::pull(gcs_name)
 
         gcs_url <- paste0(trajs.bucket_base_url, gcs_name)
-        readRDS(url(gcs_url))
+        readRDS(url(gsub(" ","%20",gcs_url)))
     })
 
     trajs_dates <- reactive({
@@ -508,7 +508,7 @@ server <- function(input, output, session) {
                           trajs_location_id(),
                           ".fires.RDS")
         tryCatch({
-            readRDS(url(gcs_url))
+            readRDS(url(gsub(" ","%20",gcs_url)))
         }, error=function(c){
             return(NULL)
         })
@@ -522,7 +522,7 @@ server <- function(input, output, session) {
                           trajs_location_id(),
                           ".weather.RDS")
         tryCatch({
-            readRDS(url(gcs_url))
+            readRDS(url(gsub(" ","%20",gcs_url)))
         }, error=function(c){
             return(NULL)
         })
@@ -543,7 +543,7 @@ server <- function(input, output, session) {
                           trajs_location_id(),
                           ".meas.RDS")
         tryCatch({
-           readRDS(url(gcs_url))
+            readRDS(url(gsub(" ","%20",gcs_url)))
         }, error=function(c){
             return(NULL)
         })
@@ -693,34 +693,62 @@ server <- function(input, output, session) {
 
         poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
         unit <- trajs_meas_all()$unit[1]
+        m <- trajs_meas_all()     %>%
+            select(date, observed, predicted, predicted_nofire)
+        m7 <- rcrea::utils.running_average(m, 7, vars_to_avg = c("observed","predicted","predicted_nofire"))
+
 
         # selected <- which(trajs_meas_obs()$date==input$trajs_date)
-        trajs_meas_all() %>%
+        m7 %>%
             plot_ly(
-                x = ~date,
-                y = ~observed
-                # selectedpoints=as.list(selected),
+                type="scatter",
+                mode="lines"
                 ) %>%
-            plotly::add_lines() %>%
+            plotly::add_lines(x=~date,
+                              y=~observed,
+                              name="Observed",
+                              opacity=0.4,
+                              line = list(
+                                  color = 'rgb(0, 0, 0)',
+                                  width = 1
+                              )) %>%
+            plotly::add_lines(x=~date,
+                              y=~predicted,
+                              name="With fire",
+                              line = list(
+                                  color = 'red',
+                                  width = 2
+                              )) %>%
+            plotly::add_lines(x=~date,
+                              y=~predicted_nofire,
+                              name="Without fire",
+                              line = list(
+                                  color = 'orange',
+                                  width = 2
+                              )) %>%
             plotly::layout(yaxis = list(title=sprintf("%s [%s]",poll, unit)),
-                   xaxis = list(title=NULL))
+                   xaxis = list(title=""))
     })
 
     output$trajsChartFire <- renderPlotly({
 
         req(trajs_weather())
 
+        f <- trajs_weather() %>%
+            dplyr::select(date, value=fire_count)
+
+        f7 <- rcrea::utils.running_average(f, 7)
 
         # selected <- which(trajs_meas_obs()$date==input$trajs_date)
-        trajs_weather() %>%
+        f7 %>%
             plot_ly(
                 x = ~date,
-                y = ~fire_count
+                y = ~value
                 # selectedpoints=as.list(selected),
             ) %>%
             plotly::add_lines() %>%
             plotly::layout(yaxis = list(title="Fire count"),
-                           xaxis = list(title=NULL))
+                           xaxis = list(title=""))
     })
 
 
