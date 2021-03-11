@@ -20,11 +20,18 @@ body,
   height: calc(100% - 120px);
 }
 
-#trajsInfos{
-    background-color: #00000040;
-    color: white;
+
+.well{
+  height: 100%;
 }
 
+/* #trajsChartPoll{
+    height: calc(50% - 20px);
+}
+
+#trajsChartFire{
+    height: calc(50% - 20px);
+}*/
 
 /*!
  * Bootswatch v4.4.1
