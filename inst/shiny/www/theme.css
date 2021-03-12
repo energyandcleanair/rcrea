@@ -8,8 +8,7 @@ body,
 .container-fluid,
 .tab-content,
 .tab-pane,
-.row,
-.shiny-spinner-output-container{
+.row{
 
         height: 100%;
         width: 100%;
