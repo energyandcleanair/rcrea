@@ -720,7 +720,7 @@ server <- function(input, output, session) {
             plotly::layout(
                 showlegend = F,
                 hovermode  = 'x unified',
-                yaxis = list(title="Fire count"),
+                yaxis = list(title="Fire count (within 10km of trajectories)"),
                 xaxis = list(title=""))
     })
 
@@ -793,10 +793,8 @@ server <- function(input, output, session) {
             dplyr::filter(id==trajs_location_id())
         d <- trajs_meas_date()
 
-        HTML(paste0("<b>",l$name,"</b>",
-                    "<br/>",
+        HTML(paste0("<b>",l$name," - ",d[["poll"]],"</b><br/>",
                     trajs_date(),"<br/>",
-                    d[["poll"]], " [", d[["unit"]],"] ","<br/>",
                     "Observed: ", round(d[["observed"]]), " ",d[["unit"]], "<br/>",
                     "Predicted: ", round(d[["predicted"]]), " ",d[["unit"]], "<br/>",
                     "Predicted (nofire): ", round(d[["predicted_nofire"]]), " ",d[["unit"]], "<br/>"
@@ -869,7 +867,6 @@ server <- function(input, output, session) {
     observe({
 
         req(trajs_date())
-        req(trajs_location_geometry())
 
         wms_url <- sprintf("https://firms.modaps.eosdis.nasa.gov/wms/key/%s/",Sys.getenv("FIRMS_KEY"))
         wms_layer <- "fires_viirs_snpp"

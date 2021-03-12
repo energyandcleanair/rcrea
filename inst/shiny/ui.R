@@ -140,12 +140,12 @@ ui <- fluidPage(
                          mainPanel(
                              width=9,
                              leafletOutput("maptrajs", height = "calc(100%)"),
-                             # absolutePanel(left=10,
-                             #               top=10,
-                             #               width=160,
-                             #               htmlOutput("trajsInfos", height="120px")
-                             #
-                             # ),
+                             absolutePanel(left=25,
+                                           top=10,
+                                           width=160,
+                                           htmlOutput("trajsInfos", height="120px")
+
+                             ),
                              absolutePanel(bottom = 10, right = "10%", width="80%",
                                            uiOutput("selectInputTrajsDates", height = "30px")
                              )

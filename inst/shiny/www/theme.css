@@ -24,6 +24,12 @@ body,
   height: 100%;
 }
 
+#trajsInfos{
+  color: white;
+  padding: 10px;
+  background: #00000040;
+}
+
 /* #trajsChartPoll{
     height: calc(50% - 20px);
 }
