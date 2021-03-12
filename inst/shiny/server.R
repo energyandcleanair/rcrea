@@ -442,15 +442,37 @@ server <- function(input, output, session) {
 
     # Tab 3: Trajectories  -----------------------------------------------------
 
-    # trajs_logs<-reactiveValues()
+    # Some log related functions
+    # trajs_logs_raw <- ""
+    trajs_logs <- reactiveValues(msg="")
+
+    trajs_add_log <- function(message){
+        trajs_logs$msg <- paste(isolate(trajs_logs$msg), "\n", message)
+    }
+
+    read_gcs_url <- function(url, force_uncache=T){
+        tryCatch({
+            trajs_add_log(url)
+            if(force_uncache){
+                url <- paste0(url,"?a=1") # GCS caches files otherwise
+            }
+            r <- readRDS(url(gsub(" ","%20",url)))
+            trajs_add_log("SUCCESS")
+            r
+        },error=function(e){
+            trajs_add_log("FAILED")
+            return(NULL)
+        })
+    }
 
     trajs_files <- reactive({
-        # trajs_logs[["log"]] <- "aaa"
+        trajs_add_log("Listing available files")
         # Get list of trajectories available
         gcs_get_bucket(trajs.bucket)
         files <- gcs_list_objects(prefix=paste0(trajs.folder,"/"),
                                   detail = "summary",
                                   delimiter = "/")
+        trajs_add_log(sprintf("%d files found", nrow(files)))
         files.trajs <- files %>%
             dplyr::filter(stringr::str_detect(name, ".trajs.RDS$"))
 
@@ -489,7 +511,7 @@ server <- function(input, output, session) {
             dplyr::pull(gcs_name)
 
         gcs_url <- paste0(trajs.bucket_base_url, gcs_name)
-        readRDS(url(gsub(" ","%20",gcs_url)))
+        read_gcs_url(gcs_url)
     })
 
     trajs_dates <- reactive({
@@ -507,11 +529,7 @@ server <- function(input, output, session) {
                           trajs.folder,"/",
                           trajs_location_id(),
                           ".fires.RDS")
-        tryCatch({
-            readRDS(url(gsub(" ","%20",gcs_url)))
-        }, error=function(c){
-            return(NULL)
-        })
+        read_gcs_url(gcs_url)
     })
 
     trajs_weather <- reactive({
@@ -521,11 +539,7 @@ server <- function(input, output, session) {
                           trajs.folder,"/",
                           trajs_location_id(),
                           ".weather.RDS")
-        tryCatch({
-            readRDS(url(gsub(" ","%20",gcs_url)))
-        }, error=function(c){
-            return(NULL)
-        })
+        read_gcs_url(gcs_url)
     })
 
     trajs_fire <- reactive({
@@ -542,11 +556,7 @@ server <- function(input, output, session) {
                           trajs.folder,"/",
                           trajs_location_id(),
                           ".meas.RDS")
-        tryCatch({
-            readRDS(url(gsub(" ","%20",gcs_url)))
-        }, error=function(c){
-            return(NULL)
-        })
+        read_gcs_url(gcs_url)
     })
 
     trajs_meas_date <- reactive({
@@ -601,10 +611,100 @@ server <- function(input, output, session) {
 
         date_ <- tolower(input$trajs_date)
 
-        trajs() %>%
-            dplyr::filter(date==date_) %>%
-            tidyr::unnest(trajs, names_sep=".") %>%
-            dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
+        tryCatch({
+            trajs() %>%
+                dplyr::filter(date==date_) %>%
+                tidyr::unnest(trajs, names_sep=".") %>%
+                dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
+        }, error=function(e){
+            trajs_add_log(sprintf("Failed to read trajectories (%s)",e))
+            return(NULL)
+        })
+    })
+
+    trajs_plot_poll <- reactive({
+
+        req(trajs_meas_all())
+        req(input$trajs_date)
+        req(input$trajs_running_width)
+
+        poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
+        unit <- trajs_meas_all()$unit[1]
+        hovertemplate <- paste('%{y:.0f}',unit)
+        m <- trajs_meas_all()     %>%
+            select(date, observed, predicted, predicted_nofire)
+        m.rolled <- rcrea::utils.running_average(m, input$trajs_running_width, vars_to_avg = c("observed","predicted","predicted_nofire"))
+
+
+        # selected <- which(trajs_meas_obs()$date==input$trajs_date)
+        m.rolled %>%
+            plot_ly(
+                type="scatter",
+                mode="lines"
+            ) %>%
+            plotly::add_lines(x=~date,
+                              y=~observed,
+                              name="Observed",
+                              opacity=0.4,
+                              hovertemplate = hovertemplate,
+                              line = list(
+                                  color = 'rgb(0, 0, 0)',
+                                  width = 1
+                              )) %>%
+            plotly::add_lines(x=~date,
+                              y=~predicted,
+                              name="With fire",
+                              hovertemplate = hovertemplate,
+                              line = list(
+                                  color = 'red',
+                                  width = 2
+                              )) %>%
+            plotly::add_lines(x=~date,
+                              y=~predicted_nofire,
+                              name="Without fire",
+                              hovertemplate = hovertemplate,
+                              line = list(
+                                  color = 'orange',
+                                  width = 2
+                              )) %>%
+            plotly::layout(
+                showlegend = F,
+                hovermode  = 'x unified',
+                yaxis = list(title=sprintf("%s [%s]",poll, unit)),
+                xaxis = list(
+                    title="",
+                    # showspikes = T,
+                    spikemode  = 'across+toaxis',
+                    spikesnap = 'cursor',
+                    # spikedash = 'solid',
+                    showline=T,
+                    showgrid=T)
+                )
+    })
+
+    trajs_plot_fire <- reactive({
+
+        req(trajs_weather())
+        req(input$trajs_running_width)
+
+        f <- trajs_weather() %>%
+            dplyr::select(date, value=fire_count)
+
+        f.rolled <- rcrea::utils.running_average(f, input$trajs_running_width)
+
+        # selected <- which(trajs_meas_obs()$date==input$trajs_date)
+        f.rolled %>%
+            plot_ly(
+                x = ~date,
+                y = ~value
+                # selectedpoints=as.list(selected),
+            ) %>%
+            plotly::add_lines(name="Fire count") %>%
+            plotly::layout(
+                showlegend = F,
+                hovermode  = 'x unified',
+                yaxis = list(title="Fire count"),
+                xaxis = list(title=""))
     })
 
     # trajs_buffer <- reactive({
@@ -686,69 +786,40 @@ server <- function(input, output, session) {
                     ))
     })
 
-    output$trajsChartPoll <- renderPlotly({
-
-        req(trajs_meas_all())
-        req(input$trajs_date)
-
-        poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
-        unit <- trajs_meas_all()$unit[1]
-        m <- trajs_meas_all()     %>%
-            select(date, observed, predicted, predicted_nofire)
-        m7 <- rcrea::utils.running_average(m, 7, vars_to_avg = c("observed","predicted","predicted_nofire"))
-
-
-        # selected <- which(trajs_meas_obs()$date==input$trajs_date)
-        m7 %>%
-            plot_ly(
-                type="scatter",
-                mode="lines"
-                ) %>%
-            plotly::add_lines(x=~date,
-                              y=~observed,
-                              name="Observed",
-                              opacity=0.4,
-                              line = list(
-                                  color = 'rgb(0, 0, 0)',
-                                  width = 1
-                              )) %>%
-            plotly::add_lines(x=~date,
-                              y=~predicted,
-                              name="With fire",
-                              line = list(
-                                  color = 'red',
-                                  width = 2
-                              )) %>%
-            plotly::add_lines(x=~date,
-                              y=~predicted_nofire,
-                              name="Without fire",
-                              line = list(
-                                  color = 'orange',
-                                  width = 2
-                              )) %>%
-            plotly::layout(yaxis = list(title=sprintf("%s [%s]",poll, unit)),
-                   xaxis = list(title=""))
+    output$trajsLogs <- renderText({
+        trajs_logs$msg
     })
 
-    output$trajsChartFire <- renderPlotly({
+    output$trajsPlots <- renderPlotly({
 
-        req(trajs_weather())
+        req(trajs_plot_poll())
+        req(trajs_plot_fire())
 
-        f <- trajs_weather() %>%
-            dplyr::select(date, value=fire_count)
+        plots <- list(
+            trajs_plot_poll(),
+            trajs_plot_fire()
+        )
 
-        f7 <- rcrea::utils.running_average(f, 7)
+        plots <- plots[!is.na(plots)]
 
-        # selected <- which(trajs_meas_obs()$date==input$trajs_date)
-        f7 %>%
-            plot_ly(
-                x = ~date,
-                y = ~value
-                # selectedpoints=as.list(selected),
-            ) %>%
-            plotly::add_lines() %>%
-            plotly::layout(yaxis = list(title="Fire count"),
-                           xaxis = list(title=""))
+        plotly::subplot(plots,
+                        nrows = length(plots),
+                        shareX = TRUE,
+                        titleX = FALSE,
+                        titleY = TRUE
+        ) %>%
+            plotly::layout(hovermode='x',
+                           xaxis = list(
+                               title="",
+                               # showspikes = T,
+                               spikemode  = 'across+toaxis',
+                               spikesnap = 'cursor',
+                               # spikedash = 'solid',
+                               showline=T,
+                               showgrid=T)
+            )
+
+
     })
 
 
@@ -815,17 +886,26 @@ server <- function(input, output, session) {
     observe({
 
         req(trajs())
-        t<-trajs() %>%
-            tidyr::unnest(trajs, names_sep=".") %>%
-            dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
 
-        buffer <- 0.5
-        leafletProxy("maptrajs") %>%
-            fitBounds(max(t$lon) + buffer,
-                      max(t$lat) + buffer,
-                      min(t$lon) - buffer,
-                      min(t$lat) - buffer)
+        tryCatch({
+            t<-trajs() %>%
+                tidyr::unnest(trajs, names_sep=".") %>%
+                dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
+
+            buffer <- 0.5
+            leafletProxy("maptrajs") %>%
+                fitBounds(max(t$lon) + buffer,
+                          max(t$lat) + buffer,
+                          min(t$lon) - buffer,
+                          min(t$lat) - buffer)
+        }, error=function(e){NULL})
     })
+
+    # observe(trajs_logs_raw, {
+    #     trajs_logs(trajs_logs_raw)
+    #     })
+
+
 
 
     # output$imageTrajs <- renderUI({
