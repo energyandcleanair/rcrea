@@ -465,6 +465,12 @@ server <- function(input, output, session) {
         })
     }
 
+    # Not refreshing for every intermediate step
+    # when sliding date
+    trajs_date <- reactive({
+        input$trajs_date
+    }) %>% debounce(1000)
+
     trajs_files <- reactive({
         trajs_add_log("Listing available files")
         # Get list of trajectories available
@@ -487,10 +493,11 @@ server <- function(input, output, session) {
         req(trajs_files())
         rcrea::locations(id=unique(trajs_files()$location_id),
                          level="city",
-                         with_metadata = T) %>%
+                         with_metadata=T,
+                         with_geometry=T) %>%
             dplyr::left_join(trajs_files(),
                              by=c("id"="location_id")) %>%
-            dplyr::distinct(id, name, country, gcs_name)
+            dplyr::distinct(id, name, country, gcs_name, geometry)
     })
 
     trajs_location_id <- reactive({
@@ -501,6 +508,16 @@ server <- function(input, output, session) {
             dplyr::filter(country==input$trajs_country,
                           name==input$trajs_city) %>%
             dplyr::pull(id)
+    })
+
+    trajs_location_geometry <- reactive({
+        req(input$trajs_city)
+        req(input$trajs_country)
+
+        trajs_locations() %>%
+            dplyr::filter(country==input$trajs_country,
+                          name==input$trajs_city) %>%
+            dplyr::pull(geometry)
     })
 
     trajs <- reactive({
@@ -522,15 +539,15 @@ server <- function(input, output, session) {
             sort(decreasing=T)
     })
 
-    trajs_fires_all <- reactive({
-        req(trajs_location_id())
-
-        gcs_url <- paste0(trajs.bucket_base_url,
-                          trajs.folder,"/",
-                          trajs_location_id(),
-                          ".fires.RDS")
-        read_gcs_url(gcs_url)
-    })
+    # trajs_fires_all <- reactive({
+    #     req(trajs_location_id())
+    #
+    #     gcs_url <- paste0(trajs.bucket_base_url,
+    #                       trajs.folder,"/",
+    #                       trajs_location_id(),
+    #                       ".fires.RDS")
+    #     read_gcs_url(gcs_url)
+    # })
 
     trajs_weather <- reactive({
         req(trajs_location_id())
@@ -542,13 +559,13 @@ server <- function(input, output, session) {
         read_gcs_url(gcs_url)
     })
 
-    trajs_fire <- reactive({
-        req(trajs_fires_all())
-        req(input$trajs_date)
-
-        trajs_fires_all() %>%
-            dplyr::filter(lubridate::date(acq_date)==input$trajs_date)
-    })
+    # trajs_fire <- reactive({
+    #     req(trajs_fires_all())
+    #     req(trajs_date())
+    #
+    #     trajs_fires_all() %>%
+    #         dplyr::filter(lubridate::date(acq_date)==trajs_date())
+    # })
 
     trajs_meas_all <- reactive({
         req(trajs_location_id())
@@ -562,10 +579,10 @@ server <- function(input, output, session) {
     trajs_meas_date <- reactive({
 
         req(trajs_meas_all())
-        req(input$trajs_date)
+        req(trajs_date())
 
         trajs_meas_all() %>%
-            dplyr::filter(date==input$trajs_date)
+            dplyr::filter(date==trajs_date())
 
     })
 
@@ -591,7 +608,7 @@ server <- function(input, output, session) {
     # })
 
     # trajs_plot_url <- reactive({
-    #     date_ <- tolower(input$trajs_date)
+    #     date_ <- tolower(trajs_date())
     #     city_ <- tolower(input$trajs_city)
     #     country_ <- tolower(input$trajs_country)
     #     req(date_, country_, city_)
@@ -607,9 +624,9 @@ server <- function(input, output, session) {
 
     trajs_points <- reactive({
         req(trajs())
-        req(input$trajs_date)
+        req(trajs_date())
 
-        date_ <- tolower(input$trajs_date)
+        date_ <- tolower(trajs_date())
 
         tryCatch({
             trajs() %>%
@@ -625,7 +642,7 @@ server <- function(input, output, session) {
     trajs_plot_poll <- reactive({
 
         req(trajs_meas_all())
-        req(input$trajs_date)
+        req(trajs_date())
         req(input$trajs_running_width)
 
         poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
@@ -636,7 +653,7 @@ server <- function(input, output, session) {
         m.rolled <- rcrea::utils.running_average(m, input$trajs_running_width, vars_to_avg = c("observed","predicted","predicted_nofire"))
 
 
-        # selected <- which(trajs_meas_obs()$date==input$trajs_date)
+        # selected <- which(trajs_meas_obs()$date==trajs_date())
         m.rolled %>%
             plot_ly(
                 type="scatter",
@@ -653,7 +670,7 @@ server <- function(input, output, session) {
                               )) %>%
             plotly::add_lines(x=~date,
                               y=~predicted,
-                              name="With fire",
+                              name="Predicted with fire",
                               hovertemplate = hovertemplate,
                               line = list(
                                   color = 'red',
@@ -661,7 +678,7 @@ server <- function(input, output, session) {
                               )) %>%
             plotly::add_lines(x=~date,
                               y=~predicted_nofire,
-                              name="Without fire",
+                              name="Predicted without fire",
                               hovertemplate = hovertemplate,
                               line = list(
                                   color = 'orange',
@@ -692,7 +709,7 @@ server <- function(input, output, session) {
 
         f.rolled <- rcrea::utils.running_average(f, input$trajs_running_width)
 
-        # selected <- which(trajs_meas_obs()$date==input$trajs_date)
+        # selected <- which(trajs_meas_obs()$date==trajs_date())
         f.rolled %>%
             plot_ly(
                 x = ~date,
@@ -709,9 +726,9 @@ server <- function(input, output, session) {
 
     # trajs_buffer <- reactive({
     #     req(trajs())
-    #     req(input$trajs_date)
+    #     req(trajs_date())
     #
-    #     date_ <- tolower(input$trajs_date)
+    #     date_ <- tolower(trajs_date())
     #
     #     creatrajs::trajs.buffer(trajs()[trajs()$date==date_,"trajs"][[1]][[1]],
     #                             buffer_km=10)
@@ -769,7 +786,7 @@ server <- function(input, output, session) {
 
     output$trajsInfos <- renderUI({
         req(trajs_location_id())
-        req(input$trajs_date)
+        req(trajs_date())
         req(trajs_meas_date())
 
         l <- trajs_locations() %>%
@@ -778,7 +795,7 @@ server <- function(input, output, session) {
 
         HTML(paste0("<b>",l$name,"</b>",
                     "<br/>",
-                    input$trajs_date,"<br/>",
+                    trajs_date(),"<br/>",
                     d[["poll"]], " [", d[["unit"]],"] ","<br/>",
                     "Observed: ", round(d[["observed"]]), " ",d[["unit"]], "<br/>",
                     "Predicted: ", round(d[["predicted"]]), " ",d[["unit"]], "<br/>",
@@ -830,9 +847,12 @@ server <- function(input, output, session) {
             # addProviderTiles(providers$Stamen.TonerLite,
             #                  options = providerTileOptions(noWrap = TRUE)
             # )
-            addProviderTiles('Stamen.Terrain', group="Terrain") %>%
-            addProviderTiles('Esri.WorldImagery', group="Satellite") %>%
-            addProviderTiles('OpenStreetMap', group = "OpenStreetMap") %>%
+            addProviderTiles('Stamen.Terrain', group="Terrain",
+                             options=providerTileOptions(zindex=0)) %>%
+            addProviderTiles('Esri.WorldImagery', group="Satellite",
+                             options=providerTileOptions(zindex=0)) %>%
+            addProviderTiles('OpenStreetMap', group = "OpenStreetMap",
+                             options=providerTileOptions(zindex=0)) %>%
             # addProviderTiles("CartoDB.PositronOnlyLabels", group="Satellite") %>%
             # addProviderTiles('Esri.Topographic', group="Topographic") %>%
             # addProviderTiles('Esri.Terrain', group="Terrain") %>%
@@ -840,9 +860,42 @@ server <- function(input, output, session) {
             # addProviderTiles("Esri.NatGeoWorldMap", group="NatGeo") %>%
             addLayersControl(
                 baseGroups = c("Terrain", "Satellite", "OpenStreetMap", "Light"),
-                overlayGroups = c("Labels", "Trajectories", "Active fires"),
+                overlayGroups = c("Trajectories", "Active fires"),
                 options = layersControlOptions(collapsed = FALSE)
             )
+    })
+
+
+    observe({
+
+        req(trajs_date())
+        req(trajs_location_geometry())
+
+        wms_url <- sprintf("https://firms.modaps.eosdis.nasa.gov/wms/key/%s/",Sys.getenv("FIRMS_KEY"))
+        wms_layer <- "fires_viirs_snpp"
+        leaflet_layer_id <- "firms_wms"
+        date_str <- strftime(as.Date(trajs_date()),"%Y-%m-%d")
+
+        #https://firms.modaps.eosdis.nasa.gov/wms/key/YourMapKey/?REQUEST=GetMap&layers=fires_viirs,fires_modis&TIME=2020-01-01/2020-01-10&WIDTH=1024&HEIGHT=512&colors=240+40+40,250+200+50&size=2,2&BBOX=-180,-90,180,90
+
+
+        leafletProxy("maptrajs") %>%
+            removeTiles(leaflet_layer_id) %>%
+            leaflet::addWMSTiles(
+                wms_url,
+                layers = wms_layer,
+                layerId = leaflet_layer_id,
+                group="Active fires",
+                options = WMSTileOptions(
+                    format = "image/png",
+                    transparent = TRUE,
+                    colors = "255+12+25",
+                    TIME = date_str,
+                    size=5,
+                    zIndex=1000
+                    )
+            )
+
     })
 
     # Incremental changes to the map. Each independent set of things that can change
@@ -850,7 +903,7 @@ server <- function(input, output, session) {
     observe({
 
         req(trajs_points())
-        req(trajs_fire())
+        # req(trajs_fire())
 
         map <- leafletProxy("maptrajs") %>%
             clearShapes() %>%
@@ -859,7 +912,7 @@ server <- function(input, output, session) {
         trajs <- trajs_points() %>%
             dplyr::arrange(run, date)
 
-        fires <- trajs_fire()
+        # fires <- trajs_fire()
 
         for(run in unique(trajs$run)){
             map <- addPolylines(map,
@@ -870,15 +923,15 @@ server <- function(input, output, session) {
                                 weight = 3)
         }
 
-        if(!is.null(fires)){
-            map <- addCircleMarkers(map,
-                                    radius=5,
-                                    color="red",
-                                    stroke=F,
-                                    opacity=0.7,
-                                    group = "Active fires",
-                                    data = fires)
-        }
+        # if(!is.null(fires)){
+        #     map <- addCircleMarkers(map,
+        #                             radius=5,
+        #                             color="green",
+        #                             stroke=F,
+        #                             opacity=0.7,
+        #                             group = "Active fires",
+        #                             data = fires)
+        # }
 
         map
     })
@@ -900,6 +953,9 @@ server <- function(input, output, session) {
                           min(t$lat) - buffer)
         }, error=function(e){NULL})
     })
+
+
+
 
     # observe(trajs_logs_raw, {
     #     trajs_logs(trajs_logs_raw)

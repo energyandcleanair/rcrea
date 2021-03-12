@@ -139,20 +139,16 @@ ui <- fluidPage(
                      sidebarLayout(
                          mainPanel(
                              width=9,
-                             leafletOutput("maptrajs", height = "calc(100%)")  %>% withSpinner(color="#0dc5c1"),
-                             absolutePanel(left=10,
-                                           top=10,
-                                           width=160,
-                                           htmlOutput("trajsInfos", height="120px")
-
-                             ),
+                             leafletOutput("maptrajs", height = "calc(100%)"),
+                             # absolutePanel(left=10,
+                             #               top=10,
+                             #               width=160,
+                             #               htmlOutput("trajsInfos", height="120px")
+                             #
+                             # ),
                              absolutePanel(bottom = 10, right = "10%", width="80%",
                                            uiOutput("selectInputTrajsDates", height = "30px")
                              )
-                             # uiOutput("imageTrajs")  %>% withSpinner(color="#0dc5c1")
-                             # plotOutput("exc_status_map"),
-                             # DT::dataTableOutput("exc_status_table")
-                             # DT::dataTableOutput("trajs_table")
                          ),
                          sidebarPanel(
                              width = 3,
