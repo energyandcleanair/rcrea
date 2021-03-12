@@ -687,7 +687,10 @@ server <- function(input, output, session) {
             plotly::layout(
                 showlegend = F,
                 hovermode  = 'x unified',
-                yaxis = list(title=sprintf("%s [%s]",poll, unit)),
+                yaxis = list(
+                    title=sprintf("%s [%s]",poll, unit),
+                    rangemode = 'tozero'
+                ),
                 xaxis = list(
                     title="",
                     # showspikes = T,
@@ -720,7 +723,10 @@ server <- function(input, output, session) {
             plotly::layout(
                 showlegend = F,
                 hovermode  = 'x unified',
-                yaxis = list(title="Fire count (within 10km of trajectories)"),
+                yaxis = list(
+                    title="Fire count (within 10km of trajectories)",
+                    rangemode = 'tozero'
+                    ),
                 xaxis = list(title=""))
     })
 
