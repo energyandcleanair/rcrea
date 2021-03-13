@@ -1,33 +1,72 @@
-body, .container-fluid {
-        padding: 0;
-        margin: 0;
-    }
-
-html,
-body,
-.container-fluid,
-.tab-content,
-.tab-pane,
-.row{
-
-        height: 100%;
-        width: 100%;
+.navbar .container-fluid{
+  justify-content: flex-start !important;
 }
 
-
-.tabbable{
-  height: calc(100% - 120px);
+.navbar-nav {
+    flex-direction: row !important;
 }
 
+.navbar-nav a{
+  font-size: medium;
+}
 
-.well{
+.navbar {
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.well {
+  border: none;
+  border-radius: 0;
   height: 100%;
 }
 
-#trajsInfos{
-  color: white;
-  padding: 10px;
-  background: #00000040;
+.no-padding-tab>.row>* {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.btn{
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+
+body{
+  height: 100vh;
+}
+
+.container-fluid{
+  height: calc(100% - 51px);
+}
+
+.tab-content,
+.tab-pane,
+.row{
+  height: 100%;
+}
+
+.form-control{
+  background: transparent !important;
+}
+
+.modebar-group{
+  height: 27px;
+}
+
+.plot-msg{
+    font-size: 18px;
+    color: var(--primary);
+    text-align: center;
+}
+
+.row-inline{
+    display: inline-flex;
+    flex-direction: row;
+    width: 100%;
+}
+.row-inline>div{
+  flex: 1;
 }
 
 /* #trajsChartPoll{
@@ -92,7 +131,7 @@ body,
 
 html {
   font-family: sans-serif;
-  line-height: 1.15;
+  line-height: 1;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }

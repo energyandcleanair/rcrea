@@ -169,6 +169,9 @@ server <- function(input, output, session) {
 
     output$selectInputProcess <- renderUI({
         req(meas())
+        if(nrow(meas())==0){
+            return(c())
+        }
         #Select non-deweather / non-population-weighted by default: putting them first
         process_ids <- meas() %>%
             dplyr::distinct(process_id) %>%
@@ -180,11 +183,24 @@ server <- function(input, output, session) {
         selectInput("process", "Processing:", multiple=T, choices = choices, selected = value)
     })
 
+    output$meas_plot_message <- renderText({
+        req(meas())
+        if(nrow(meas())==0){
+            return(HTML("<div style='margin-top: 40px;'>No measurement found</div>"))
+        }else{
+            return(NULL)
+        }
+    })
+
 
     output$meas_plot <- renderPlot({
 
         # To trigger refresh
         input$meas_refresh
+
+        if(nrow(meas())==0){
+            return(NULL)
+        }
 
         poll <- isolate(input$poll)
         averaging <- isolate(input$averaging)
@@ -252,7 +268,7 @@ server <- function(input, output, session) {
         # meas_plot_data <- meas_plot_data %>% dplyr::mutate(location_name=id_to_name[region_id])
         if(nrow(meas_plot_data)==0) return()
 
-        meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
+        meas_plot <- rcrea::plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
                                        linetype_by=ifelse(length(process_)>1,"process_id",NA))
 
         if(plot_type %in% c('ts_year','yoy_year')){
@@ -687,8 +703,13 @@ server <- function(input, output, session) {
             plotly::layout(
                 showlegend = F,
                 hovermode  = 'x unified',
+                # title=list(
+                #     text=sprintf("%s [%s]",poll, unit),
+                #     x=0.1,
+                #     font=list(size=10)
+                # ),
                 yaxis = list(
-                    title=sprintf("%s [%s]",poll, unit),
+                    # title="", #sprintf("%s [%s]",poll, unit),
                     rangemode = 'tozero'
                 ),
                 xaxis = list(
@@ -698,8 +719,23 @@ server <- function(input, output, session) {
                     spikesnap = 'cursor',
                     # spikedash = 'solid',
                     showline=T,
-                    showgrid=T)
-                )
+                    showgrid=T
+                    ),
+                plot_bgcolor  = "rgba(0, 0, 0, 0)",
+                paper_bgcolor = "rgba(0, 0, 0, 0)",
+                fig_bgcolor   = "rgba(0, 0, 0, 0)"
+                ) %>%
+            plotly::add_annotations(
+                text = sprintf("%s [%s]",poll, unit),
+                x = -0.05,
+                y = 1.1,
+                yref = "paper",
+                xref = "paper",
+                xanchor = "left",
+                yanchor = "top",
+                showarrow = FALSE,
+                font = list(size = 12)
+            )
     })
 
     trajs_plot_fire <- reactive({
@@ -721,13 +757,96 @@ server <- function(input, output, session) {
             ) %>%
             plotly::add_lines(name="Fire count") %>%
             plotly::layout(
+                # title=list(
+                #     text="Fire count (within 10km of trajectories)",
+                #     x=0.1,
+                #     font=list(size=10)
+                # ),
                 showlegend = F,
                 hovermode  = 'x unified',
                 yaxis = list(
-                    title="Fire count (within 10km of trajectories)",
+                     title="", #Fire count (within 10km of trajectories)",
                     rangemode = 'tozero'
-                    ),
-                xaxis = list(title=""))
+                ),
+                xaxis = list(title="")) %>%
+            plotly::add_annotations(
+                    text = "Fire count (within 10km of trajectories)",
+                    x = -0.05,
+                    y = 1.1,
+                    yref = "paper",
+                    xref = "paper",
+                    xanchor = "left",
+                    yanchor = "top",
+                    showarrow = FALSE,
+                    font = list(size = 12)
+                )
+    })
+
+    trajs_plot_firecontribution <- reactive({
+
+        req(trajs_meas_all())
+        req(trajs_date())
+        req(input$trajs_running_width)
+
+        poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
+        unit <- trajs_meas_all()$unit[1]
+        hovertemplate <- paste('%{y:.0f}',unit)
+        m <- trajs_meas_all()     %>%
+            select(date, observed, predicted, predicted_nofire) %>%
+            mutate(value=predicted-predicted_nofire) %>%
+            select(date, value)
+
+        m.rolled <- rcrea::utils.running_average(m, input$trajs_running_width)
+
+
+        # selected <- which(trajs_meas_obs()$date==trajs_date())
+        m.rolled %>%
+            plot_ly(
+                type="scatter",
+                mode="lines"
+            ) %>%
+            plotly::add_lines(x=~date,
+                              y=~value,
+                              hovertemplate = hovertemplate,
+                              line = list(
+                                  width = 2
+                              )) %>%
+            plotly::layout(
+                # title=list(
+                #     text=sprintf("Fire contribution to %s [%s]",poll, unit),
+                #     x=0.1,
+                #     font=list(size=10)
+                #     ),
+                showlegend = F,
+                hovermode  = 'x unified',
+                yaxis = list(
+                    # title=sprintf("Fire contribution to %s [%s]",poll, unit),
+                    rangemode = 'tozero'
+                ),
+                xaxis = list(
+                    title="",
+                    # showspikes = T,
+                    spikemode  = 'across+toaxis',
+                    spikesnap = 'cursor',
+                    # spikedash = 'solid',
+                    showline=T,
+                    showgrid=T
+                ),
+                plot_bgcolor  = "rgba(0, 0, 0, 0)",
+                paper_bgcolor = "rgba(0, 0, 0, 0)",
+                fig_bgcolor   = "rgba(0, 0, 0, 0)"
+            ) %>%
+            plotly::add_annotations(
+                text = sprintf("Fire contribution to %s [%s]",poll, unit),
+                x = -0.05,
+                y = 1.1,
+                yref = "paper",
+                xref = "paper",
+                xanchor = "left",
+                yanchor = "top",
+                showarrow = FALSE,
+                font = list(size = 12)
+            )
     })
 
     # trajs_buffer <- reactive({
@@ -815,9 +934,11 @@ server <- function(input, output, session) {
 
         req(trajs_plot_poll())
         req(trajs_plot_fire())
+        req(trajs_plot_firecontribution())
 
         plots <- list(
             trajs_plot_poll(),
+            trajs_plot_firecontribution(),
             trajs_plot_fire()
         )
 
@@ -827,7 +948,9 @@ server <- function(input, output, session) {
                         nrows = length(plots),
                         shareX = TRUE,
                         titleX = FALSE,
-                        titleY = TRUE
+                        titleY = FALSE,
+                        shareY = FALSE,
+                        margin = 0.03
         ) %>%
             plotly::layout(hovermode='x',
                            xaxis = list(
@@ -848,6 +971,7 @@ server <- function(input, output, session) {
     output$maptrajs <- renderLeaflet({
         leaflet(options = leafletOptions(preferCanvas = TRUE,
                                          zoomControl = FALSE)) %>%
+            setView(80,30,6) %>%
             # addProviderTiles(providers$Stamen.TonerLite,
             #                  options = providerTileOptions(noWrap = TRUE)
             # )
@@ -941,20 +1065,32 @@ server <- function(input, output, session) {
 
     observe({
 
-        req(trajs())
-
+        req(trajs_location_geometry())
         tryCatch({
-            t<-trajs() %>%
-                tidyr::unnest(trajs, names_sep=".") %>%
-                dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
 
-            buffer <- 0.5
             leafletProxy("maptrajs") %>%
-                fitBounds(max(t$lon) + buffer,
-                          max(t$lat) + buffer,
-                          min(t$lon) - buffer,
-                          min(t$lat) - buffer)
+                setView(
+                    lng=sf::st_coordinates(trajs_location_geometry())[1],
+                    lat=sf::st_coordinates(trajs_location_geometry())[2],
+                    zoom = 6
+                )
         }, error=function(e){NULL})
+
+
+        # req(trajs())
+        #
+        # tryCatch({
+        #     t<-trajs() %>%
+        #         tidyr::unnest(trajs, names_sep=".") %>%
+        #         dplyr::select(date=trajs.traj_dt, lon=trajs.lon, lat=trajs.lat, run=trajs.run)
+        #
+        #     buffer <- 0.5
+        #     leafletProxy("maptrajs") %>%
+        #         fitBounds(max(t$lon) + buffer,
+        #                   max(t$lat) + buffer,
+        #                   min(t$lon) - buffer,
+        #                   min(t$lat) - buffer)
+        # }, error=function(e){NULL})
     })
 
 

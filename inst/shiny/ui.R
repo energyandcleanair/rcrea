@@ -1,18 +1,21 @@
 library(leaflet)
 library(plotly)
 
-ui <- fluidPage(
+ui <- navbarPage(
+    title=div(img(src="crea_logo.svg",
+                  height=44)),
+    windowTitle="CREA - Air Quality Dashboard",
     theme = "theme.css",
+        # ,
 
-    # Application title
-    titlePanel(windowTitle="CREA - Air Quality Monitoring", title=div(img(src="crea_logo.svg", width=220))),
-
-    tabsetPanel(id = "tabSetPanel1",
+    # tabsetPanel(id = "tabSetPanel1",
         # Measurements
-        tabPanel("Measurements", value="measurements", fluid = TRUE,
+        tabPanel("Measurements",
+                 value="measurements",
+                 class = "no-padding-tab",
             sidebarLayout(
                 sidebarPanel(
-                    width = 2,
+                    width = 3,
                     h4("Data selection"),
                     selectInput("source",
                                 "Source:",
@@ -42,7 +45,9 @@ ui <- fluidPage(
                     ),
                     sliderInput("years", "Year", min=2010, max=2021, value=c(2018, 2021), step=1, sep = "", ticks = F
                     ),
-                    actionButton("meas_refresh", "Refresh Measurements"),
+                    actionButton("meas_refresh",
+                                 "Refresh Measurements",
+                                 class="btn-primary"),
                     h4("Display options"),
                     sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=1, step=1, sep = ""
                     ),
@@ -58,13 +63,14 @@ ui <- fluidPage(
                     uiOutput("selectInputProcess"),
                     uiOutput("selectInputTarget"),
                     uiOutput("selectInputScale"),
-                    downloadButton("download_csv", "Download (.csv)"),
-                    downloadButton("download_rds", "Download (.rds)"),
+                    downloadButton("download_csv", "Download (.csv)", class="btn-secondary"),
+                    downloadButton("download_rds", "Download (.rds)", class="btn-secondary"),
 
                 ),
                 # Show a plot of the generated distribution
                 mainPanel(
-                   width=10,
+                   width=9,
+                   htmlOutput("meas_plot_message", class="plot-msg"),
                    plotOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1"),
                    DT::dataTableOutput("processes_table")
                 )
@@ -135,10 +141,11 @@ ui <- fluidPage(
 #             )
 #         ),
 
-            tabPanel("Trajectories", value="trajectories", fluid = TRUE, height="20%",
+        tabPanel("Trajectories", value="trajectories",
+                 class = "no-padding-tab",
                      sidebarLayout(
                          mainPanel(
-                             width=9,
+                             width=8,
                              leafletOutput("maptrajs", height = "calc(100%)"),
                              absolutePanel(left=25,
                                            top=10,
@@ -151,12 +158,18 @@ ui <- fluidPage(
                              )
                          ),
                          sidebarPanel(
-                             width = 3,
-                             uiOutput("selectInputTrajsCountry"),
-                             uiOutput("selectInputTrajsCity"),
+                             width = 4,
+                             div(
+                                 class="row-inline",
+                                 height=50,
+                                 uiOutput("selectInputTrajsCountry"),
+                                 uiOutput("selectInputTrajsCity")
+                             ),
+
                              sliderInput("trajs_running_width", "Rolling average (day)", min=1, max=30, value=7, step=1, sep = ""),
-                             plotlyOutput("trajsPlots", height=500)  %>% withSpinner(color="#0dc5c1"),
+                             plotlyOutput("trajsPlots", height=600) #"calc(100% - 300px)")
                              # verbatimTextOutput("trajsLogs", placeholder = TRUE)
+
                          )
 
                      )
@@ -223,6 +236,7 @@ ui <- fluidPage(
 #                      )
 #                  )
 #         )
-    )
+    # )
 )
+
 
