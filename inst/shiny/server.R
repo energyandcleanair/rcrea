@@ -728,7 +728,7 @@ server <- function(input, output, session) {
             plotly::add_annotations(
                 text = sprintf("%s [%s]",poll, unit),
                 x = -0.05,
-                y = 1.1,
+                y = 1.15,
                 yref = "paper",
                 xref = "paper",
                 xanchor = "left",
@@ -772,7 +772,7 @@ server <- function(input, output, session) {
             plotly::add_annotations(
                     text = "Fire count (within 10km of trajectories)",
                     x = -0.05,
-                    y = 1.1,
+                    y = 1.15,
                     yref = "paper",
                     xref = "paper",
                     xanchor = "left",
@@ -839,7 +839,7 @@ server <- function(input, output, session) {
             plotly::add_annotations(
                 text = sprintf("Fire contribution to %s [%s]",poll, unit),
                 x = -0.05,
-                y = 1.1,
+                y = 1.15,
                 yref = "paper",
                 xref = "paper",
                 xanchor = "left",
@@ -949,8 +949,8 @@ server <- function(input, output, session) {
                         shareX = TRUE,
                         titleX = FALSE,
                         titleY = FALSE,
-                        shareY = FALSE,
-                        margin = 0.03
+                        shareY = T,
+                        margin = 0.05
         ) %>%
             plotly::layout(hovermode='x',
                            xaxis = list(
