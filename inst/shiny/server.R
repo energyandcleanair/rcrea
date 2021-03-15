@@ -3,6 +3,7 @@ library(lubridate)
 library(scales)
 library(shinyWidgets)
 library(leaflet)
+library(leaflet.extras2)
 # library(creatrajs)
 library(plotly)
 
@@ -11,8 +12,9 @@ server <- function(input, output, session) {
     observe({
         query <- parseQueryString(session$clientData$url_search)
         if(!is.null(query$tab)) {
-            updateTabsetPanel(session, "tabSetPanel1",
-                              selected = query$tab)
+            updateNavbarPage(session,
+                             "nav-page",
+                             selected = query$tab)
         }
     })
 
@@ -986,9 +988,17 @@ server <- function(input, output, session) {
             # addProviderTiles('Esri.Terrain', group="Terrain") %>%
             addProviderTiles(providers$CartoDB.Positron, group="Light") %>%
             # addProviderTiles("Esri.NatGeoWorldMap", group="NatGeo") %>%
+
+            # leaflet.extras2::addGIBS(
+            #     layers="MODIS_Terra_Aerosol_Optical_Depth_3km",
+            #     group="Aerosol Optical Depth",
+            #     dates=lubridate::today(),
+            #     transparent = T,
+            #     opacity = 0.7
+            # ) %>%
             addLayersControl(
                 baseGroups = c("Terrain", "Satellite", "OpenStreetMap", "Light"),
-                overlayGroups = c("Trajectories", "Active fires"),
+                overlayGroups = c("Trajectories", "Active fires", "Aerosol Optical Depth"),
                 options = layersControlOptions(collapsed = FALSE)
             )
     })
@@ -1020,8 +1030,11 @@ server <- function(input, output, session) {
                     TIME = date_str,
                     size=5,
                     zIndex=1000
-                    )
-            )
+                    ))
+
+            #      %>%
+            # leaflet.extras2::setDate(layers="MODIS_Terra_Aerosol_Optical_Depth_3km",
+            #                          dates=as.Date(trajs_date()))
 
     })
 

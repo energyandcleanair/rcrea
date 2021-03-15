@@ -6,16 +6,17 @@ ui <- navbarPage(
                   height=44)),
     windowTitle="CREA - Air Quality Dashboard",
     theme = "theme.css",
+    id = "nav-page",
         # ,
 
     # tabsetPanel(id = "tabSetPanel1",
         # Measurements
         tabPanel("Measurements",
                  value="measurements",
-                 class = "no-padding-tab",
+                 class ="no-padding-tab",
             sidebarLayout(
                 sidebarPanel(
-                    width = 3,
+                    width = 2,
                     h4("Data selection"),
                     selectInput("source",
                                 "Source:",
@@ -49,7 +50,7 @@ ui <- navbarPage(
                                  "Refresh Measurements",
                                  class="btn-primary"),
                     h4("Display options"),
-                    sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=1, step=1, sep = ""
+                    sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=14, step=1, sep = ""
                     ),
                     sliderInput("months", "Month", min=1, max=12, value=c(1, 12), step=1, sep = "", ticks = F
                     ),
@@ -69,7 +70,7 @@ ui <- navbarPage(
                 ),
                 # Show a plot of the generated distribution
                 mainPanel(
-                   width=9,
+                   width=10,
                    htmlOutput("meas_plot_message", class="plot-msg"),
                    plotOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1"),
                    DT::dataTableOutput("processes_table")
@@ -141,7 +142,8 @@ ui <- navbarPage(
 #             )
 #         ),
 
-        tabPanel("Trajectories", value="trajectories",
+        tabPanel("Trajectories",
+                 value="trajectories",
                  class = "no-padding-tab",
                      sidebarLayout(
                          mainPanel(
