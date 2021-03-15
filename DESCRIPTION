@@ -46,7 +46,7 @@ Imports:
     stringi
 Remotes:
     tidyverse/lubridate,
-    trafficonese/leaflet.extras2
+    energyandcleanair/leaflet.extras2
 Depends:
     ggplot2
 Suggests: 

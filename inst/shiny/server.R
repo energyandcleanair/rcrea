@@ -996,16 +996,25 @@ server <- function(input, output, session) {
             #     transparent = T,
             #     opacity = 0.7
             # ) %>%
-            leaflet.extras2::addGIBS(
-                layers=c("AIRS_L2_Dust_Score_Day","AIRS_L2_Dust_Score_Night"),
-                group="Dust score",
-                dates=lubridate::today(),
-                transparent = T,
-                opacity = 0.7
-            ) %>%
+            # leaflet.extras2::addGIBS(
+            #     layers=c(
+            #         "AIRS_L2_Dust_Score_Day"),
+            #     group="Dust score",
+            #     dates=lubridate::today(),
+            #     transparent = T,
+            #     opacity = 0.7
+            # ) %>%
+            # leaflet.extras2::addGIBS(
+            #     layers=c(
+            #         "MODIS_Combined_Value_Added_AOD"),
+            #     group="Aerosol Optical Depth",
+            #     dates=lubridate::today(),
+            #     transparent = T,
+            #     opacity = 0.7
+            # ) %>%
             addLayersControl(
                 baseGroups = c("Terrain", "Satellite", "OpenStreetMap", "Light"),
-                overlayGroups = c("Trajectories", "Active fires", "Aerosol Optical Depth"),
+                overlayGroups = c("Trajectories", "Active fires"),
                 options = layersControlOptions(collapsed = FALSE)
             )
     })
@@ -1037,11 +1046,13 @@ server <- function(input, output, session) {
                     TIME = date_str,
                     size=5,
                     zIndex=1000
-                    )) %>%
-            leaflet.extras2::setDate(layers=c(
-                # "AIRS_L2_Dust_Score_Day","AIRS_L2_Dust_Score_Night",
-                "MODIS_Combined_Value_Added_AOD"),
-                                     dates=as.Date(trajs_date()))
+                    ))
+        # %>%
+        #     leaflet.extras2::setDate(layers=c(
+        #         "AIRS_L2_Dust_Score_Day","AIRS_L2_Dust_Score_Night"
+        #         # "MODIS_Combined_Value_Added_AOD"
+        #         ),
+        #                              dates=as.Date(trajs_date()))
 
     })
 

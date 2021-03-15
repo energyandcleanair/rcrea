@@ -18,6 +18,9 @@ deployShinyApp <- function() {
   if(!require(dotenv)) install.packages('dotenv')
   if(!require(devtools)) install.packages('devtools')
 
+  devtools::install_github("energyandcleanair/leaflet.extras2", force=T, upgrade="never")
+  library(leaflet.extras2)
+
   url <- "https://github.com/energyandcleanair/rcrea"
   devtools::install_github(url, force=T, upgrade="never")
   library(rcrea)
