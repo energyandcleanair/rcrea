@@ -43,7 +43,8 @@ Imports:
     reshape2,
     jsonlite,
     uuid,
-    stringi
+    stringi,
+    leaflet.extras2
 Remotes:
     tidyverse/lubridate
 Depends:
