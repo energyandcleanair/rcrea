@@ -43,10 +43,10 @@ Imports:
     reshape2,
     jsonlite,
     uuid,
-    stringi,
-    leaflet.extras2
+    stringi
 Remotes:
-    tidyverse/lubridate
+    tidyverse/lubridate,
+    trafficonese/leaflet.extras2
 Depends:
     ggplot2
 Suggests: 
