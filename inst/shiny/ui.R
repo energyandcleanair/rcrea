@@ -23,12 +23,12 @@ ui <- navbarPage(
                     width = 2,
                     h4("Data selection"),
                     uiOutput("selectInputCountry"),
-                    selectInput("regionLevel",
-                                "Region Level:",
-                                choices = list("station"="station","city"="city"),
-                                multiple=F,
-                                selected = "city"
-                    ),
+                    # selectInput("regionLevel",
+                    #             "Region Level:",
+                    #             choices = list("station"="station","city"="city"),
+                    #             multiple=F,
+                    #             selected = "city"
+                    # ),
                     uiOutput("selectInputRegion"),
                     selectInput("poll",
                                 "Pollutant:",
@@ -71,11 +71,14 @@ ui <- navbarPage(
                               placement="right",
                               paste0(
                                   "<ul>",
-                                  "<li><b>city_day_*:</b> Daily <b>observed</b> level [µg/m3 or ppm]</li>",
-                                  "<li><b>anomaly_vs_counterfactual*:</b> <b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions,",
+                                  "<li><b>city_day:</b> Daily <b>observed</b> level [µg/m3 or ppm]</li>",
+                                  "<li><b>anomaly:</b> <b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions [µg/m3 or ppm]</li>",
+                                  "<li><b>counterfactual:</b> Predicted level based on weather conditions (also called <i>predicted</i> [µg/m3 or ppm]</li>",
+                                  "<li><b>anomaly_vs_counterfactual:</b> <b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions, ",
                                   "expressed as (observed-predicted)/predicted [%]</li>",
-                                  "<li><b>anomaly_offsetted*:</b> <b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions,",
+                                  "<li><b>anomaly_offsetted:</b> <b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions, ",
                                   "brought back to an absolute scale (observed-predicted) + average [µg/m3 or ppm]</li>",
+                                  "<li><b>trend</b>: long-term <b>deweathered</b> trend [µg/m3 or ppm]</li>",
                                   "</ul>")
                     ),
 

@@ -81,7 +81,7 @@ body{
   font-size: 6px !important;
   padding: 0 !important;
   line-height: 8px !important;
-  background: var(--secondary) !important;
+  background: var(--gray) !important;
   margin: 0 !important;
 }
 

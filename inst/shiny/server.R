@@ -32,13 +32,14 @@ server <- function(input, output, session) {
 
     region_choices <- reactive({
         # req(input$source)
-        req(input$regionLevel)
+        # req(input$regionLevel)
         req(input$country)
 
         filtered_locations <- locations %>%
             dplyr::filter(
                 # source==input$source,
-                level==input$regionLevel)
+                level=="city")
+                # level==input$regionLevel)
         region_name_col <- "name"
         region_id_col <- "id"
 
@@ -59,7 +60,7 @@ server <- function(input, output, session) {
         # source <- isolate(input$source)
         country <- isolate(input$country)
         region <- isolate(input$region)
-        region_level <- isolate(input$regionLevel)
+        region_level <- "city" #isolate(input$regionLevel)
         poll <- isolate(input$poll)
         averaging <-  isolate(input$averaging)
         years <- isolate(input$years)
@@ -172,9 +173,9 @@ server <- function(input, output, session) {
 
     output$selectInputRegion <- renderUI({
         req(input$country)
-        req(input$regionLevel)
+        # req(input$regionLevel)
         pickerInput("region",
-                    input$regionLevel,
+                    "City:",#input$regionLevel,
                     choices = region_choices(),
                     options = pickerOptions(
                         actionsBox=T,

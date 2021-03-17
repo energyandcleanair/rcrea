@@ -8,7 +8,7 @@ Sys.setenv("GCS_AUTH_FILE"=Sys.getenv("GCS_AUTH_FILE", "keys/gcs.shiny.auth.json
 Sys.setenv("GCS_DEFAULT_BUCKET"=Sys.getenv("GCS_DEFAULT_BUCKET", "crea-public"))
 library(googleCloudStorageR)
 
-locations <- rcrea::locations(level=c("city","station"), with_metadata=T, with_geometry=F, collect=T)
+locations <- rcrea::locations(level=c("city"), with_metadata=T, with_geometry=F, collect=T)
 
 countries <- unique(locations$country)
 countries <- countries[!is.na(countries)]
