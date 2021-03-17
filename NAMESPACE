@@ -1,6 +1,7 @@
 importFrom(magrittr,"%>%")
 importFrom(magrittr,"%<>%")
 
+importFrom(dplyr,"distinct")
 importFrom(dplyr,"collect")
 importFrom(dplyr,"filter")
 importFrom(dplyr,"mutate")
