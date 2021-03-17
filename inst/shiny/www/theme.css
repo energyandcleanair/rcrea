@@ -74,6 +74,10 @@ body{
   width: 450px !important;
 }
 
+.popover ul {
+  padding-left: 20px !important;
+}
+
 
 .btn-help{
   height: 15px !important;

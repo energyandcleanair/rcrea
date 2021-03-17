@@ -193,8 +193,6 @@ server <- function(input, output, session) {
         selectInput("scale", "Applicable scales:", multiple=T, choices = scales()$name)
     })
 
-
-
     output$meas_plot_message <- renderText({
         req(meas())
         if(nrow(meas())==0){
@@ -203,7 +201,6 @@ server <- function(input, output, session) {
             return(NULL)
         }
     })
-
 
     output$meas_plot <- renderPlot({
 
@@ -328,6 +325,33 @@ server <- function(input, output, session) {
         meas_plot
     })
 
+    observe({
+        req(meas())
+        req(input$source)
+        selected_old <- isolate(input$process)
+        if(nrow(meas())==0){
+            process_ids = c()
+        }else{
+            process_ids <- meas() %>%
+                dplyr::filter(source==input$source) %>%
+                dplyr::distinct(process_id) %>%
+                dplyr::left_join(processes, by=c("process_id"="id")) %>%
+                dplyr::arrange(!is.na(deweather), !is.na(weighting)) %>%
+                dplyr::pull(process_id)
+        }
+        #Select non-deweather / non-population-weighted by default: putting them first
+        choices = process_ids
+        selected = ifelse(!is.null(selected_old) && selected_old %in% choices,
+                          selected_old,
+                          ifelse(length(process_ids)>0, process_ids[1], NULL))
+
+        updateSelectInput(session,
+                          "process",
+                          choices = choices,
+                          selected = selected)
+
+    })
+
 
     output$processes_table_lite <- renderUI({
         # tibble::tibble(
@@ -406,32 +430,7 @@ server <- function(input, output, session) {
     })
 
 
-    observe({
-        req(meas())
-        req(input$source)
-        selected_old <- input$process
-        if(nrow(meas())==0){
-            process_ids = c()
-        }else{
-            process_ids <- meas() %>%
-                dplyr::filter(source==input$source) %>%
-                dplyr::distinct(process_id) %>%
-                dplyr::left_join(processes, by=c("process_id"="id")) %>%
-                dplyr::arrange(!is.na(deweather), !is.na(weighting)) %>%
-                dplyr::pull(process_id)
-        }
-        #Select non-deweather / non-population-weighted by default: putting them first
-        choices = process_ids
-        selected = ifelse(!is.null(selected_old) && selected_old %in% choices,
-                          selected_old,
-                          ifelse(length(process_ids)>0, process_ids[1], NULL))
 
-        updateSelectInput(session,
-                          "process",
-                          choices = choices,
-                          selected = selected)
-
-    })
 
     # Tab 2 -----------------------------------------------------
 
