@@ -1,9 +1,13 @@
+library(shiny)
+library(shinydashboard)
 require(rcrea)
 library(lubridate)
 library(scales)
 library(shinyWidgets)
 library(leaflet)
 library(leaflet.extras2)
+
+
 # library(creatrajs)
 library(plotly)
 
@@ -27,11 +31,14 @@ server <- function(input, output, session) {
     # Reactive Values ---------------------------------------
 
     region_choices <- reactive({
-        req(input$source)
+        # req(input$source)
         req(input$regionLevel)
         req(input$country)
 
-        filtered_locations <- locations %>% dplyr::filter(source==input$source, level==input$regionLevel)
+        filtered_locations <- locations %>%
+            dplyr::filter(
+                # source==input$source,
+                level==input$regionLevel)
         region_name_col <- "name"
         region_id_col <- "id"
 
@@ -49,7 +56,7 @@ server <- function(input, output, session) {
 
         # To trigger refresh
         input$meas_refresh
-        source <- isolate(input$source)
+        # source <- isolate(input$source)
         country <- isolate(input$country)
         region <- isolate(input$region)
         region_level <- isolate(input$regionLevel)
@@ -75,7 +82,7 @@ server <- function(input, output, session) {
 
         # Get measurements
         rcrea::measurements(country=country, location_id=region, poll=poll, date_from=date_from, date_to=date_to,
-                            average_by=averaging, aggregate_level=aggregate_level, source=source,
+                            average_by=averaging, aggregate_level=aggregate_level,
                             with_metadata = T, deweathered=NULL, population_weighted = NULL)
     })
 
@@ -137,14 +144,30 @@ server <- function(input, output, session) {
     # Output Elements --------------------------------------
 
     output$selectInputCountry <- renderUI({
-        req(input$source)
-        filtered_locations <- locations %>% dplyr::filter(source==input$source)
+        # req(input$source)
+        filtered_locations <- locations #%>% dplyr::filter(source==input$source)
         countries <- unique(filtered_locations$country)
         countries <- countries[!is.na(countries)]
         names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name', custom_match = list(XK='Kosovo')))
         countries <- countries[!is.na(names(countries))]
-
         selectInput("country", "Country:", multiple=T, choices = countries)
+    })
+
+    output$selectInputSources <- renderUI({
+        req(meas())
+        if(nrow(meas())==0){
+            choices <- c()
+        }else{
+            choices <- unique(meas()$source)
+        }
+        selected = ifelse(length(choices)>0, choices[1], NULL)
+
+
+        selectInput("source",
+                    "Source:",
+                    choices=choices,
+                    multiple=F,
+                    selected=selected)
     })
 
     output$selectInputRegion <- renderUI({
@@ -169,21 +192,7 @@ server <- function(input, output, session) {
         selectInput("scale", "Applicable scales:", multiple=T, choices = scales()$name)
     })
 
-    output$selectInputProcess <- renderUI({
-        req(meas())
-        if(nrow(meas())==0){
-            return(c())
-        }
-        #Select non-deweather / non-population-weighted by default: putting them first
-        process_ids <- meas() %>%
-            dplyr::distinct(process_id) %>%
-            dplyr::left_join(processes, by=c("process_id"="id")) %>%
-            dplyr::arrange(!is.na(deweather), !is.na(weighting)) %>%
-            dplyr::pull(process_id)
-        choices = process_ids
-        value = ifelse(length(process_ids)>0, process_ids[1], NULL)
-        selectInput("process", "Processing:", multiple=T, choices = choices, selected = value)
-    })
+
 
     output$meas_plot_message <- renderText({
         req(meas())
@@ -207,10 +216,10 @@ server <- function(input, output, session) {
         poll <- isolate(input$poll)
         averaging <- isolate(input$averaging)
         region <- isolate(input$region)
-        source_ <- isolate(input$source)
         region_choices_ <- isolate(region_choices())
 
         # Plotting parameteres
+        source <- input$source
         months <- input$months
         running_width <- input$running_width
         scales <- input$scale
@@ -218,7 +227,7 @@ server <- function(input, output, session) {
         plot_type <- input$plot_type
         process_ <- input$process
 
-        req(poll, averaging, plot_type, region, months, source_)
+        req(poll, averaging, plot_type, region, months, source)
 
         if(averaging == noaveraging_name){
             averaging = NULL
@@ -262,7 +271,7 @@ server <- function(input, output, session) {
 
         meas_plot_data <- meas() %>% dplyr::filter(lubridate::month(date)>=months[1],
                                                    lubridate::month(date)<=months[2],
-                                                   source==source_,
+                                                   source==!!source,
                                                    process_id %in% process_)
 
         # Replace region ids with region name
@@ -318,6 +327,38 @@ server <- function(input, output, session) {
         meas_plot
     })
 
+
+    output$processes_table_lite <- renderUI({
+        # tibble::tibble(
+        #     name=c("sdf","sdf22"),
+        #     explanation=c("sdfkljsdlkfj","asdkq")
+        # )
+        HTML(paste0("asd<div>wer<table style=\"width:100%\">",
+               "<tr>",
+               "<th>Process Id</th>",
+               "<th>Definition</th>",
+               "<th>Unit</th>",
+               "</tr>",
+               "<tr>",
+               "<td>city_day_*</td>",
+               "<td>Daily <b>observed</b> level</td>",
+               "<td>µg/m3 or ppm</td>",
+               "</tr>",
+               "<tr>",
+               "<td>anomaly_vs_counterfactual*</th>",
+               "<td><b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions,",
+               "expressed as (observed-predicted)/predicted</td>",
+               "<td>%</td>",
+               "</tr>",
+               "<tr>",
+               "<td>anomaly_offsetted*</th>",
+               "<td><b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions,",
+               "brought back to an absolute scale (observed-predicted) + average</td>",
+               "<td>µg/m3 or ppm</td>",
+               "</tr>",
+               "</table></div>"))
+    })
+
     output$processes_table <- DT::renderDataTable({
 
         poll <- isolate(input$poll)
@@ -361,8 +402,35 @@ server <- function(input, output, session) {
         #         target = 'row',
         #         backgroundColor = styleEqual(exc_status_labels, exc_status_colours)
         #     )
-    }
-    )
+    })
+
+
+    observe({
+        req(meas())
+        req(input$source)
+        selected_old <- input$process
+        if(nrow(meas())==0){
+            process_ids = c()
+        }else{
+            process_ids <- meas() %>%
+                dplyr::filter(source==input$source) %>%
+                dplyr::distinct(process_id) %>%
+                dplyr::left_join(processes, by=c("process_id"="id")) %>%
+                dplyr::arrange(!is.na(deweather), !is.na(weighting)) %>%
+                dplyr::pull(process_id)
+        }
+        #Select non-deweather / non-population-weighted by default: putting them first
+        choices = process_ids
+        selected = ifelse(!is.null(selected_old) && selected_old %in% choices,
+                          selected_old,
+                          ifelse(length(process_ids)>0, process_ids[1], NULL))
+
+        updateSelectInput(session,
+                          "process",
+                          choices = choices,
+                          selected = selected)
+
+    })
 
     # Tab 2 -----------------------------------------------------
 

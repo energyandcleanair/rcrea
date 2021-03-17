@@ -69,6 +69,33 @@ body{
   flex: 1;
 }
 
+.popover{
+  opacity: 1!important;
+  width: 450px !important;
+}
+
+
+.btn-help{
+  height: 15px !important;
+  width: 15px !important;
+  font-size: 6px !important;
+  padding: 0 !important;
+  line-height: 8px !important;
+  background: var(--secondary) !important;
+  margin: 0 !important;
+}
+
+.inline-flex{
+    justify-content: space-between;
+    width: 100%;
+    display: inline-flex;
+}
+
+.control-label {
+  width: 100%;
+}
+
+
 /* #trajsChartPoll{
     height: calc(50% - 20px);
 }

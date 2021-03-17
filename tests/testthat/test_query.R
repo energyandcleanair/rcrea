@@ -30,131 +30,35 @@ test_that("cities returns source when asked and not when not", {
                c("eea","openaq"))
 })
 
+test_that("robust to empty parameters", {
 
-test_that("source_query works on locations (city)", {
-
-  source_city=list("eea"=c("paris","rome"), #several
-                   "openaq"="paris",#one
-                   "jp"=c(), #all
-                   "cpcb"="") #none
-  l <- locations(level="city", source_city = source_city, with_metadata=T)
-
-  expect_true(identical(
-    l %>% filter(source=="eea") %>% distinct(city_name) %>% arrange(city_name) %>% pull() %>% tolower(),
-    source_city[["eea"]] %>% sort() %>% tolower()
-    ))
-
-  expect_true(identical(
-    l%>% filter(source=="openaq") %>% distinct(city_name) %>% arrange(city_name) %>% pull() %>% tolower(),
-    source_city[["openaq"]] %>% sort() %>% tolower()
-  ))
-
-  expect_gt(l%>% filter(source=="jp") %>% distinct(city_name) %>% count() %>% pull(), 47)
-  expect_equal(l%>% filter(source=="cpcb") %>% distinct(city_name) %>% count() %>% pull(), 0)
-
-  l <- locations(source="eea", with_metadata=T)
-  expect_gt( l%>% filter(source=="eea") %>% distinct(city_name) %>% count() %>% pull(), 100)
-  expect_equal( l%>% filter(source!="eea") %>% distinct(city_name) %>% count() %>% pull(), 0)
-
-  l <- locations(source="eea", city="paris", with_metadata=T)
-  expect_equal( l%>% filter(source=="eea") %>% distinct(city_name) %>% count() %>% pull(), 1)
-
-  l <- locations(source=NULL, city="paris", with_metadata=T)
-  expect_equal( l%>% filter(tolower(city)!="paris") %>% distinct(city_name) %>% count() %>% pull(), 0)
-
-  l <- locations(level="city", source="mee", with_metadata=F)
-  expect_equal( l%>% distinct(country_id) %>% pull(), "CN")
-  # There should be cities with similar name but different ids (e.g. Suzhou)
-  expect_gt( l%>% distinct(id) %>% count(),
-             l%>% distinct(city_name) %>% count()
-             )
-})
-
-
-
-test_that("locations returns a source column when needed", {
-
-
-  l <- locations(level="city", source = "csb", with_metadata=T)
-  expect_equal(l %>% distinct(source) %>% pull,
-               "csb")
-
-  l <- locations(level="city", source = "csb", with_metadata=F)
-  expect_equal(l %>% distinct(source) %>% pull,
-               "csb")
+  measurements(source="eea", city="paris", date_from="2020-12-01", date_to="2020-12-03", poll="no2", location_id=character(0))
 
 })
 
 
-test_that("source_query works on locations (stations)", {
 
-  source_city=list("eea"=c("paris","rome"), #several
-                   "openaq"="paris",#one
-                   "jp"=c(), #all
-                   "cpcb"="") #none
-  l <- locations(level="station", source_city = source_city, with_metadata=T)
 
-  expect_true(identical(
-    l %>% filter(source=="eea") %>% distinct(city_name) %>% arrange(city_name) %>% pull() %>% tolower(),
-    source_city[["eea"]] %>% sort() %>% tolower()
-  ))
 
-  expect_true(identical(
-    l%>% filter(source=="openaq") %>% distinct(city_name) %>% arrange(city_name) %>% pull() %>% tolower(),
-    source_city[["openaq"]] %>% sort() %>% tolower()
-  ))
 
-  expect_gt(l%>% filter(source=="jp") %>% distinct(city_name) %>% count() %>% pull(), 47)
-  expect_equal(l%>% filter(source=="cpcb") %>% distinct(city_name) %>% count() %>% pull(), 0)
+test_that("location_type works works on measurements", {
 
-  l <- locations(level="city", source="eea", with_metadata=T)
-  expect_gt( l %>% filter(source=="eea") %>% distinct(name) %>% count() %>% pull(), 100)
-  expect_equal( l%>% filter(source!="eea") %>% distinct(name) %>% count() %>% pull(), 0)
+  m.background <- measurements(source="eea", city="paris", with_metadata=T, poll="no2",
+                               location_type="background",
+                               date_from="2020-12-01", date_to="2020-12-03")
+  m.all <- measurements(source="eea", city="paris", with_metadata=T, poll="no2",
+                               location_type=NULL,
+                               date_from="2020-12-01", date_to="2020-12-03")
 
-  l <- locations(level="city", source="eea", city="paris", with_metadata=T)
-  expect_equal( l%>% filter(source=="eea") %>% distinct(city) %>% count() %>% pull(), 1)
+  expect_equal(unique(m.background$process_id), "city_background_day_mad")
 
-  l <- locations(level="city", source=NULL, city="paris", with_metadata=T)
-  expect_equal( l%>% filter(tolower(name)!="paris") %>% distinct(name) %>% count() %>% pull(), 0)
+  m.combined <- m.all %>%
+    filter(process_id=="city_day_mad") %>%
+    left_join(
+    m.background %>% select(location_id, date, poll, unit,)
+  )
 
 })
-
-
-test_that("source_city query works on measurements", {
-
-  source_city=list("eea"=c("paris","rome"), #several
-                   "openaq"="paris",#one
-                   "jp"=c(), #all
-                   "cpcb"="") #none
-
-  m <- measurements(source_city = source_city, with_metadata=T, poll="no2", date_from="2020-03-01", date_to="2020-03-02")
-
-  expect_true(identical(
-    m %>% filter(source=="eea") %>% distinct(location_name) %>% arrange(location_name) %>% pull() %>% tolower(),
-    source_city[["eea"]] %>% sort() %>% tolower()
-  ))
-
-  expect_true(identical(
-    m %>% filter(source=="openaq") %>% distinct(location_name) %>% arrange(location_name) %>% pull() %>% tolower(),
-    source_city[["openaq"]] %>% sort() %>% tolower()
-  ))
-
-  expect_gt(m %>% filter(source=="jp") %>% distinct(location_id) %>% count() %>% pull(), 46)
-  expect_equal(m %>% filter(source=="cpcb") %>% distinct(location_id) %>% count() %>% pull(), 0)
-
-  m <- measurements(source="eea", with_metadata=T, date_from="2020-01-01", date_to="2020-01-02", poll="no2")
-  expect_gt( m %>% filter(source=="eea") %>% distinct(location_id) %>% count() %>% pull(), 100)
-  expect_equal( m %>% filter(source!="eea") %>% distinct(location_id) %>% count() %>% pull(), 0)
-
-  m <- measurements(source="eea", city="paris", date_from="2020-01-01", date_to="2020-01-02", with_metadata=T)
-  expect_equal( m %>% filter(source=="eea") %>% distinct(location_id) %>% count() %>% pull(), 1)
-
-  m <- measurements(source=NULL, city="paris", date_from="2020-01-01", date_to="2020-01-02", with_metadata=T)
-  expect_equal( m %>% filter(tolower(location_name)!="paris") %>% distinct(location_name) %>% count() %>% pull(), 0)
-  expect_gte( m %>% filter(tolower(location_name)=="paris") %>% distinct(source) %>% count() %>% pull(), 2) #At least EEA and OpenAQ for Paris
-
-})
-
 #
 # test_that("RPostgres faster than RPostgresQL", {
 #

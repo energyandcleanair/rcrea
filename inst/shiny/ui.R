@@ -1,3 +1,7 @@
+library(shiny)
+library(shinydashboard)
+
+library(shinyBS)
 library(leaflet)
 library(plotly)
 
@@ -18,13 +22,6 @@ ui <- navbarPage(
                 sidebarPanel(
                     width = 2,
                     h4("Data selection"),
-                    selectInput("source",
-                                "Source:",
-                                choices = unique(sources),
-                                multiple=F,
-                                selected = "openaaq_government"
-                    ),
-
                     uiOutput("selectInputCountry"),
                     selectInput("regionLevel",
                                 "Region Level:",
@@ -49,7 +46,8 @@ ui <- navbarPage(
                     actionButton("meas_refresh",
                                  "Refresh Measurements",
                                  class="btn-primary"),
-                    h4("Display options"),
+                    h4("Display options", id="h4_display"),
+                    uiOutput("selectInputSources"),
                     sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=14, step=1, sep = ""
                     ),
                     sliderInput("months", "Month", min=1, max=12, value=c(1, 12), step=1, sep = "", ticks = F
@@ -61,19 +59,38 @@ ui <- navbarPage(
                     ),
                     conditionalPanel( condition = "input.plot_type=='ts'",
                                       checkboxInput("overlayCities", "Overlay cities", value=FALSE)),
-                    uiOutput("selectInputProcess"),
+                    # uiOutput("selectInputProcess"),
+                    selectInput("process",
+                                label=span("Processing:",
+                                           # tags$style(type = "text/css", "{width: 100%; justify-content: space-between;}"),
+                                           bsButton("qProcess", label = "", class="btn-help", icon = icon("question"), style = "info", size = "extra-small"),
+                                           class="inline-flex"),
+                                multiple=T, choices = c(), selected = NULL),
+                    bsPopover(id = "qProcess",
+                              title = "Process Ids",
+                              placement="right",
+                              paste0(
+                                  "<ul>",
+                                  "<li><b>city_day_*:</b> Daily <b>observed</b> level [µg/m3 or ppm]</li>",
+                                  "<li><b>anomaly_vs_counterfactual*:</b> <b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions,",
+                                  "expressed as (observed-predicted)/predicted [%]</li>",
+                                  "<li><b>anomaly_offsetted*:</b> <b>Deweathered</b> indication of how observed values differs from what would be expected in these weather conditions,",
+                                  "brought back to an absolute scale (observed-predicted) + average [µg/m3 or ppm]</li>",
+                                  "</ul>")
+                    ),
+
                     uiOutput("selectInputTarget"),
                     uiOutput("selectInputScale"),
-                    downloadButton("download_csv", "Download (.csv)", class="btn-secondary"),
-                    downloadButton("download_rds", "Download (.rds)", class="btn-secondary"),
+                    downloadButton(outputId="download_csv", "Download (.csv)", class="btn-secondary"),
+                    downloadButton("download_rds", "Download (.rds)", class="btn-secondary")
 
                 ),
                 # Show a plot of the generated distribution
                 mainPanel(
                    width=10,
                    htmlOutput("meas_plot_message", class="plot-msg"),
-                   plotOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1"),
-                   DT::dataTableOutput("processes_table")
+                   plotOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1")
+                   # DT::dataTableOutput("processes_table")
                 )
             )
         ),
