@@ -508,9 +508,32 @@ output$trajsPlots <- renderPlotly({
 })
 
 
+add_sentinel_layers <- function(map, date){
+  for(l in names(sentinel_layers)){
+    map <- map %>% addWMSTiles(
+      sentinel_url,
+      layers = sentinel_layers[[l]],
+      layerId = l,
+      group = l,
+      options = WMSTileOptions(
+        tileSize= 512,
+        # attribution= '&copy; <a href="http://www.sentinel-hub.com/" target="_blank">Sentinel Hub</a>',
+        # urlProcessingApi="https://services.sentinel-hub.com/ogc/wms/aeafc74a-c894-440b-a85b-964c7b26e471",
+        # maxcc=20,
+        # minZoom:6,
+        # maxZoom:16,
+        preset=sentinel_layers[[l]],
+        # layers:"NO2",
+        time=date,
+        format = "image/png",
+        transparent = F)
+    )
+  }
+  return(map)
+}
 
 output$maptrajs <- renderLeaflet({
-  leaflet(options = leafletOptions(preferCanvas = TRUE,
+  map <- leaflet(options = leafletOptions(preferCanvas = TRUE,
                                    zoomControl = FALSE)) %>%
     setView(80,30,6) %>%
     # addProviderTiles(providers$Stamen.TonerLite,
@@ -526,36 +549,46 @@ output$maptrajs <- renderLeaflet({
     # addProviderTiles('Esri.Topographic', group="Topographic") %>%
     # addProviderTiles('Esri.Terrain', group="Terrain") %>%
     addProviderTiles(providers$CartoDB.Positron, group="Light") %>%
-    # addProviderTiles("Esri.NatGeoWorldMap", group="NatGeo") %>%
+    addLayersControl(
+      baseGroups = c("Terrain", "Satellite", "OpenStreetMap", "Light"),
+      overlayGroups = c("Trajectories", "Active fires",
+                        names(trajs_gibs_layers),
+                        names(sentinel_layers)),
+      options = layersControlOptions(collapsed = FALSE)
+    ) %>%
+    hideGroup(c(names(trajs_gibs_layers),
+                 names(sentinel_layers)))
 
-    # leaflet.extras2::addGIBS(
-    #     layers=c("MODIS_Combined_Value_Added_AOD"),
-    #     group="Aerosol Optical Depth",
-    #     dates=lubridate::today(),
-    #     transparent = T,
-    #     opacity = 0.7
-    # ) %>%
-    # leaflet.extras2::addGIBS(
-    #     layers=c(
-  #         "AIRS_L2_Dust_Score_Day"),
-  #     group="Dust score",
-  #     dates=lubridate::today(),
-  #     transparent = T,
-  #     opacity = 0.7
-  # ) %>%
-  # leaflet.extras2::addGIBS(
-  #     layers=c(
-  #         "MODIS_Combined_Value_Added_AOD"),
-  #     group="Aerosol Optical Depth",
-  #     dates=lubridate::today(),
-  #     transparent = T,
-  #     opacity = 0.7
-  # ) %>%
-  addLayersControl(
-    baseGroups = c("Terrain", "Satellite", "OpenStreetMap", "Light"),
-    overlayGroups = c("Trajectories", "Active fires"),
-    options = layersControlOptions(collapsed = FALSE)
-  )
+
+  for(l in names(trajs_gibs_layers)){
+    map <- map %>%leaflet.extras2::addGIBS(
+      layers=trajs_gibs_layers[[l]],
+      group=l,
+      dates=lubridate::today(),
+      transparent = T,
+      opacity = 0.7
+    )
+  }
+
+
+  # Add S5P - NO2
+  map <- add_sentinel_layers(map, date=lubridate::today())
+
+
+  # sentinelHub = L.tileLayer.wms(baseUrl, {
+  #   tileSize: 512,
+  #   attribution: '&copy; <a href="http://www.sentinel-hub.com/" target="_blank">Sentinel Hub</a>',
+  #   urlProcessingApi:"https://services.sentinel-hub.com/ogc/wms/aeafc74a-c894-440b-a85b-964c7b26e471",
+  #   maxcc:20,
+  #   minZoom:6,
+  #   maxZoom:16,
+  #   preset:"NO2",
+  #   layers:"NO2",
+  #   time:"2020-09-01/2021-03-17",
+  #
+  # });
+
+  return(map)
 })
 
 
@@ -585,14 +618,14 @@ observe({
         TIME = date_str,
         size=5,
         zIndex=1000
-      ))
-  # %>%
-  #     leaflet.extras2::setDate(layers=c(
-  #         "AIRS_L2_Dust_Score_Day","AIRS_L2_Dust_Score_Night"
-  #         # "MODIS_Combined_Value_Added_AOD"
-  #         ),
-  #                              dates=as.Date(trajs_date()))
+      )) %>%
+      leaflet.extras2::setDate(layers=stack(trajs_gibs_layers)$values,
+                               dates=as.Date(trajs_date())) %>%
 
+
+    # removeTiles(stack(trajs_gibs_layers)$values) %>%
+    removeTiles(names(sentinel_layers)) %>%
+    add_sentinel_layers(date=date_str)
 })
 
 # Incremental changes to the map. Each independent set of things that can change
