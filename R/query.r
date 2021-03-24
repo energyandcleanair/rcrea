@@ -92,6 +92,11 @@ cities <- function(
   cols <- if(with_source) c(cols, "source") else cols
   c <- c %>% dplyr::select_at(cols)
 
+  if(with_metadata){
+    c <- c %>% left_join(
+      gadm1s(con) %>% dplyr::select(gadm1_id, gadm1_name))
+  }
+
   if(collect){
     c <- c %>% dplyr::collect()
     if(with_geometry){
@@ -164,6 +169,11 @@ stations <- function(
   cols <- if(with_metadata) c(cols, "name", "timezone", "type", "city_name", "gadm1_id") else cols
   s <- s %>% dplyr::select_at(cols)
 
+  if(with_metadata){
+    s <- s %>% left_join(
+      gadm1s(con) %>% dplyr::select(gadm1_id, gadm1_name))
+  }
+
   if(collect){
     s <- s %>% dplyr::collect()
     if(with_geometry){
@@ -175,14 +185,20 @@ stations <- function(
 }
 
 
-
-
+gadm1s <- function(con=NULL){
+  # Connecting
+  con = if(!is.null(con)) con else connection()
+  s <- tbl_safe(con, "gadm1") %>%
+    dplyr::rename(gadm1_id=gid_1,
+                  gadm1_name=name_1) %>%
+    dplyr::mutate(gadm1_id=tolower(gadm1_id))
+  return(s)
+}
 
 
 
 # Cached version
 # m_measurements <- memoise(measurements, cache=fc)
-
 standards <- function(collect=TRUE){
   # Connecting
   con = connection()

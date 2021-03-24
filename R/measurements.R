@@ -129,7 +129,7 @@ measurements <- function(country=NULL,
   }
 
   value_cols <- c("location_id","location_name","process_id","date","poll","unit","source","value","timezone","country")
-  meta_cols <- if(with_metadata) c("gadm1_id") else c()
+  meta_cols <- if(with_metadata) c("gadm1_id","gadm1_name") else c()
 
   # Attach geometry
   # If collect, we attach it after, too slow to download otherwise
