@@ -28,6 +28,7 @@ plot_recents <- function(
   aggregate_level="city",
   country=NULL,
   city=NULL,
+  location_id=NULL,
   source_city=NULL, #If not null, replaces source and city list(source1=c(city1,city2), source2=c(city3,city4))
   process_id=NULL,
   running_days=c(0, 7, 14, 30),
@@ -134,6 +135,7 @@ plot_recents <- function(
   if(is.null(meas_raw)){
     meas_raw <- rcrea::measurements(country=country,
                                 city=city,
+                                location_id=location_id,
                                 poll=poll,
                                 aggregate_level=aggregate_level,
                                 process_id=process_id,
