@@ -96,15 +96,6 @@ trajs_dates <- reactive({
     sort(decreasing=T)
 })
 
-# trajs_fires_all <- reactive({
-#     req(trajs_location_id())
-#
-#     gcs_url <- paste0(trajs.bucket_base_url,
-#                       trajs.folder,"/",
-#                       trajs_location_id(),
-#                       ".fires.RDS")
-#     read_gcs_url(gcs_url)
-# })
 
 trajs_weather <- reactive({
   req(trajs_location_id())
@@ -116,13 +107,6 @@ trajs_weather <- reactive({
   read_gcs_url(gcs_url)
 })
 
-# trajs_fire <- reactive({
-#     req(trajs_fires_all())
-#     req(trajs_date())
-#
-#     trajs_fires_all() %>%
-#         dplyr::filter(lubridate::date(acq_date)==trajs_date())
-# })
 
 trajs_meas_all <- reactive({
   req(trajs_location_id())
@@ -142,42 +126,6 @@ trajs_meas_date <- reactive({
     dplyr::filter(date==trajs_date())
 
 })
-
-# trajs_meas <- reactive({
-#     req(trajs_location_id())
-#     gcs_url <- paste0(trajs.bucket_base_url,
-#                       trajs.folder,"/",
-#                       trajs_location_id(),
-#                       ".dew.RDS")
-#     tryCatch({
-#         m.dew <-  readRDS(url(gcs_url))
-#
-#         # Get observations
-#         rcrea::measurements(location_id=trajs_location_id(),
-#                             date_from="2017-01-01",
-#                             deweathered = F,
-#                             # process_id="city_day_mad",
-#                             source=m.dew$source[1],
-#                             poll=m.dew$poll[1])
-#     }, error=function(c){
-#         return(NULL)
-#     })
-# })
-
-# trajs_plot_url <- reactive({
-#     date_ <- tolower(trajs_date())
-#     city_ <- tolower(input$trajs_city)
-#     country_ <- tolower(input$trajs_country)
-#     req(date_, country_, city_)
-#
-#     url.short <- trajs_files() %>%
-#         dplyr::filter(tolower(country)==country_,
-#                        date==date_,
-#                        tolower(city)==city_) %>%
-#         dplyr::pull(name) %>% as.character()
-#     paste("https://storage.googleapis.com", trajs.bucket, url.short, sep="/")
-#
-# })
 
 trajs_points <- reactive({
   req(trajs())
@@ -205,7 +153,7 @@ trajs_plot_poll <- reactive({
   poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
   unit <- trajs_meas_all()$unit[1]
   hovertemplate <- paste('%{y:.0f}',unit)
-  m <- trajs_meas_all()     %>%
+  m <- trajs_meas_all() %>%
     select(date, observed, predicted, predicted_nofire)
   m.rolled <- rcrea::utils.running_average(m, input$trajs_running_width, vars_to_avg = c("observed","predicted","predicted_nofire"))
 
@@ -263,8 +211,8 @@ trajs_plot_poll <- reactive({
         showgrid=T
       ),
       plot_bgcolor  = "rgba(0, 0, 0, 0)",
-      paper_bgcolor = "rgba(0, 0, 0, 0)",
-      fig_bgcolor   = "rgba(0, 0, 0, 0)"
+      paper_bgcolor = "rgba(0, 0, 0, 0)"
+      # fig_bgcolor   = "rgba(0, 0, 0, 0)"
     ) %>%
     plotly::add_annotations(
       text = sprintf("%s [%s]",poll, unit),
@@ -276,7 +224,8 @@ trajs_plot_poll <- reactive({
       yanchor = "top",
       showarrow = FALSE,
       font = list(size = 12)
-    )
+    ) %>%
+    plotly::event_register('plotly_click')
 })
 
 trajs_plot_fire <- reactive({
@@ -374,8 +323,7 @@ trajs_plot_firecontribution <- reactive({
         showgrid=T
       ),
       plot_bgcolor  = "rgba(0, 0, 0, 0)",
-      paper_bgcolor = "rgba(0, 0, 0, 0)",
-      fig_bgcolor   = "rgba(0, 0, 0, 0)"
+      paper_bgcolor = "rgba(0, 0, 0, 0)"
     ) %>%
     plotly::add_annotations(
       text = sprintf("Fire contribution to %s [%s]",poll, unit),
@@ -389,28 +337,6 @@ trajs_plot_firecontribution <- reactive({
       font = list(size = 12)
     )
 })
-
-# trajs_buffer <- reactive({
-#     req(trajs())
-#     req(trajs_date())
-#
-#     date_ <- tolower(trajs_date())
-#
-#     creatrajs::trajs.buffer(trajs()[trajs()$date==date_,"trajs"][[1]][[1]],
-#                             buffer_km=10)
-# })
-#
-
-
-# Download
-# output$trajs_download_jpg <- downloadHandler(
-#     # filename = function() {
-#     #     paste("trajectories.jpg", sep = "")
-#     # },
-#     # content = function(file) {
-#     #     write.csv(exc(), file, row.names = FALSE)
-#     # }
-# )
 
 
 # Output Elements --------------------------------------
@@ -431,18 +357,29 @@ output$selectInputTrajsCity <- renderUI({
   pickerInput("trajs_city","City", choices=cities, options = list(`actions-box` = TRUE), multiple = F)
 })
 
-output$selectInputTrajsDates <- renderUI({
+
+createInputTrajsDate <- function(value=NULL){
   dates <- trajs_dates()
+  if(is.null(value)){
+    value <- max(dates)
+  }
+
   # pickerInput("trajs_date","Date", choices=dates, options = list(`actions-box` = TRUE), multiple = F)
   # dateInput("trajs_date","Date", min=min(dates), max=max(dates))
   sliderInput("trajs_date",
               NULL,
               min = as.Date(min(dates),"%Y-%m-%d"),
               max = as.Date(max(dates),"%Y-%m-%d"),
-              value=as.Date(max(dates)),
+              value=as.Date(value),
               timeFormat="%Y-%m-%d",
               ticks=T,
               width="100%")
+}
+
+
+output$selectInputTrajsDates <- renderUI({
+  req(trajs_dates())
+  createInputTrajsDate()
 })
 
 # output$trajsLogs <- renderText({
@@ -706,18 +643,18 @@ observe({
 
 
 
-# output$imageTrajs <- renderUI({
-#     imgurl <- trajs_plot_url()
-#     # tags$img(src=imgurl[1], height=800) #TODO account for various met_types
-#
-#     image_output_list <-
-#         lapply(1:length(imgurl),
-#                function(i)
-#                {
-#                    tags$img(src=imgurl[i], height=800)
-#                    # imagename = i
-#                    # imageOutput(imagename)
-#                })
-#
-#     do.call(tagList, image_output_list)
-# })
+# Click date
+clickedDate <- reactiveVal()
+
+observe({
+  req(trajs_plot_poll())
+  d <- unlist(event_data(event = "plotly_click",
+                         priority = "event"))
+
+  if(is.null(d)){return(NULL)}
+  name <- intersect(c("x","x1"), names(d))
+  clickedDate(d[[name]])
+  output$selectInputTrajsDates = renderUI(createInputTrajsDate(value=d[[name]]))
+
+})
+

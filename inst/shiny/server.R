@@ -7,7 +7,6 @@ library(shinyWidgets)
 library(leaflet)
 library(leaflet.extras2)
 
-
 # library(creatrajs)
 library(plotly)
 
