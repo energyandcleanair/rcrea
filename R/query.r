@@ -166,7 +166,7 @@ stations <- function(
   # Keeping only interesting columns
   cols <- c("id", "level", "city_id", "country", "source")
   cols <- if(with_geometry)  c(cols, "geometry") else cols
-  cols <- if(with_metadata) c(cols, "name", "timezone", "type", "city_name", "gadm1_id") else cols
+  cols <- if(with_metadata) c(cols, "name", "timezone", "type", "city_name", "gadm1_id", "infos") else cols
   s <- s %>% dplyr::select_at(cols)
 
   if(with_metadata){
