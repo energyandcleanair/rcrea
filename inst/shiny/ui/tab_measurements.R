@@ -75,7 +75,7 @@ tabPanel("Measurements",
            mainPanel(
              width=10,
              htmlOutput("meas_plot_message", class="plot-msg"),
-             plotOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1")
+             plotlyOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1")
              # DT::dataTableOutput("processes_table")
            )
          )

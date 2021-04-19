@@ -99,6 +99,11 @@ body{
   width: 100%;
 }
 
+/* Plotly */
+.plotly text{
+  font-family: "Montserrat", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
 
 /* #trajsChartPoll{
     height: calc(50% - 20px);

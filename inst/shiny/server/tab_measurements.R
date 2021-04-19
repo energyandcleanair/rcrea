@@ -170,7 +170,7 @@ output$meas_plot_message <- renderText({
   }
 })
 
-output$meas_plot <- renderPlot({
+output$meas_plot <- renderPlotly({
 
   # To trigger refresh
   input$meas_refresh
@@ -290,7 +290,10 @@ output$meas_plot <- renderPlot({
     }
   }
 
-  meas_plot
+  #meas_plot
+  ggplotly(meas_plot) %>%
+    layout(hovermode = "x",
+           font=list(family = "Montserrat"))
 })
 
 observe({
