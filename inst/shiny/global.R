@@ -3,6 +3,7 @@ require(DT)
 require(shinyWidgets)
 library(shinycssloaders)
 library(countrycode)
+library(dplyr)
 
 Sys.setenv("GCS_AUTH_FILE"=Sys.getenv("GCS_AUTH_FILE", "keys/gcs.shiny.auth.json"))
 Sys.setenv("GCS_DEFAULT_BUCKET"=Sys.getenv("GCS_DEFAULT_BUCKET", "crea-public"))

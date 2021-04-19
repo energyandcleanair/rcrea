@@ -23,6 +23,12 @@ tabPanel("Trajectories",
                uiOutput("selectInputTrajsCountry"),
                uiOutput("selectInputTrajsCity")
              ),
+             div(
+               class="row-inline",
+               height=50,
+               uiOutput("selectInputTrajsDuration"),
+               uiOutput("selectInputTrajsBuffer")
+             ),
 
              sliderInput("trajs_running_width", "Rolling average (day)", min=1, max=30, value=7, step=1, sep = ""),
              plotlyOutput("trajsPlots", height=600) #"calc(100% - 300px)")

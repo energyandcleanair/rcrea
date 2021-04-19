@@ -37,13 +37,14 @@ trajs_files <- reactive({
                             delimiter = "/")
   trajs_add_log(sprintf("%d files found", nrow(files)))
   files.trajs <- files %>%
-    dplyr::filter(stringr::str_detect(name, ".trajs.RDS$"))
+    dplyr::filter(stringr::str_detect(name, ".trajs..*.RDS$"))
 
-  tibble::tibble(
-    gcs_name=files.trajs$name,
-    location_id=gsub(".trajs.RDS",
-                     "",
-                     basename(files.trajs$name)))
+  files.trajs %>%
+    mutate(location_id=gsub(".trajs.*.RDS","",basename(name))) %>%
+    mutate(details=stringr::str_match(basename(name),
+                                      sprintf("%s.trajs.(.*?).RDS",location_id))[,2]) %>%
+    tidyr::separate(details, c("buffer","duration")) %>%
+    rename(gcs_name=name)
 })
 
 trajs_locations <- reactive({
@@ -64,7 +65,8 @@ trajs_location_id <- reactive({
   trajs_locations() %>%
     dplyr::filter(country==input$trajs_country,
                   name==input$trajs_city) %>%
-    dplyr::pull(id)
+    dplyr::pull(id) %>%
+    unique()
 })
 
 trajs_location_geometry <- reactive({
@@ -74,17 +76,24 @@ trajs_location_geometry <- reactive({
   trajs_locations() %>%
     dplyr::filter(country==input$trajs_country,
                   name==input$trajs_city) %>%
+    dplyr::distinct(geometry) %>%
     dplyr::pull(geometry)
 })
 
-trajs <- reactive({
+trajs_file <- reactive({
   req(trajs_location_id())
+  req(input$trajs_buffer)
+  req(input$trajs_duration)
 
-  gcs_name <- trajs_locations() %>%
-    dplyr::filter(id==trajs_location_id()) %>%
-    dplyr::pull(gcs_name)
+  trajs_files() %>%
+    filter(location_id==trajs_location_id(),
+           buffer==input$trajs_buffer,
+           duration==input$trajs_duration)
+})
 
-  gcs_url <- paste0(trajs.bucket_base_url, gcs_name)
+trajs <- reactive({
+  req(trajs_file())
+  gcs_url <- paste0(trajs.bucket_base_url, trajs_file()$gcs_name)
   read_gcs_url(gcs_url)
 })
 
@@ -96,24 +105,38 @@ trajs_dates <- reactive({
     sort(decreasing=T)
 })
 
+trajs_durations <- reactive({
+  req(trajs_location_id())
+  req(trajs_files())
+
+  trajs_files() %>%
+    filter(location_id==trajs_location_id()) %>%
+    pull(duration) %>%
+    unique()
+})
+
+trajs_buffers <- reactive({
+  req(trajs_location_id())
+  req(trajs_files())
+
+  trajs_files() %>%
+    filter(location_id==trajs_location_id()) %>%
+    pull(buffer) %>%
+    unique()
+})
 
 trajs_weather <- reactive({
-  req(trajs_location_id())
-
+  req(trajs_file())
   gcs_url <- paste0(trajs.bucket_base_url,
-                    trajs.folder,"/",
-                    trajs_location_id(),
-                    ".weather.RDS")
+                    gsub("\\.trajs\\.","\\.weather\\.",trajs_file()$gcs_name))
   read_gcs_url(gcs_url)
 })
 
 
 trajs_meas_all <- reactive({
-  req(trajs_location_id())
+  req(trajs_file())
   gcs_url <- paste0(trajs.bucket_base_url,
-                    trajs.folder,"/",
-                    trajs_location_id(),
-                    ".meas.RDS")
+                    gsub("\\.trajs\\.","\\.meas\\.",trajs_file()$gcs_name))
   read_gcs_url(gcs_url)
 })
 
@@ -147,7 +170,7 @@ trajs_points <- reactive({
 trajs_plot_poll <- reactive({
 
   req(trajs_meas_all())
-  req(trajs_date())
+  # req(trajs_date())
   req(input$trajs_running_width)
 
   poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
@@ -215,7 +238,7 @@ trajs_plot_poll <- reactive({
       # fig_bgcolor   = "rgba(0, 0, 0, 0)"
     ) %>%
     plotly::add_annotations(
-      text = sprintf("%s [%s]",poll, unit),
+      text = sprintf("%s [%s]", poll, unit),
       x = -0.05,
       y = 1.15,
       yref = "paper",
@@ -275,7 +298,6 @@ trajs_plot_fire <- reactive({
 trajs_plot_firecontribution <- reactive({
 
   req(trajs_meas_all())
-  req(trajs_date())
   req(input$trajs_running_width)
 
   poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
@@ -357,6 +379,16 @@ output$selectInputTrajsCity <- renderUI({
   pickerInput("trajs_city","City", choices=cities, options = list(`actions-box` = TRUE), multiple = F)
 })
 
+output$selectInputTrajsDuration <- renderUI({
+  req(trajs_durations())
+  pickerInput("trajs_duration","Duration", choices=trajs_durations(), options = list(`actions-box` = TRUE), multiple = F)
+})
+
+output$selectInputTrajsBuffer <- renderUI({
+  req(trajs_buffers())
+  pickerInput("trajs_buffer","Buffer", choices=trajs_buffers(), options = list(`actions-box` = TRUE), multiple = F)
+})
+
 
 createInputTrajsDate <- function(value=NULL){
   dates <- trajs_dates()
@@ -393,7 +425,8 @@ output$trajsInfos <- renderUI({
   req(trajs_meas_date())
 
   l <- trajs_locations() %>%
-    dplyr::filter(id==trajs_location_id())
+    dplyr::filter(id==trajs_location_id()) %>%
+    distinct(name)
   d <- trajs_meas_date()
 
   HTML(paste0("<b>",l$name," - ",d[["poll"]],"</b><br/>",
