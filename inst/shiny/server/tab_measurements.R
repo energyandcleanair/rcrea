@@ -186,14 +186,14 @@ output$meas_plot <- renderPlotly({
 
   # Plotting parameteres
   source <- input$source
-  months <- input$months
+  # months <- input$months
   running_width <- input$running_width
   scales <- input$scale
   targets <- input$target
   plot_type <- input$plot_type
   process_ <- input$process
 
-  req(poll, averaging, plot_type, region, months, source)
+  req(poll, averaging, plot_type, region, source)
 
   if(averaging == noaveraging_name){
     averaging = NULL
@@ -235,9 +235,7 @@ output$meas_plot <- renderPlotly({
 
 
 
-  meas_plot_data <- meas() %>% dplyr::filter(lubridate::month(date)>=months[1],
-                                             lubridate::month(date)<=months[2],
-                                             source==!!source,
+  meas_plot_data <- meas() %>% dplyr::filter(source==!!source,
                                              process_id %in% process_)
 
   # Replace region ids with region name

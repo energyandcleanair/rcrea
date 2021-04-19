@@ -33,8 +33,8 @@ tabPanel("Measurements",
              uiOutput("selectInputSources"),
              sliderInput("running_width", "Rolling average (day)", min=1, max=30, value=14, step=1, sep = ""
              ),
-             sliderInput("months", "Month", min=1, max=12, value=c(1, 12), step=1, sep = "", ticks = F
-             ),
+             # sliderInput("months", "Month", min=1, max=12, value=c(1, 12), step=1, sep = "", ticks = F
+             # ),
              selectInput("plot_type",
                          "Plot type",
                          choices = plot_types,
