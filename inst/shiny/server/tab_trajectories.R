@@ -240,7 +240,7 @@ trajs_plot_poll <- reactive({
     plotly::add_annotations(
       text = sprintf("%s [%s]", poll, unit),
       x = -0.05,
-      y = 1.15,
+      y = 1.19,
       yref = "paper",
       xref = "paper",
       xanchor = "left",
@@ -285,7 +285,7 @@ trajs_plot_fire <- reactive({
     plotly::add_annotations(
       text = "Fire count",
       x = -0.05,
-      y = 1.15,
+      y = 1.19,
       yref = "paper",
       xref = "paper",
       xanchor = "left",
@@ -301,7 +301,8 @@ trajs_plot_precip <- reactive({
   req(input$trajs_running_width)
 
   f <- trajs_weather() %>%
-    dplyr::select(date, value=precip)
+    dplyr::select(date, value=precip) %>%
+    mutate(value=value/10) #NOAA ISD has a 10 scaling factor
 
   f.rolled <- rcrea::utils.running_average(f, input$trajs_running_width)
 
@@ -320,9 +321,9 @@ trajs_plot_precip <- reactive({
       ),
       xaxis = list(title="")) %>%
     plotly::add_annotations(
-      text = "Precipitation",
+      text = "Precipitation (mm/day)",
       x = -0.05,
-      y = 1.15,
+      y = 1.19,
       yref = "paper",
       xref = "paper",
       xanchor = "left",
@@ -387,7 +388,7 @@ trajs_plot_firecontribution <- reactive({
     plotly::add_annotations(
       text = sprintf("Fire contribution to %s [%s]",poll, unit),
       x = -0.05,
-      y = 1.15,
+      y = 1.19,
       yref = "paper",
       xref = "paper",
       xanchor = "left",
@@ -399,7 +400,13 @@ trajs_plot_firecontribution <- reactive({
 
 
 # Output Elements --------------------------------------
+output$selectInputTrajsRunning <- renderUI({
+  req(trajs_locations()) # Not required, but added so that all ui elements appear together
+  sliderInput("trajs_running_width", "Rolling average (day)", min=1, max=30, value=7, step=1, sep="")
+})
+
 output$selectInputTrajsCountry <- renderUI({
+
   countries <- trajs_locations()$country %>% unique()
   names(countries) = unlist(countrycode(countries, origin='iso2c', destination='country.name',
                                         custom_match = list(XK='Kosovo')))

@@ -32,11 +32,11 @@ tabPanel("Trajectories",
              div(
                class="row-inline",
                height=50,
-               sliderInput("trajs_running_width", "Rolling average (day)", min=1, max=30, value=7, step=1, sep=""),
+               uiOutput("selectInputTrajsRunning"),
                uiOutput("selectInputTrajsPlots")
              ),
 
-             plotlyOutput("trajsPlots", height="calc(100% - 300px)") #"calc(100% - 300px)")
+             plotlyOutput("trajsPlots", height="calc(100% - 270px)") #"calc(100% - 300px)")
              # verbatimTextOutput("trajsLogs", placeholder = TRUE)
 
            )
