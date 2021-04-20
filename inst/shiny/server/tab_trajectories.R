@@ -283,7 +283,44 @@ trajs_plot_fire <- reactive({
       ),
       xaxis = list(title="")) %>%
     plotly::add_annotations(
-      text = "Fire count (within 10km of trajectories)",
+      text = "Fire count",
+      x = -0.05,
+      y = 1.15,
+      yref = "paper",
+      xref = "paper",
+      xanchor = "left",
+      yanchor = "top",
+      showarrow = FALSE,
+      font = list(size = 12)
+    )
+})
+
+trajs_plot_precip <- reactive({
+
+  req(trajs_weather())
+  req(input$trajs_running_width)
+
+  f <- trajs_weather() %>%
+    dplyr::select(date, value=precip)
+
+  f.rolled <- rcrea::utils.running_average(f, input$trajs_running_width)
+
+  f.rolled %>%
+    plot_ly(
+      x = ~date,
+      y = ~value
+    ) %>%
+    plotly::add_lines(name="Precipitation") %>%
+    plotly::layout(
+      showlegend = F,
+      hovermode  = 'x unified',
+      yaxis = list(
+        title="",
+        rangemode = 'tozero'
+      ),
+      xaxis = list(title="")) %>%
+    plotly::add_annotations(
+      text = "Precipitation",
       x = -0.05,
       y = 1.15,
       yref = "paper",
@@ -389,6 +426,16 @@ output$selectInputTrajsBuffer <- renderUI({
   pickerInput("trajs_buffer","Buffer", choices=trajs_buffers(), options = list(`actions-box` = TRUE), multiple = F)
 })
 
+output$selectInputTrajsPlots <- renderUI({
+  plots <- list(
+    "PM 2.5"="pm25",
+    "Fire contribution"="fire_contrib",
+    "Fire count"="fire_count",
+    "Precipitation"="precip")
+
+  pickerInput("trajs_plots","Charts", choices=plots, selected=c("pm25","fire_contrib","fire_count"),
+              options = list(`actions-box` = TRUE, `selected-text-format`= "count"), multiple = T)
+})
 
 createInputTrajsDate <- function(value=NULL){
   dates <- trajs_dates()
@@ -446,12 +493,14 @@ output$trajsPlots <- renderPlotly({
   req(trajs_plot_poll())
   req(trajs_plot_fire())
   req(trajs_plot_firecontribution())
+  req(input$trajs_plots)
 
   plots <- list(
-    trajs_plot_poll(),
-    trajs_plot_firecontribution(),
-    trajs_plot_fire()
-  )
+    "pm25"=trajs_plot_poll(),
+    "fire_contrib"=trajs_plot_firecontribution(),
+    "fire_count"=trajs_plot_fire(),
+    "precip"=trajs_plot_precip()
+  )[input$trajs_plots]
 
   plots <- plots[!is.na(plots)]
 
