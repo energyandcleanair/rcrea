@@ -288,10 +288,10 @@ output$meas_plot <- renderPlotly({
     }
   }
 
-  #meas_plot
-  ggplotly(meas_plot) %>%
-    layout(hovermode = "x",
-           font=list(family = "Montserrat"))
+  meas_plot
+  # ggplotly(meas_plot) %>%
+  #   layout(hovermode = "x",
+  #          font=list(family = "Montserrat"))
 })
 
 observe({
