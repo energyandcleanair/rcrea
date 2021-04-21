@@ -177,8 +177,9 @@ plot_measurements <-function(meas,
 
 
   plt <- switch(type,
-                "ts" = plt + geom_line(size=0.8, lineend="round", show.legend = show_color_legend) +
+                "ts" = plt + geom_line(aes(size="1"), lineend="round", show.legend = show_color_legend) +
                   ylim(ymin, NA) +
+                  scale_size_manual(values=c(0.8), guide = FALSE) +
                   {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
                   {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
                 "yoy" = plt + geom_line(size=0.8) +
