@@ -72,7 +72,7 @@ targets <- reactive({
 scales <- reactive({
 
   # Make it reactive to meas
-  meas()
+  req(meas())
 
   poll <- isolate(input$poll)
   req(poll)
@@ -188,12 +188,16 @@ output$meas_plot <- renderPlot({
   source <- input$source
   # months <- input$months
   running_width <- input$running_width
-  scales <- input$scale
+  input$scale
   targets <- input$target
   plot_type <- input$plot_type
   process_ <- input$process
 
   req(poll, averaging, plot_type, region, source)
+
+  print(min(meas()$date))
+  print(max(meas()$date))
+
 
   if(averaging == noaveraging_name){
     averaging = NULL
@@ -243,13 +247,14 @@ output$meas_plot <- renderPlot({
   # meas_plot_data <- meas_plot_data %>% dplyr::mutate(location_name=id_to_name[region_id])
   if(nrow(meas_plot_data)==0) return()
 
+  meas_plot_data$date <- lubridate::date(meas_plot_data$date)
   meas_plot <- rcrea::plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
                                         linetype_by=ifelse(length(process_)>1,"process_id",NA))
 
   if(plot_type %in% c('ts_year','yoy_year')){
     month_date <- meas_plot_data$date
     lubridate::year(month_date) <- 0
-    meas_plot <- meas_plot + scale_x_datetime(limits=c(min(month_date),max(month_date)),
+    meas_plot <- meas_plot + scale_x_date(limits=c(min(month_date),max(month_date)),
                                               breaks = seq(min(month_date),max(month_date), "1 month"),
                                               labels=scales::date_format("%b", tz=attr(min(month_date),"tz"))
     )
@@ -272,9 +277,9 @@ output$meas_plot <- renderPlot({
 
   # Adding scale colours if any and if timeseries
   if(type %in% c('ts','yoy')){
-    if(!is.null(scales)){
-      for (i_scale in 1:length(scales)){
-        scale <- scales() %>% dplyr::filter(name == scales[i_scale]) %>% dplyr::filter(poll == !!poll)
+    if(!is.null(input$scale)){
+      for (i_scale in 1:length(input$scale)){
+        scale <- scales() %>% dplyr::filter(name == input$scale[i_scale]) %>% dplyr::filter(poll == !!poll)
 
         if(plot_type %in% c('ts_year','yoy_year')){
           date_from <- as.POSIXct("0000-01-01")
@@ -288,7 +293,7 @@ output$meas_plot <- renderPlot({
     }
   }
 
-  meas_plot
+  return(meas_plot)
   # ggplotly(meas_plot) %>%
   #   layout(hovermode = "x",
   #          font=list(family = "Montserrat"))
