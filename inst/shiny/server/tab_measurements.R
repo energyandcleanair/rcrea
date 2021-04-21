@@ -170,7 +170,7 @@ output$meas_plot_message <- renderText({
   }
 })
 
-output$meas_plot <- renderPlotly({
+output$meas_plot <- renderPlot({
 
   # To trigger refresh
   input$meas_refresh
