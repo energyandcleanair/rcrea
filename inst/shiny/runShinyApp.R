@@ -18,23 +18,26 @@ deployShinyApp <- function() {
   if(!require(dotenv)) install.packages('dotenv')
   if(!require(devtools)) install.packages('devtools')
 
-  devtools::install_github("energyandcleanair/leaflet.extras2", force=T, upgrade="never")
-  library(leaflet.extras2)
+  urls <- c(
+    "tidyverse/lubridate",
+    "energyandcleanair/leaflet.extras2",
+    "energyandcleanair/rcrea")
 
-  url <- "https://github.com/energyandcleanair/rcrea"
-  devtools::install_github(url, force=T, upgrade="never")
+  devtools::install_github(urls, force=T, upgrade="never")
+
+  library(lubridate)
+  library(leaflet.extras2)
   library(rcrea)
 
   try(dotenv::load_dot_env())
   try(readRenviron(".Renviron"))
-  # appDir <- getAppDir()
 
   rsconnect::setAccountInfo(name=Sys.getenv("SHINYAPP_ACCOUNT"),
                             token=Sys.getenv("SHINYAPP_TOKEN"),
                             secret=Sys.getenv("SHINYAPP_SECRET"))
 
   # We could deploy like this:
-  # rsconnect::deployApp(appDir)
+  # rsconnect::deployApp(getAppDir())
   # but it would miss the auth file that is not pushed to Github
 
   rsconnect::deployApp("inst/shiny",
