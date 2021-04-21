@@ -43,7 +43,8 @@ Imports:
     reshape2,
     jsonlite,
     uuid,
-    stringi
+    stringi,
+    plotly
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2
