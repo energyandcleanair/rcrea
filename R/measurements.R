@@ -36,7 +36,7 @@ measurements <- function(country=NULL,
                          user_filter=NULL,
                          with_metadata=FALSE,
                          with_geometry=FALSE,
-                         aggregate_level='city', # city or station
+                         aggregate_level='city', # city, station, gadm1, (based on stations), gadm2 (based on stations) or country (based on stations)
                          deweathered=F,
                          population_weighted=F,
                          con=NULL) {
@@ -53,8 +53,8 @@ measurements <- function(country=NULL,
     aggregate_level <- "station"
   }
 
-  if(!aggregate_level %in% c('station','city')){
-    stop("'aggregate_level' should be either 'station' or 'city'")
+  if(!aggregate_level %in% c('station', 'city', 'gadm1', 'gadm2', 'country')){
+    stop("'aggregate_level' should be either 'station', 'city', 'gadm1', 'gadm2', 'country'")
   }
 
   if(!is.null(source) & best_source_only){
@@ -87,9 +87,25 @@ measurements <- function(country=NULL,
   #-------------------------------------------------
   procs <- rcrea::processes(con=con, collect=F)
 
-  if(!is.null(aggregate_level)){
-    procs <- procs %>% dplyr::filter(aggregate_level==region_type)
-  }
+  # Aggregation level
+  # Database is filled with station-level data AND pre-aggregated city-level data
+  # For GADM and country, we query at station level and aggregate accordingly
+  process_region_type <- dplyr::recode(aggregate_level,
+                              "city"="city",
+                              .default="station") #for GADM1, GADM2, Country, we use stations
+
+  need_aggregation <- process_region_type != aggregate_level
+  aggregation_col <- dplyr::recode(aggregate_level,
+                                      "gadm2"="gadm2_id",
+                                      "gadm1"="gadm1_id",
+                                      "country"="country")
+  aggregation_col_name <- dplyr::recode(aggregate_level,
+                                      "gadm2"="gadm2_name",
+                                      "gadm1"="gadm1_name",
+                                      "country"="country")
+
+  procs <- procs %>% dplyr::filter(region_type==process_region_type)
+
 
   if(!is.null(location_type) && !is.null(aggregate_level) && (aggregate_level!="station")){
     procs <- procs %>%
@@ -144,7 +160,7 @@ measurements <- function(country=NULL,
   # Prepare locations
   locs <- rcrea::locations(
     id=location_id,
-    level=aggregate_level,
+    level=process_region_type,
     source=source,
     city=city,
     source_city=source_city,
@@ -153,7 +169,6 @@ measurements <- function(country=NULL,
     with_metadata=T,
     collect=F,
     con = con) %>%
-
     dplyr::rename(location_id=id, location_name=name)
 
 
@@ -215,6 +230,17 @@ measurements <- function(country=NULL,
 
   if(!is.null(user_filter)){
     result <- user_filter(result)
+  }
+
+
+  if(need_aggregation){
+    group_cols <- c(setdiff(c(value_cols,meta_cols), c("location_id","location_name","value")))
+    names(group_cols) <- group_cols
+    group_cols <- c(group_cols, c("location_id"=aggregation_col, "location_name"=aggregation_col_name))
+
+    result <- result %>%
+      group_by_at(group_cols) %>%
+      summarise(value=mean(value, na.rm=T))
   }
 
   # Whether to collect the query i.e. actually run the query

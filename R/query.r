@@ -166,12 +166,14 @@ stations <- function(
   # Keeping only interesting columns
   cols <- c("id", "level", "city_id", "country", "source")
   cols <- if(with_geometry)  c(cols, "geometry") else cols
-  cols <- if(with_metadata) c(cols, "name", "timezone", "type", "city_name", "gadm1_id", "infos") else cols
+  cols <- if(with_metadata) c(cols, "name", "timezone", "type", "city_name", "gadm1_id", "infos", "gadm2_id") else cols
   s <- s %>% dplyr::select_at(cols)
 
+  # Adding gadm names
   if(with_metadata){
-    s <- s %>% left_join(
-      gadm1s(con) %>% dplyr::select(gadm1_id, gadm1_name))
+    s <- s %>%
+      left_join(gadm1s(con) %>% dplyr::select(gadm1_id, gadm1_name)) %>%
+      left_join(gadm2s(con) %>% dplyr::select(gadm2_id, gadm2_name))
   }
 
   if(collect){
@@ -192,6 +194,17 @@ gadm1s <- function(con=NULL){
     dplyr::rename(gadm1_id=gid_1,
                   gadm1_name=name_1) %>%
     dplyr::mutate(gadm1_id=tolower(gadm1_id))
+  return(s)
+}
+
+
+gadm2s <- function(con=NULL){
+  # Connecting
+  con = if(!is.null(con)) con else connection()
+  s <- tbl_safe(con, "gadm2") %>%
+    dplyr::rename(gadm2_id=gid_2,
+                  gadm2_name=name_2) %>%
+    dplyr::mutate(gadm2_id=tolower(gadm2_id))
   return(s)
 }
 

@@ -1,6 +1,5 @@
-
 test_that("source_query works on locations (city)", {
-
+  require(dplyr)
   source_city=list("eea"=c("paris","rome"), #several
                    "openaq"="paris",#one
                    "jp"=c(), #all
