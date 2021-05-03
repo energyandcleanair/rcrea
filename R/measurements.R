@@ -104,6 +104,13 @@ measurements <- function(country=NULL,
                                       "gadm1"="gadm1_name",
                                       "country"="country")
 
+  loc_filter_col <- dplyr::recode(aggregate_level,
+                              "station"="id",
+                              "city"="id",
+                              "gadm2"="gadm2_id",
+                              "gadm1"="gadm1_id",
+                              "country"="country")
+
   procs <- procs %>% dplyr::filter(region_type==process_region_type)
 
 
@@ -159,7 +166,6 @@ measurements <- function(country=NULL,
   #-----------------------
   # Prepare locations
   locs <- rcrea::locations(
-    id=location_id,
     level=process_region_type,
     source=source,
     city=city,
@@ -171,11 +177,11 @@ measurements <- function(country=NULL,
     con = con) %>%
     dplyr::rename(location_id=id, location_name=name)
 
-
   # Filtering by location_id (can be station_id or city_id)
+  # or gadm id if aggregate level asks so
   # https://github.com/tidyverse/dbplyr/issues/296
   if(!is.null(location_id) & length(location_id)>0){
-    locs <- locs %>% dplyr::filter(location_id %in% !!tolower(location_id))
+    locs <- locs %>% filter_at(vars(all_of(loc_filter_col)), all_vars(. %in% !!tolower(location_id)))
   }
 
   # Use best source if asked
