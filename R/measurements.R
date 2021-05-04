@@ -181,7 +181,13 @@ measurements <- function(country=NULL,
   # or gadm id if aggregate level asks so
   # https://github.com/tidyverse/dbplyr/issues/296
   if(!is.null(location_id) & length(location_id)>0){
-    locs <- locs %>% filter_at(vars(all_of(loc_filter_col)), all_vars(. %in% !!tolower(location_id)))
+    if(loc_filter_col=="country"){
+      locs <- locs %>% filter_at(vars(all_of(loc_filter_col)), all_vars(tolower(.) %in% !!tolower(location_id)))
+    }else{
+      # This one uses db indexes. And location_id, gadm_ids are (should be) all lowercases in the db
+      locs <- locs %>% filter_at(vars(all_of(loc_filter_col)), all_vars(. %in% !!tolower(location_id)))
+    }
+
   }
 
   # Use best source if asked
