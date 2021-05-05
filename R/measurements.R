@@ -87,6 +87,14 @@ measurements <- function(country=NULL,
   #-------------------------------------------------
   procs <- rcrea::processes(con=con, collect=F)
 
+  if(!is.null(process_id)){
+    procs <- procs %>% dplyr::filter(id %in% !!process_id)
+    aggregate_level <- procs %>% dplyr::distinct(region_type) %>% dplyr::pull()
+    if(length(aggregate_level)>1){
+      stop("Can only specify process_id with similar aggregation_level")
+    }
+  }
+
   # Aggregation level
   # Database is filled with station-level data AND pre-aggregated city-level data
   # For GADM and country, we query at station level and aggregate accordingly
@@ -133,14 +141,6 @@ measurements <- function(country=NULL,
     procs <- procs %>% dplyr::filter(
       (is.null(weighting) & !population_weighted) |
         (!is.null(weighting) & population_weighted))
-  }
-
-  if(!is.null(process_id)){
-    procs <- procs %>% dplyr::filter(id %in% !!process_id)
-    aggregate_level <- procs %>% dplyr::distinct(region_type) %>% dplyr::pull()
-    if(length(aggregate_level)>1){
-      stop("Can only specify process_id with similar aggregation_level")
-    }
   }
 
   # procs %>% dplyr::filter("\"weighting\": \"gpw\"" %in% agg_spatial) %>% dplyr::select(agg_spatial)
