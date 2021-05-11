@@ -113,8 +113,8 @@ measurements <- function(country=NULL,
                                       "country"="country")
 
   loc_filter_col <- dplyr::recode(aggregate_level,
-                              "station"="id",
-                              "city"="id",
+                              "station"="location_id",
+                              "city"="location_id",
                               "gadm2"="gadm2_id",
                               "gadm1"="gadm1_id",
                               "country"="country")
