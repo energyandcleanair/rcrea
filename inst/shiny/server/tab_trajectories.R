@@ -43,8 +43,9 @@ trajs_files <- reactive({
     mutate(location_id=gsub(".trajs.*.RDS","",basename(name))) %>%
     mutate(details=stringr::str_match(basename(name),
                                       sprintf("%s.trajs.(.*?).RDS",location_id))[,2]) %>%
-    tidyr::separate(details, c("buffer","duration")) %>%
-    rename(gcs_name=name)
+    tidyr::separate(details, c("buffer","duration","pbl")) %>%
+    rename(gcs_name=name) %>%
+    filter(pbl=="50m")
 })
 
 trajs_locations <- reactive({
