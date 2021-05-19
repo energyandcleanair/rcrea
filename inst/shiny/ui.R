@@ -8,6 +8,7 @@ library(plotly)
 ui <- navbarPage(
     title=div(img(src="crea_logo.svg",
                   height=44)),
+
     windowTitle="CREA - Air Quality Dashboard",
     theme = "theme.css",
     id = "nav-page",
@@ -16,7 +17,9 @@ ui <- navbarPage(
 
     # source(file.path("ui", "tab_exceedances.R"),  local = TRUE)$value,
 
-    source(file.path("ui", "tab_trajectories.R"),  local = TRUE)$value
+    source(file.path("ui", "tab_trajectories.R"),  local = TRUE)$value,
+    tags$head(includeHTML(("www/gtm-head.html"))),
+    tags$body(includeHTML(("www/gtm-body.html")))
 
     # source(file.path("ui", "tab_download.R"),  local = TRUE)$value
 
