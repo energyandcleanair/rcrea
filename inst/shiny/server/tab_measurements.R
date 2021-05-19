@@ -127,7 +127,12 @@ output$selectInputSources <- renderUI({
   if(nrow(meas())==0){
     choices <- c()
   }else{
-    choices <- unique(meas()$source)
+    choices <- meas() %>%
+      # distinct(source, location_id, poll) %>%
+      group_by(source) %>%
+      summarise(count=n()) %>%
+      arrange(desc(count)) %>%
+      pull(source)
   }
   selected = ifelse(length(choices)>0, choices[1], NULL)
 
@@ -170,7 +175,7 @@ output$meas_plot_message <- renderText({
   }
 })
 
-output$meas_plot <- renderPlot({
+output$meas_plot <- renderPlotly({
 
   # To trigger refresh
   input$meas_refresh
@@ -248,7 +253,7 @@ output$meas_plot <- renderPlot({
   if(nrow(meas_plot_data)==0) return()
 
   meas_plot_data$date <- lubridate::date(meas_plot_data$date)
-  meas_plot <- rcrea::plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
+  meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
                                         linetype_by=ifelse(length(process_)>1,"process_id",NA))
 
   if(plot_type %in% c('ts_year','yoy_year')){
@@ -293,10 +298,13 @@ output$meas_plot <- renderPlot({
     }
   }
 
-  return(meas_plot)
-  # ggplotly(meas_plot) %>%
-  #   layout(hovermode = "x",
-  #          font=list(family = "Montserrat"))
+  # return(meas_plot)
+  ggplotly(meas_plot,
+           tooltip = c("text")
+           ) %>%
+    layout(hovermode = "x",
+           margin = list(l = 75),
+           font=list(family = "Montserrat"))
 })
 
 observe({
@@ -317,7 +325,7 @@ observe({
   choices = process_ids
   selected = ifelse(!is.null(selected_old) && selected_old %in% choices,
                     selected_old,
-                    ifelse(length(process_ids)>0, process_ids[1], NULL))
+                    ifelse(length(process_ids)>0, process_ids[1], NA))
 
   updateSelectInput(session,
                     "process",

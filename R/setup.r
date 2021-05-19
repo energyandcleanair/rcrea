@@ -59,6 +59,7 @@ source_str <- function(source){
                        "defra"="DEFRA",
                        "aurn"="AURN",
                        "airvisual"="AirVisual",
+                       "air4thai"="Air4Thai",
                        .default = toupper(source)
                        ))
 }

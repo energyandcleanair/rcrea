@@ -130,10 +130,13 @@ plot_measurements <-function(meas,
   }
 
   # Remove year for time series to overlap
+  meas <- meas %>% dplyr::mutate(year=factor(lubridate::year(date)))
+  meas$group <- 1
+
   if('year' %in% color_by){
     meas <- meas %>% dplyr::mutate(year=factor(lubridate::year(date)))
-    # meas <- meas %>% dplyr::mutate(year=reorder(year, dplyr::desc(year)))
     lubridate::year(meas$date) <- 0
+    meas$group <- meas$year
   }
 
   # Build plot
@@ -169,6 +172,8 @@ plot_measurements <-function(meas,
   # seq.POSIXt
   meas$date <- lubridate::date(meas$date)
 
+  meas$label <- sprintf("%s-%s\n%s: %s %s", meas$year, strftime(meas$date, "%m-%d"), meas$poll, round(meas$value), meas$unit)
+
   plt <- ggplot2::ggplot(meas %>% dplyr::filter(!is.na(value)), plt_aes, color="red") +
     labs(x='', y=ylabel,
          title=paste(''),
@@ -180,9 +185,10 @@ plot_measurements <-function(meas,
 
 
   plt <- switch(type,
-                "ts" = plt + geom_line(size=0.8, lineend="round", show.legend = show_color_legend) +
+                "ts" = plt + geom_line(size=0.8, lineend="round", show.legend = show_color_legend,
+                                       aes(text=label, group=group)) +
                   ylim(ymin, NA) +
-                  {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
+                  {if(!is.null(color_by) && (color_by=="value")) scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
                   {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
                 "yoy" = plt + geom_line(size=0.8) +
                   {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
