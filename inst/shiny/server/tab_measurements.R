@@ -2,6 +2,7 @@ region_choices <- reactive({
   # req(input$source)
   # req(input$regionLevel)
   req(input$country)
+  country <- input$country
 
   filtered_locations <- locations %>%
     dplyr::filter(
@@ -11,13 +12,17 @@ region_choices <- reactive({
   region_name_col <- "name"
   region_id_col <- "id"
 
+  if(length(country)==1 && (country %in% names(country_unique_sources))){
+    filtered_locations <- filtered_locations %>% filter(source %in% country_unique_sources[[!!country]])
+  }
+
   l <- filtered_locations %>%
     dplyr::filter(country %in% input$country) %>%
     dplyr::filter_at(c(region_name_col, region_id_col), ~ !is.na(.)) %>%
     dplyr::distinct_at(c(region_id_col, region_name_col))
 
   choices = l %>% dplyr::pull(region_id_col)
-  choices=setNames(choices, l %>% dplyr::pull(region_name_col))
+  choices = setNames(choices, l %>% dplyr::pull(region_name_col))
   choices
 })
 
@@ -49,10 +54,17 @@ meas <- reactive({
   date_from <- lubridate::ymd(years[1]*10000+101)
   date_to <- lubridate::ymd(years[2]*10000+1231)
 
+  if(country %in% names(country_unique_sources)){
+    source <- country_unique_sources[[country]]
+  }else{
+    source <- NULL
+  }
+
   # Get measurements
   rcrea::measurements(country=country, location_id=region, poll=poll, date_from=date_from, date_to=date_to,
                       average_by=averaging, aggregate_level=aggregate_level,
-                      with_metadata = T, deweathered=NULL, population_weighted = NULL)
+                      with_metadata = T, deweathered=NULL, population_weighted = NULL,
+                      source=source)
 })
 
 targets <- reactive({

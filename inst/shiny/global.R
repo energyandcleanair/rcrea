@@ -21,6 +21,10 @@ standards <- rcrea::standards(collect=T)
 sources <- c("openaq", "openaq_government", "openaq_community", "openaq_research", "cpcb", "eea",  "mee", "csb", "defra", "aurn", "airvisual","jp", "airkorea",  "earthengine")
 polls <- c(rcrea::PM25, rcrea::PM10, rcrea::NO2, rcrea::O3, rcrea::SO2, rcrea::CO)
 
+# If we want to constrain sources for certain countries
+country_unique_sources <- c("TR"="csb")
+
+
 noaveraging_name <- "none"
 averagings <- c("hour", "day")
 
