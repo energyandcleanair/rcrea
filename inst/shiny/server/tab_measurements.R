@@ -213,8 +213,12 @@ output$meas_plot <- renderPlotly({
 
   req(poll, averaging, plot_type, region, source)
 
-  print(min(meas()$date))
-  print(max(meas()$date))
+  m <- meas()
+
+  m$date <- lubridate::force_tz(m$date, tzone="UTC")
+
+  print(min(m$date))
+  print(max(m$date))
 
 
   if(averaging == noaveraging_name){
@@ -257,7 +261,7 @@ output$meas_plot <- renderPlotly({
 
 
 
-  meas_plot_data <- meas() %>% dplyr::filter(source==!!source,
+  meas_plot_data <- m %>% dplyr::filter(source==!!source,
                                              process_id %in% process_)
 
   # Replace region ids with region name
