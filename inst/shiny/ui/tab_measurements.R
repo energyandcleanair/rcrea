@@ -24,8 +24,12 @@ tabPanel("Measurements",
                          choices = averagings,
                          selected = "day"
              ),
-             sliderInput("years", "Year", min=2010, max=2021, value=c(2018, 2021), step=1, sep = "", ticks = F
-             ),
+             # sliderInput("years", "Year", min=2010, max=2021, value=c(2018, 2021), step=1, sep = "", ticks = F),
+             sliderInput("meas_dates", "Dates",
+                         min = as.Date("2010-01-01"),
+                         max = lubridate::ceiling_date(lubridate::today(), "month"),
+                         value=c(as.Date("2018-01-01"), lubridate::ceiling_date(lubridate::today(), "month")),
+                         timeFormat="%b %Y"),
              actionButton("meas_refresh",
                           "Refresh Measurements",
                           class="btn-primary"),
@@ -75,7 +79,7 @@ tabPanel("Measurements",
            mainPanel(
              width=10,
              htmlOutput("meas_plot_message", class="plot-msg"),
-             plotlyOutput("meas_plot", height = 800)  %>% withSpinner(color="#0dc5c1")
+             plotlyOutput("meas_plot", height = "100%")  %>% withSpinner(color="#0dc5c1")
              # DT::dataTableOutput("processes_table")
            )
          )

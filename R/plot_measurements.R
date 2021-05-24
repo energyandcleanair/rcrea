@@ -8,6 +8,7 @@ plot_measurements <-function(meas,
                              average_by='day',
                              subplot_by=NULL,
                              linetype_by=NULL,
+                             line_width=0.8,
                              years=NULL,
                              type='ts',
                              percent=F,
@@ -168,11 +169,14 @@ plot_measurements <-function(meas,
     dplyr::mutate_at(intersect(c("location_id","location_name"), names(meas)),
                      tools::toTitleCase)
 
-  # Trying to fix the bug in Shinyapps: Warning: Error in seq.int: 'from' must be a finite number
-  # seq.POSIXt
-  meas$date <- lubridate::date(meas$date)
+  # Ensure this is always datetime
+  meas$date <- as.POSIXct(meas$date)
 
-  meas$label <- sprintf("%s-%s\n%s: %s %s", meas$year, strftime(meas$date, "%m-%d"), meas$poll, round(meas$value), meas$unit)
+  date_format <- ifelse(average_by=="day", "%y-%m-%d", "%y-%m-%d %H:%M")
+  if(color_by=="year"){
+    date_format <- gsub("%y-", "", date_format)
+  }
+  meas$label <- sprintf("%s-%s\n%s: %s %s", meas$year, strftime(meas$date, date_format), meas$poll, round(meas$value), meas$unit)
 
   plt <- ggplot2::ggplot(meas %>% dplyr::filter(!is.na(value)), plt_aes, color="red") +
     labs(x='', y=ylabel,
@@ -185,15 +189,15 @@ plot_measurements <-function(meas,
 
 
   plt <- switch(type,
-                "ts" = plt + geom_line(size=0.8, lineend="round", show.legend = show_color_legend,
+                "ts" = plt + geom_line(size=line_width, lineend="round", show.legend = show_color_legend,
                                        aes(text=label, group=group)) +
                   ylim(ymin, NA) +
                   {if(!is.null(color_by) && (color_by=="value")) scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
                   {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
-                "yoy" = plt + geom_line(size=0.8) +
+                "yoy" = plt + geom_line(size=line_width) +
                   {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
                   {if(is.null(color_by) || color_by!="value") scale_color_manual(values=RColorBrewer::brewer.pal(max(n_colors, 4), "Spectral")[n_colors:1])},
-                "yoy-relative" = plt + geom_line(size=0.8) +
+                "yoy-relative" = plt + geom_line(size=line_width) +
                   scale_y_continuous(labels=scales::percent) +
                   geom_hline(yintercept = 0) +
                   {if(!is.null(color_by) && (color_by=="value"))scale_color_gradientn(colors = chg_colors, guide = F, limits=c(-maxabs,maxabs))}+
@@ -215,7 +219,7 @@ plot_measurements <-function(meas,
 
 
   if('year' %in% color_by){
-    plt <- plt + scale_x_date(date_labels = "%b")
+    plt <- plt + scale_x_datetime(date_labels = "%d %b")
   }
 
   if(percent){

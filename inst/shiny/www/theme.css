@@ -1,3 +1,7 @@
+.shiny-spinner-output-container{
+  height: calc(100% - 120px);
+}
+
 .navbar .container-fluid{
   justify-content: flex-start !important;
 }

@@ -36,7 +36,7 @@ meas <- reactive({
   region_level <- "city" #isolate(input$regionLevel)
   poll <- isolate(input$poll)
   averaging <-  isolate(input$averaging)
-  years <- isolate(input$years)
+  dates <- isolate(input$meas_dates)
   req(country, region, poll, averaging, years)
 
   print("Fetching measurements")
@@ -51,8 +51,8 @@ meas <- reactive({
     aggregate_level=region_level
   }
 
-  date_from <- lubridate::ymd(years[1]*10000+101)
-  date_to <- lubridate::ymd(years[2]*10000+1231)
+  date_from <- dates[1] - lubridate::days(30) # For running average
+  date_to <- dates[2]
 
   if(country %in% names(country_unique_sources)){
     source <- country_unique_sources[[country]]
@@ -146,7 +146,7 @@ output$selectInputSources <- renderUI({
       arrange(desc(count)) %>%
       pull(source)
   }
-  selected = ifelse(length(choices)>0, choices[1], NULL)
+  selected = ifelse(length(choices)>0, choices[1], NA)
 
 
   selectInput("source",
@@ -200,6 +200,7 @@ output$meas_plot <- renderPlotly({
   averaging <- isolate(input$averaging)
   region <- isolate(input$region)
   region_choices_ <- isolate(region_choices())
+  meas_dates <- isolate(input$meas_dates)
 
   # Plotting parameteres
   source <- input$source
@@ -264,18 +265,14 @@ output$meas_plot <- renderPlotly({
   # meas_plot_data <- meas_plot_data %>% dplyr::mutate(location_name=id_to_name[region_id])
   if(nrow(meas_plot_data)==0) return()
 
-  meas_plot_data$date <- lubridate::date(meas_plot_data$date)
-  meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width, color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
-                                        linetype_by=ifelse(length(process_)>1,"process_id",NA))
+  # meas_plot_data$date <- lubridate::date(meas_plot_data$date)
+  meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width,
+                                 color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
+                                        linetype_by=ifelse(length(process_)>1,"process_id",NA),
+                                 line_width=0.5) #Looks thicker in plotly
 
-  if(plot_type %in% c('ts_year','yoy_year')){
-    month_date <- meas_plot_data$date
-    lubridate::year(month_date) <- 0
-    meas_plot <- meas_plot + scale_x_date(limits=c(min(month_date),max(month_date)),
-                                              breaks = seq(min(month_date),max(month_date), "1 month"),
-                                              labels=scales::date_format("%b", tz=attr(min(month_date),"tz"))
-    )
-  }
+  # Fix time scale
+  meas_plot <- fix_scale_date(meas_plot, averaging, meas_plot_data, plot_type, meas_dates)
 
   # Adding target lines if any
   if(!is.null(targets)){
@@ -312,12 +309,83 @@ output$meas_plot <- renderPlotly({
 
   # return(meas_plot)
   ggplotly(meas_plot,
+           dynamicTicks = TRUE,
            tooltip = c("text")
            ) %>%
     layout(hovermode = "x",
+           # xaxis = list(
+           #   tickmode='auto',
+           #              type='date'
+           #              # tickformatstops = list(
+           #              #   list(
+           #              #     dtickrange = list(NULL, 1000),
+           #              #     value = "%H:%M:%S.%L"
+           #              #   ),
+           #              #   list(
+           #              #     dtickrange = list(1000, 60000),
+           #              #     value = "%H:%M:%S"
+           #              #   ),
+           #              #   list(
+           #              #     dtickrange = list(60000, 3600000),
+           #              #     value = "%H:%M"
+           #              #   ),
+           #              #   list(
+           #              #     dtickrange = list(3600000, 86400000),
+           #              #     value = "%H:%M"
+           #              #   ),
+           #              #   list(
+           #              #     dtickrange = list(86400000, 604800000),
+           #              #     value = "%e %b"
+           #              #   ),
+           #              #   list(
+           #              #     dtickrange = list(604800000, "M1"),
+           #              #     value = "%e %b"
+           #              #   ),
+           #              #   list(
+           #              #     dtickrange = list("M1", "M12"),
+           #              #     value = ifelse(color_by=='year',"%b AA","%b %y AA")
+           #              #   ),
+           #              #   list(
+           #              #     dtickrange = list("M12", NULL),
+           #              #     value = "%Y"
+           #              #   )
+           #              # )
+           #  ),
            margin = list(l = 75),
            font=list(family = "Montserrat"))
 })
+
+
+fix_scale_date <- function(meas_plot, averaging, meas_plot_data, plot_type, meas_dates){
+
+  scale_ <- scale_x_datetime
+  cast_ <- as.POSIXct
+
+  if(plot_type %in% c('ts_year','yoy_year')){
+      dates <- meas_plot_data$date
+      lubridate::year(dates) <- 0
+
+      lower_date <- cast_(max(min(dates), cast_(meas_dates[1] %>% `year<-`(0))))
+      upper_date <- cast_(min(max(dates), cast_(meas_dates[2] %>% `year<-`(0))))
+
+      meas_plot <- meas_plot + scale_(limits=c(lower_date, upper_date))
+      # breaks = seq(lower_date, upper_date, "1 month"),
+      # labels=scales::date_format("%b", tz=attr(lower_date,"tz"))
+      # )
+    }
+
+  if(plot_type %in% c('ts', 'yoy')){
+    lower_date <- cast_(max(min(meas_plot_data$date), cast_(meas_dates[1])))
+    upper_date <- cast_(min(max(meas_plot_data$date), cast_(meas_dates[2])))
+
+    meas_plot <- meas_plot + scale_(limits=c(lower_date, upper_date))
+    # breaks = seq(lower_date, upper_date, "1 month"),
+    # labels=scales::date_format("%b", tz=attr(lower_date,"tz"))
+    # )
+  }
+
+  return(meas_plot)
+}
 
 observe({
   req(meas())
