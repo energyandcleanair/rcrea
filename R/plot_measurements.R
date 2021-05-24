@@ -173,7 +173,7 @@ plot_measurements <-function(meas,
   meas$date <- as.POSIXct(meas$date)
 
   date_format <- ifelse(average_by=="day", "%y-%m-%d", "%y-%m-%d %H:%M")
-  if(color_by=="year"){
+  if(!is.null(color_by) && color_by=="year"){
     date_format <- gsub("%y-", "", date_format)
   }
   meas$label <- sprintf("%s-%s\n%s: %s %s", meas$year, strftime(meas$date, date_format), meas$poll, round(meas$value), meas$unit)
