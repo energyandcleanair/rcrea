@@ -369,8 +369,8 @@ fix_scale_date <- function(meas_plot, averaging, meas_plot_data, plot_type, meas
       dates <- meas_plot_data$date
       lubridate::year(dates) <- 0
 
-      lower_date <- cast_(max(min(dates), cast_(meas_dates[1] %>% `year<-`(0))))
-      upper_date <- cast_(min(max(dates), cast_(meas_dates[2] %>% `year<-`(0))))
+      lower_date <- cast_(min(dates))
+      upper_date <- cast_(max(dates))
 
       message("lower_date:",lower_date)
       message("upper_date:",upper_date)
