@@ -372,6 +372,9 @@ fix_scale_date <- function(meas_plot, averaging, meas_plot_data, plot_type, meas
       lower_date <- cast_(max(min(dates), cast_(meas_dates[1] %>% `year<-`(0))))
       upper_date <- cast_(min(max(dates), cast_(meas_dates[2] %>% `year<-`(0))))
 
+      message("lower_date:",lower_date)
+      message("upper_date:",upper_date)
+
       meas_plot <- meas_plot + scale_(limits=c(lower_date, upper_date))
       # breaks = seq(lower_date, upper_date, "1 month"),
       # labels=scales::date_format("%b", tz=attr(lower_date,"tz"))
@@ -383,6 +386,9 @@ fix_scale_date <- function(meas_plot, averaging, meas_plot_data, plot_type, meas
     upper_date <- cast_(min(max(meas_plot_data$date), cast_(meas_dates[2])))
 
     meas_plot <- meas_plot + scale_(limits=c(lower_date, upper_date))
+
+    message("lower_date:",lower_date)
+    message("upper_date:",upper_date)
     # breaks = seq(lower_date, upper_date, "1 month"),
     # labels=scales::date_format("%b", tz=attr(lower_date,"tz"))
     # )
