@@ -313,7 +313,7 @@ output$meas_plot <- renderPlotly({
 
   # return(meas_plot)
   ggplotly(meas_plot,
-           dynamicTicks = TRUE,
+           # dynamicTicks = TRUE,
            tooltip = c("text")
            ) %>%
     layout(hovermode = "x",
