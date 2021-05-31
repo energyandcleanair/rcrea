@@ -69,7 +69,7 @@ tabPanel("Measurements",
                          "</ul>")
              ),
 
-             uiOutput("selectInputTarget"),
+             # uiOutput("selectInputTarget"),
              uiOutput("selectInputScale"),
              downloadButton(outputId="download_csv", "Download (.csv)", class="btn-secondary"),
              downloadButton("download_rds", "Download (.rds)", class="btn-secondary")

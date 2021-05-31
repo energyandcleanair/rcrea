@@ -67,19 +67,19 @@ meas <- reactive({
                       source=source)
 })
 
-targets <- reactive({
-
-  # Make it reactive to meas
-  meas()
-
-  country <- isolate(input$country)
-  city <- isolate(input$region)
-  poll <- isolate(input$poll)
-  req(country, city, poll)
-
-  # Get measurements
-  rcrea::targets(country=country, city=city, poll=poll)
-})
+# targets <- reactive({
+#
+#   # Make it reactive to meas
+#   meas()
+#
+#   country <- isolate(input$country)
+#   city <- isolate(input$region)
+#   poll <- isolate(input$poll)
+#   req(country, city, poll)
+#
+#   # Get measurements
+#   rcrea::targets(country=country, city=city, poll=poll)
+# })
 
 scales <- reactive({
 
@@ -100,7 +100,7 @@ observeEvent(input$averaging, {
 
 
 # Download Handlers ----------------------------------
-# Downloadable csv of selected dataset ----
+# Downloadable csv of selected dataset
 output$download_csv <- downloadHandler(
   filename = function() {
     paste("measurements.csv", sep = "")
@@ -170,9 +170,9 @@ output$selectInputRegion <- renderUI({
   # selectInput("region", "City/Region:", multiple=T, choices = region_choices())
 })
 
-output$selectInputTarget <- renderUI({
-  selectInput("target", "Applicable targets:", multiple=T, choices = targets()$short_name)
-})
+# output$selectInputTarget <- renderUI({
+#   selectInput("target", "Applicable targets:", multiple=T, choices = targets()$short_name)
+# })
 
 output$selectInputScale <- renderUI({
   selectInput("scale", "Applicable scales:", multiple=T, choices = scales()$name)
@@ -270,7 +270,7 @@ output$meas_plot <- renderPlotly({
   if(nrow(meas_plot_data)==0) return()
 
   # meas_plot_data$date <- lubridate::date(meas_plot_data$date)
-  meas_plot <- plot_measurements(meas_plot_data, poll=poll, running_width=running_width,
+  meas_plot <- rcrea::plot_measurements(meas_plot_data, poll=poll, running_width=running_width,
                                  color_by=color_by, average_by=averaging, subplot_by=subplot_by, type=type,
                                         linetype_by=ifelse(length(process_)>1,"process_id",NA),
                                  line_width=0.5) #Looks thicker in plotly
