@@ -13,6 +13,7 @@ runShinyApp <- function() {
   shiny::runApp(appDir, display.mode = "normal")
 }
 
+#' @export
 deployShinyApp <- function() {
   if(!require(rsconnect)) install.packages('reconnect')
   if(!require(dotenv)) install.packages('dotenv')
