@@ -27,7 +27,8 @@ tabPanel("Trajectories",
                class="row-inline",
                height=50,
                uiOutput("selectInputTrajsDuration"),
-               uiOutput("selectInputTrajsBuffer")
+               uiOutput("selectInputTrajsBuffer"),
+               uiOutput("selectInputTrajsFireSource")
              ),
              div(
                class="row-inline",
