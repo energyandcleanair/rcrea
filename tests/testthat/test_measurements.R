@@ -115,6 +115,19 @@ test_that("gadm or country aggregation works on measurements", {
                           date_from="2020-03-01",
                           date_to="2020-03-02")
 
+
+  expect_equal(c("CN"),
+               sort(unique(m.country$location_id)))
+
+  m.country <- measurements(source="mee",
+                            location_id="CN",
+                            aggregate_level = "country",
+                            poll="no2",
+                            city=c("Shanghai","Beijing"), # To make it faster
+                            date_from="2020-03-01",
+                            date_to="2020-03-02")
+
+
   expect_equal(c("chn"),
                sort(unique(m.country$location_id)))
 })

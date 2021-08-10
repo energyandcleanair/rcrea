@@ -47,7 +47,7 @@ trajs_files <- reactive({
                                       sprintf("%s.trajs.(.*?).RDS",location_id))[,2]) %>%
     tidyr::separate(details, c("buffer","duration","pbl")) %>%
     rename(gcs_name_trajs=name) %>%
-    filter(pbl=="50m") %>%
+    filter(pbl %in% c("10m","50m")) %>%
     select(location_id, buffer, duration, pbl, gcs_name_trajs)
 
   # Weather & measurements
