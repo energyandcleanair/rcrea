@@ -28,24 +28,42 @@ trajs_date <- reactive({
   input$trajs_date
 }) %>% debounce(1000)
 
+
 trajs_files <- reactive({
   trajs_add_log("Listing available files")
+
   # Get list of trajectories available
   gcs_get_bucket(trajs.bucket)
   files <- gcs_list_objects(prefix=paste0(trajs.folder,"/"),
                             detail = "summary",
                             delimiter = "/")
   trajs_add_log(sprintf("%d files found", nrow(files)))
-  files.trajs <- files %>%
-    dplyr::filter(stringr::str_detect(name, ".trajs..*.RDS$"))
 
-  files.trajs %>%
+  # Trajectories (no fire source in it)
+  files.trajs <- files %>%
+    dplyr::filter(stringr::str_detect(name, ".trajs..*.RDS$")) %>%
     mutate(location_id=gsub(".trajs.*.RDS","",basename(name))) %>%
     mutate(details=stringr::str_match(basename(name),
                                       sprintf("%s.trajs.(.*?).RDS",location_id))[,2]) %>%
     tidyr::separate(details, c("buffer","duration","pbl")) %>%
+    rename(gcs_name_trajs=name) %>%
+    filter(pbl=="50m") %>%
+    select(location_id, buffer, duration, pbl, gcs_name_trajs)
+
+  # Weather & measurements
+  files.meas_weather <- files %>%
+    dplyr::filter(stringr::str_detect(name, ".(weather|meas)..*.RDS$")) %>%
+    mutate(location_id=gsub(".(weather|meas).*.RDS","",basename(name))) %>%
+    mutate(details=stringr::str_match(basename(name),
+                                      sprintf("%s.(weather|meas).(.*?).RDS",location_id))[,3]) %>%
+    tidyr::separate(details, c("buffer","duration","pbl","firesource")) %>%
     rename(gcs_name=name) %>%
+    mutate(meas_or_weather=ifelse(stringr::str_detect(gcs_name, ".(weather)..*.RDS$"), "weather","meas")) %>%
+    select(location_id, buffer, duration, pbl, gcs_name, firesource, meas_or_weather) %>%
+    tidyr::pivot_wider(names_from=meas_or_weather, values_from=gcs_name, names_prefix="gcs_name_") %>%
     filter(pbl=="50m")
+
+  full_join(files.trajs, files.meas_weather)
 })
 
 trajs_locations <- reactive({
@@ -56,7 +74,7 @@ trajs_locations <- reactive({
                    with_geometry=T) %>%
     dplyr::left_join(trajs_files(),
                      by=c("id"="location_id")) %>%
-    dplyr::distinct(id, name, country, gcs_name, geometry)
+    dplyr::distinct(id, name, country, geometry)
 })
 
 trajs_location_id <- reactive({
@@ -85,16 +103,18 @@ trajs_file <- reactive({
   req(trajs_location_id())
   req(input$trajs_buffer)
   req(input$trajs_duration)
+  req(input$trajs_firesource)
 
   trajs_files() %>%
     filter(location_id==trajs_location_id(),
            buffer==input$trajs_buffer,
-           duration==input$trajs_duration)
+           duration==input$trajs_duration,
+           (input$trajs_firesource=="NA" & is.na(firesource)) | (firesource==input$trajs_firesource))
 })
 
 trajs <- reactive({
   req(trajs_file())
-  gcs_url <- paste0(trajs.bucket_base_url, trajs_file()$gcs_name)
+  gcs_url <- paste0(trajs.bucket_base_url, trajs_file()$gcs_name_trajs)
   read_gcs_url(gcs_url)
 })
 
@@ -126,18 +146,27 @@ trajs_buffers <- reactive({
     unique()
 })
 
+
+trajs_firesources <- reactive({
+  req(trajs_location_id())
+  req(trajs_files())
+
+  trajs_files() %>%
+    filter(location_id==trajs_location_id()) %>%
+    pull(firesource) %>%
+    unique() %>%
+    tidyr::replace_na("NA")
+})
+
 trajs_weather <- reactive({
   req(trajs_file())
-  gcs_url <- paste0(trajs.bucket_base_url,
-                    gsub("\\.trajs\\.","\\.weather\\.",trajs_file()$gcs_name))
+  gcs_url <- paste0(trajs.bucket_base_url, trajs_file()$gcs_name_weather)
   read_gcs_url(gcs_url)
 })
 
-
 trajs_meas_all <- reactive({
   req(trajs_file())
-  gcs_url <- paste0(trajs.bucket_base_url,
-                    gsub("\\.trajs\\.","\\.meas\\.",trajs_file()$gcs_name))
+  gcs_url <- paste0(trajs.bucket_base_url, trajs_file()$gcs_name_meas)
   read_gcs_url(gcs_url)
 })
 
@@ -171,7 +200,6 @@ trajs_points <- reactive({
 trajs_plot_poll <- reactive({
 
   req(trajs_meas_all())
-  # req(trajs_date())
   req(input$trajs_running_width)
 
   poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
@@ -256,9 +284,17 @@ trajs_plot_fire <- reactive({
 
   req(trajs_weather())
   req(input$trajs_running_width)
+  req(input$trajs_firesource)
 
+  if(input$trajs_firesource=="gfas"){
+    fire_value="pm25_emission"
+    fire_name="PM25 emission from fires"
+  }else{
+    fire_value="fire_count"
+    fire_name="Fire count"
+  }
   f <- trajs_weather() %>%
-    dplyr::select(date, value=fire_count)
+    dplyr::select_at(c("date", "value"=fire_value))
 
   f.rolled <- rcrea::utils.running_average(f, input$trajs_running_width)
 
@@ -269,7 +305,7 @@ trajs_plot_fire <- reactive({
       y = ~value
       # selectedpoints=as.list(selected),
     ) %>%
-    plotly::add_lines(name="Fire count") %>%
+    plotly::add_lines(name=fire_name) %>%
     plotly::layout(
       # title=list(
       #     text="Fire count (within 10km of trajectories)",
@@ -284,7 +320,7 @@ trajs_plot_fire <- reactive({
       ),
       xaxis = list(title="")) %>%
     plotly::add_annotations(
-      text = "Fire count",
+      text = fire_name,
       x = -0.05,
       y = 1.19,
       yref = "paper",
@@ -432,6 +468,11 @@ output$selectInputTrajsDuration <- renderUI({
 output$selectInputTrajsBuffer <- renderUI({
   req(trajs_buffers())
   pickerInput("trajs_buffer","Buffer", choices=trajs_buffers(), options = list(`actions-box` = TRUE), multiple = F)
+})
+
+output$selectInputTrajsFireSource <- renderUI({
+  req(trajs_firesources())
+  pickerInput("trajs_firesource","Fire source", choices=trajs_firesources(), options = list(`actions-box` = TRUE), multiple = F)
 })
 
 output$selectInputTrajsPlots <- renderUI({
