@@ -47,7 +47,7 @@ trajs_files <- reactive({
                                       sprintf("%s.trajs.(.*?).RDS",location_id))[,2]) %>%
     tidyr::separate(details, c("buffer","duration","pbl")) %>%
     rename(gcs_name_trajs=name) %>%
-    filter(pbl=="50m") %>%
+    filter(pbl %in% c("10m","50m")) %>%
     select(location_id, buffer, duration, pbl, gcs_name_trajs)
 
   # Weather & measurements
@@ -61,7 +61,7 @@ trajs_files <- reactive({
     mutate(meas_or_weather=ifelse(stringr::str_detect(gcs_name, ".(weather)..*.RDS$"), "weather","meas")) %>%
     select(location_id, buffer, duration, pbl, gcs_name, firesource, meas_or_weather) %>%
     tidyr::pivot_wider(names_from=meas_or_weather, values_from=gcs_name, names_prefix="gcs_name_") %>%
-    filter(pbl=="50m")
+    filter(pbl %in% c("10m","50m"))
 
   full_join(files.trajs, files.meas_weather)
 })
@@ -69,8 +69,8 @@ trajs_files <- reactive({
 trajs_locations <- reactive({
   req(trajs_files())
   rcrea::locations(id=unique(trajs_files()$location_id),
-                   level="city",
-                   with_metadata=T,
+                   level=c("station","city"),
+                   with_metadata=F,
                    with_geometry=T) %>%
     dplyr::left_join(trajs_files(),
                      by=c("id"="location_id")) %>%
@@ -170,6 +170,17 @@ trajs_meas_all <- reactive({
   read_gcs_url(gcs_url)
 })
 
+trajs_polls <- reactive({
+  req(trajs_meas_all())
+
+  polls <- trajs_meas_all() %>%
+    pull(poll) %>%
+    unique()
+
+  names(polls) <- rcrea::poll_str(polls)
+  return(polls)
+})
+
 trajs_meas_date <- reactive({
 
   req(trajs_meas_all())
@@ -200,13 +211,19 @@ trajs_points <- reactive({
 trajs_plot_poll <- reactive({
 
   req(trajs_meas_all())
-  req(input$trajs_running_width)
+  trajs_poll <- input$trajs_poll
+  req(input$trajs_running_width, trajs_poll)
 
-  poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
-  unit <- trajs_meas_all()$unit[1]
-  hovertemplate <- paste('%{y:.0f}',unit)
   m <- trajs_meas_all() %>%
+    filter(poll==!!trajs_poll)
+
+  poll_name <- rcrea::poll_str(trajs_poll)
+  unit <- unique(m$unit)
+  hovertemplate <- paste('%{y:.0f}',unit)
+
+  m <- m %>%
     select(date, observed, predicted, predicted_nofire)
+
   m.rolled <- rcrea::utils.running_average(m, input$trajs_running_width, vars_to_avg = c("observed","predicted","predicted_nofire"))
 
 
@@ -267,7 +284,7 @@ trajs_plot_poll <- reactive({
       # fig_bgcolor   = "rgba(0, 0, 0, 0)"
     ) %>%
     plotly::add_annotations(
-      text = sprintf("%s [%s]", poll, unit),
+      text = sprintf("%s [%s]", poll_name, unit),
       x = -0.05,
       y = 1.19,
       yref = "paper",
@@ -374,11 +391,17 @@ trajs_plot_firecontribution <- reactive({
 
   req(trajs_meas_all())
   req(input$trajs_running_width)
+  trajs_poll <- input$trajs_poll
+  req(trajs_poll)
 
-  poll <- rcrea::poll_str(trajs_meas_all()$poll[1])
-  unit <- trajs_meas_all()$unit[1]
+  m <- trajs_meas_all() %>%
+    filter(poll==trajs_poll)
+
+  poll_name <- rcrea::poll_str(trajs_poll)
+  unit <- unique(m$unit)
+
   hovertemplate <- paste('%{y:.0f}',unit)
-  m <- trajs_meas_all()     %>%
+  m <- m %>%
     select(date, observed, predicted, predicted_nofire) %>%
     mutate(value=predicted-predicted_nofire) %>%
     select(date, value)
@@ -423,7 +446,7 @@ trajs_plot_firecontribution <- reactive({
       paper_bgcolor = "rgba(0, 0, 0, 0)"
     ) %>%
     plotly::add_annotations(
-      text = sprintf("Fire contribution to %s [%s]",poll, unit),
+      text = sprintf("Fire contribution to %s [%s]",poll_name, unit),
       x = -0.05,
       y = 1.19,
       yref = "paper",
@@ -475,14 +498,21 @@ output$selectInputTrajsFireSource <- renderUI({
   pickerInput("trajs_firesource","Fire source", choices=trajs_firesources(), options = list(`actions-box` = TRUE), multiple = F)
 })
 
+
+output$selectInputTrajsPoll <- renderUI({
+  req(trajs_polls())
+  pickerInput("trajs_poll","Pollutant", choices=trajs_polls(), options = list(`actions-box` = TRUE), multiple = F)
+})
+
+
 output$selectInputTrajsPlots <- renderUI({
   plots <- list(
-    "PM 2.5"="pm25",
+    "Pollutant"="pollutant",
     "Fire contribution"="fire_contrib",
     "Fire count"="fire_count",
     "Precipitation"="precip")
 
-  pickerInput("trajs_plots","Charts", choices=plots, selected=c("pm25","fire_contrib","fire_count"),
+  pickerInput("trajs_plots","Charts", choices=plots, selected=c("pollutant","fire_contrib","fire_count"),
               options = list(`actions-box` = TRUE, `selected-text-format`= "count"), multiple = T)
 })
 
@@ -545,7 +575,7 @@ output$trajsPlots <- renderPlotly({
   req(input$trajs_plots)
 
   plots <- list(
-    "pm25"=trajs_plot_poll(),
+    "pollutant"=trajs_plot_poll(),
     "fire_contrib"=trajs_plot_firecontribution(),
     "fire_count"=trajs_plot_fire(),
     "precip"=trajs_plot_precip()

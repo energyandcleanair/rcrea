@@ -251,13 +251,13 @@ plot_recents <- function(
         if(add_lockdown){
           plt <- plt +
             geom_vline(data=filtered_meas, aes(xintercept=movement, linetype="National lockdown"),
-                       color=rcrea::CREAtheme.pal_crea['Turquoise']) +
+                       color=rcrea::pal_crea['Turquoise']) +
             geom_vline(data=filtered_meas, aes(xintercept=movement0, linetype="National lockdown"),
-                       color=rcrea::CREAtheme.pal_crea['Turquoise']) +
+                       color=rcrea::pal_crea['Turquoise']) +
             geom_vline(data=filtered_meas, aes(xintercept=partial_restriction, linetype="Partial restrictions"),
-                       color=rcrea::CREAtheme.pal_crea['Turquoise']) +
+                       color=rcrea::pal_crea['Turquoise']) +
             geom_vline(data=filtered_meas, aes(xintercept=partial_restriction0, linetype="Partial restrictions"),
-                       color=rcrea::CREAtheme.pal_crea['Turquoise']) +
+                       color=rcrea::pal_crea['Turquoise']) +
             scale_linetype_manual(values=c("dashed","dotted"), name=NULL)
         }
 
