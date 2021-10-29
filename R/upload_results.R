@@ -44,7 +44,12 @@ create_new_process_id <- function(preferred_id=NULL){
 #' @return id (string) of the process found or created
 #' @export
 #'
-retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather, preferred_name=NULL){
+retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
+                                       preferred_name=NULL, processes=NULL){
+
+  if(is.null(processes)){
+    processes <- processes()
+  }
 
   safe_fromJSON <- function(x){
     if(is.na(x)){return(NA)}
@@ -61,7 +66,7 @@ retrieve_or_create_process <- function(filter, agg_spatial, agg_temp, deweather,
   }
 
   # Check existing process
-  p=processes() %>%
+  p <- processes %>%
     dplyr::mutate(
       filter=purrr::map(filter, safe_fromJSON),
       agg_spatial=purrr::map(agg_spatial, safe_fromJSON),
