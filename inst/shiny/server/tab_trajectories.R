@@ -217,6 +217,10 @@ trajs_plot_poll <- reactive({
   m <- trajs_meas_all() %>%
     filter(poll==!!trajs_poll)
 
+  if(nrow(m)==0){
+    return(NULL)
+  }
+
   poll_name <- rcrea::poll_str(trajs_poll)
   unit <- unique(m$unit)
   hovertemplate <- paste('%{y:.0f}',unit)
@@ -395,7 +399,11 @@ trajs_plot_firecontribution <- reactive({
   req(trajs_poll)
 
   m <- trajs_meas_all() %>%
-    filter(poll==trajs_poll)
+    filter(poll==!!trajs_poll)
+
+  if(nrow(m)==0){
+    return(NULL)
+  }
 
   poll_name <- rcrea::poll_str(trajs_poll)
   unit <- unique(m$unit)
@@ -501,7 +509,13 @@ output$selectInputTrajsFireSource <- renderUI({
 
 output$selectInputTrajsPoll <- renderUI({
   req(trajs_polls())
-  pickerInput("trajs_poll","Pollutant", choices=trajs_polls(), options = list(`actions-box` = TRUE), multiple = F)
+  selected <- input$trajs_poll
+  if(is.null(selected) || !selected %in% trajs_polls()){
+    selected <- trajs_polls()[1]
+  }
+  pickerInput("trajs_poll","Pollutant", choices=trajs_polls(),
+              selected=selected,
+              options = list(`actions-box` = TRUE), multiple = F)
 })
 
 
