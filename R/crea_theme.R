@@ -1,21 +1,29 @@
 
 getpal <- function(x) {
   x %<>% textConnection %>% readLines
+  x %<>% trimws()
   x %>% gsub('.*#', '#', .) -> pal
   x %>% gsub(' #.*', '', .) %>% make.names -> names(pal)
   return(pal)
 }
 
- pal_crea <-
+pal_crea <-
   "Dark blue #35416C
-Blue #8cc9D0
-Light blue #cce7eb
-Turquoise #27a59c
-Green #75b44c
-Dark gray #333333
-Light gray #cacaca" %>% getpal
+  Blue #8cc9D0
+  Light blue #cce7eb
+  Turquoise #27a59c
+  Green #75b44c
+  Dark gray #333333
+  Light gray #cacaca
+  Yellow #fff2cc
+  Orange #f6b26b
+  Red #cc0000
+  Dark red #990000
+  Black #000
+  Dark violet #351c75
+  Dark purple #741b47" %>% getpal
 
- pal_crea.change <-
+pal_crea.change <-
   "Dark blue #35416C
 Blue #8cc9D0
 Light blue #cce7eb
@@ -33,12 +41,24 @@ Red #cc0000
 Orange #f6b26b
 Yellow #fff2cc" %>% getpal
 
- pal_crea.dramatic <- pal_crea.heatmap[c(4,2,3,1,5,6,7)]
+pal_crea.dramatic <- pal_crea.heatmap[c(4,2,3,1,5,6,7)]
+
+pal_crea.electricity <- c(
+  "Solar"= pal_crea["Yellow"],
+  "Wind"= pal_crea["Blue"],
+  "Other Renewables"= pal_crea["Light.blue"],
+  "Hydro"= pal_crea["Dark.blue"],
+  "Biomass"= pal_crea["Greem"],
+  "Nuclear"= pal_crea["Dark.red"],
+  "Fossil Gas"= pal_crea["Light.gray"],
+  "Coal"=pal_crea["Dark.gray"]
+)
 
 crea_palettes <- list(CREA = pal_crea,
-                                 change = pal_crea.change,
-                                 heatmap = pal_crea.heatmap,
-                                 dramatic = pal_crea.dramatic)
+                      change = pal_crea.change,
+                      heatmap = pal_crea.heatmap,
+                      dramatic = pal_crea.dramatic,
+                      electricity = pal_crea.electricity)
 
 makepal <- function(pal, alpha=1, col.index=T) {
   cols <- paste0(crea_palettes[[pal]][col.index],
@@ -69,6 +89,12 @@ scale_color_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, ...
 scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, ...) {
   continuous_scale("fill", palette, makegrad(palette, alpha, reverse.order), ...)
 }
+
+
+# Specific scales ---------------------------------------------------------
+scale_fill_electricity <- scale_fill_manual(values=pal_crea.electricity)
+scale_color_electricity <- scale_color_manual(values=pal_crea.electricity)
+
 
 theme_crea <- function(base_size=11, ...) {
   (ggthemes::theme_calc(base_size=base_size) +
