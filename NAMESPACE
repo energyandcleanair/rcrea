@@ -17,6 +17,7 @@ importFrom(dplyr,"desc")
 importFrom(dplyr,"row_number")
 importFrom(dplyr,"pull")
 importFrom(dplyr,"vars")
+importFrom(dplyr,"all_vars")
 
 
 
