@@ -1,5 +1,5 @@
 
-getAppDir <- function(){
+get_app_dir <- function(){
   appDir <- system.file("shiny", package = "rcrea")
   if (appDir == "") {
     stop("Could not find application directory. Try re-installing `rcrea`.", call. = FALSE)
@@ -8,13 +8,13 @@ getAppDir <- function(){
 }
 
 #' @export
-runShinyApp <- function() {
-  appDir <- getAppDir()
+run_shiny <- function() {
+  appDir <- get_app_dir()
   shiny::runApp(appDir, display.mode = "normal")
 }
 
 #' @export
-deployShinyApp <- function() {
+deploy_shiny <- function() {
   if(!require(rsconnect)) install.packages('reconnect')
   if(!require(dotenv)) install.packages('dotenv')
   if(!require(devtools)) install.packages('devtools')
@@ -38,7 +38,7 @@ deployShinyApp <- function() {
                             secret=Sys.getenv("SHINYAPP_SECRET"))
 
   # We could deploy like this:
-  # rsconnect::deployApp(getAppDir())
+  # rsconnect::deployApp(get_app_dir())
   # but it would miss the auth file that is not pushed to Github
 
   rsconnect::deployApp("inst/shiny",
