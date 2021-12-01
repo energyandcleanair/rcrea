@@ -128,7 +128,9 @@ measurements <- function(country=NULL,
   }
 
   if(!is.null(average_by)){
-    procs <- procs %>% dplyr::filter(average_by==period)
+    procs <- procs %>%
+      dplyr::filter(period==!!average_by,
+                    period_fn=="avg") # We exclude 8h_max or 1h_max aggregations by default
   }
 
   if(!is.null(deweathered)){

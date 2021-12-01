@@ -33,7 +33,8 @@ processes <- function(con=NULL, collect=T){
                       region_type = "region_type",
                       weighting = "weighting") %>%
     utils.unnest_json("agg_temp",
-                      period = "period")
+                      period = "period",
+                      period_fn = "function")
 
   if(collect){
     p <- p %>% dplyr::collect()
