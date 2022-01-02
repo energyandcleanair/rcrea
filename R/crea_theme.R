@@ -19,7 +19,7 @@ pal_crea <-
   Orange #f6b26b
   Red #cc0000
   Dark red #990000
-  Black #000
+  Black #000000
   Dark violet #351c75
   Dark purple #741b47" %>% getpal
 
