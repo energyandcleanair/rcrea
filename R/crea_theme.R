@@ -1,3 +1,34 @@
+theme_crea <- function(base_size=11,
+                       family='OpenSans',
+                       ...) {
+  (ggthemes::theme_calc(base_size=base_size) +
+     ggplot2::theme(#title = element_text(family='SourceSansPro'),
+       plot.title = element_text(size=rel(1.5), face='bold', color=unname(pal_crea['Dark.blue'])),
+       plot.subtitle = element_text(color='#060606'),
+       plot.caption = element_text(face='italic', color=pal_crea['Dark.blue']),
+       strip.background = element_rect(fill=pal_crea['Blue'],
+                                       linetype=0),
+       plot.background = element_rect(color='white', fill='white'),
+       # text = element_text(family=family),
+       panel.grid.major.y = element_line(size=0.1),
+       panel.border = element_rect(colour="white"),
+       axis.line = element_line(size=0.1),
+       ...))
+}
+
+
+theme_crea_old <- function(base_size=11, ...) {
+  (ggthemes::theme_calc(base_size=base_size) +
+     ggplot2::theme(#title = element_text(family='SourceSansPro'),
+       plot.title = element_text(size=rel(1.5), face='bold', color=unname(pal_crea['Dark.blue'])),
+       plot.subtitle = element_text(face='italic', color='black'),
+       plot.caption = element_text(face='italic', color=pal_crea['Dark.blue']),
+       strip.background = element_rect(fill=pal_crea['Blue'],
+                                       linetype=0),
+       plot.background = element_rect(color='white', fill='white'),
+       ...))
+}
+
 
 getpal <- function(x) {
   x %<>% textConnection %>% readLines
@@ -90,23 +121,13 @@ scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, ...)
   continuous_scale("fill", palette, makegrad(palette, alpha, reverse.order), ...)
 }
 
+scale_y_crea_zero <- function(mult_high=0.1){
+  scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
+}
 
 # Specific scales ---------------------------------------------------------
 scale_fill_electricity <- scale_fill_manual(values=pal_crea.electricity)
 scale_color_electricity <- scale_color_manual(values=pal_crea.electricity)
-
-
-theme_crea <- function(base_size=11, ...) {
-  (ggthemes::theme_calc(base_size=base_size) +
-     ggplot2::theme(#title = element_text(family='SourceSansPro'),
-           plot.title = element_text(size=rel(1.5), face='bold', color=unname(pal_crea['Dark.blue'])),
-           plot.subtitle = element_text(face='italic', color='black'),
-           plot.caption = element_text(face='italic', color=pal_crea['Dark.blue']),
-           strip.background = element_rect(fill=pal_crea['Blue'],
-                                           linetype=0),
-           plot.background = element_rect(color='white', fill='white'),
-           ...))
-}
 
 crea.theme <- function(colors='CREA', reverse.order=F) {
   pars = standard.theme(color = FALSE)
