@@ -140,8 +140,8 @@ upsert_meas <- function(meas){
 
   meas <- meas %>% dplyr::rename(pollutant=poll)
 
-  required_cols <- c("date","pollutant","unit","location_id","process_id","source","value")
-  conflict_cols <- c("date","pollutant","unit","location_id","process_id","source")
+  required_cols <- c("date","pollutant","unit","location_id","process_id","source","variable","value")
+  conflict_cols <- c("date","pollutant","unit","location_id","process_id","source","variable")
 
   if(!all(required_cols %in% colnames(meas))){
     stop(paste("Missing columns ", paste(setdiff(required_cols, colnames(meas)))))
