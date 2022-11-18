@@ -13,7 +13,7 @@ CREA Scraper is part of a larger ecosystem, as shown in the diagram below.
 ```
 install.packages('devtools')
 library(devtools)
-url <- "https://github.com/hubert-thieriot/crea_r_package"
+url <- "https://github.com/energyandcleanair/rcrea"
 devtools::install_github(url)
 ```
 
