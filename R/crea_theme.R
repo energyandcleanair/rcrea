@@ -116,12 +116,12 @@ scale_fill_crea_d <- function(palette = "CREA", alpha = 1, col.index=T,...) {
   discrete_scale("fill", palette, makepal(palette, alpha, col.index), ...)
 }
 
-scale_color_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, ...) {
-  continuous_scale("colour", palette, makegrad(palette, alpha, reverse.order), ...)
+scale_color_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, ...) {
+  continuous_scale("colour", palette, makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias), ...)
 }
 
-scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, ...) {
-  continuous_scale("fill", palette, makegrad(palette, alpha, reverse.order), ...)
+scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, ...) {
+  continuous_scale("fill", palette, makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias), ...)
 }
 
 scale_y_crea_zero <- function(mult_high=0.1){
@@ -143,6 +143,24 @@ crea.theme <- function(colors='CREA', reverse.order=F) {
   return(pars)
 }
 
+#add CREA logo to plot
+add_logo <- function(plt, footer_height=.05, logo_height = 0.1, logo_y = 0, logo_vjust=0.15, logo_width = 0.1){
+  require(cowplot)
+  require(magick)
+
+  img <- image_read(system.file("extdata", "CREA-logo-simple.svg", package="rcrea"))
+
+  # Set the canvas where you are going to draw the plot and the image
+  ggdraw() +
+    # Draw the plot in the canvas setting the x and y positions, which go from 0,0
+    # (lower left corner) to 1,1 (upper right corner) and set the width and height of
+    # the plot. It's advisable that x + width = 1 and y + height = 1, to avoid clipping
+    # the plot
+    draw_plot(plt,x = 0, y = footer_height, width = 1, height = (1-footer_height)) +
+    # Draw image in the canvas using the same concept as for the plot. Might need to
+    # play with the x, y, width and height values to obtain the desired result
+    draw_image(img,x = 0.895, y = logo_y, vjust=logo_vjust, width = logo_width, height = logo_height)
+}
 
 # attach(CREAtheme)
 
