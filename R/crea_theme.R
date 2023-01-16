@@ -144,7 +144,10 @@ crea.theme <- function(colors='CREA', reverse.order=F) {
 }
 
 #add CREA logo to plot
-add_logo <- function(plt, footer_height=.025, logo_height = 0.02, logo_y = 0, logo_vjust=-.2, logo_width = 0.1, ...){
+add_logo <- function(plt, footer_height=.0,
+                     logo_vjust = -.4, logo_hjust=.82,
+                     logo_height = 0.02, logo_width = 0.1,
+                     logo_y = 0, logo_x = 1, ...){
   require(cowplot)
   require(magick)
 
@@ -167,18 +170,22 @@ add_logo <- function(plt, footer_height=.025, logo_height = 0.02, logo_y = 0, lo
 
 #save png with defaults, adding crea logo
 quicksave <- function(file, plot = last_plot(), width=8, height=6, bg='white',
-          logo=T, preview=F,
+          logo=T, preview=T,
           ...) {
   if(logo) plot <- add_logo(plot, ...)
   ggsave(file, plot=plot, width=width, height=height, bg=bg, ...)
-  if(preview) {
-    require(cowplot)
-    require(magick)
-    img <- image_read(file)
 
-    preview_img <- ggdraw() + draw_image(img)
-    print(preview_img)
-  }
+  if(preview) plot_image(file)
+}
+
+#plot an image in the plot window
+plot_image <- function(file) {
+  require(cowplot)
+  require(magick)
+  img <- image_read(file)
+
+  preview_img <- ggdraw() + draw_image(img)
+  print(preview_img)
 }
 
 # attach(CREAtheme)
