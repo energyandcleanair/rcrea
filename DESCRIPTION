@@ -44,7 +44,12 @@ Imports:
     jsonlite,
     uuid,
     stringi,
-    plotly
+    plotly,
+    raster,
+    terra,
+    rgee,
+    glue,
+    lubridate
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2
