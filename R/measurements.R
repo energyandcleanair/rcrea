@@ -119,7 +119,7 @@ measurements <- function(country=NULL,
                               "gadm1"="gadm1_id",
                               "country"="country")
 
-  procs <- procs %>% dplyr::filter(region_type==process_region_type)
+  procs <- procs %>% dplyr::filter(region_type==!!process_region_type)
 
 
   if(!is.null(location_type) && !is.null(aggregate_level) && (aggregate_level!="station")){
@@ -231,11 +231,11 @@ measurements <- function(country=NULL,
   }
 
   if(!is.null(date_from)){
-    result <- result %>% dplyr::filter(date >= date_from)
+    result <- result %>% dplyr::filter(date >= !!as.Date(date_from))
   }
 
   if(!is.null(date_to)){
-    result <- result %>% dplyr::filter(date <= date_to)
+    result <- result %>% dplyr::filter(date <= !!as.Date(date_to))
   }
 
   if(!is.null(process_id)){
