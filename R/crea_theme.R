@@ -94,15 +94,21 @@ crea_palettes <- list(CREA = pal_crea,
                       dramatic = pal_crea.dramatic,
                       electricity = pal_crea.electricity)
 
-makepal <- function(pal, alpha=1, col.index=T) {
-  cols <- paste0(crea_palettes[[pal]][col.index],
-                 format(as.hexmode(round(alpha*255, 0)), width=2))
+getcols <- function(pal, alpha=1, col.index=T, darken=0) {
+  paste0(crea_palettes[[pal]][col.index],
+         format(as.hexmode(round(alpha*255, 0)), width=2))
+
+  if(darken > 0) cols <- colorspace::darken(col, amount=darken)
+  if(darken < 0) cols <- colorspace::lighten(col, amount=-darken)
+}
+
+makepal <- function(pal, alpha=1, col.index=T, darken=0) {
+  cols <- getcols(pal=pal, alpha=alpha, col.index=col.index, darken=darken)
   scales::manual_pal(unname(cols))
 }
 
-makegrad <- function(pal, alpha=1, bias=1, reverse.order=F) {
-  cols <- paste0(crea_palettes[[pal]],
-                 format(as.hexmode(round(alpha*255, 0)), width=2))
+makegrad <- function(pal, alpha=1, bias=1, reverse.order=F, col.index=T, darken=0) {
+  cols <- getcols(pal=pal, alpha=alpha, col.index=col.index, darken=darken)
   if(reverse.order) cols <- rev(cols)
   function(x) { scales::col_numeric(unname(cols), c(0,1))(x^bias) }
 }
