@@ -95,11 +95,11 @@ crea_palettes <- list(CREA = pal_crea,
                       electricity = pal_crea.electricity)
 
 getcols <- function(pal, alpha=1, col.index=T, darken=0) {
-  paste0(crea_palettes[[pal]][col.index],
+  cols <- paste0(crea_palettes[[pal]][col.index],
          format(as.hexmode(round(alpha*255, 0)), width=2))
 
-  if(darken > 0) cols <- colorspace::darken(col, amount=darken)
-  if(darken < 0) cols <- colorspace::lighten(col, amount=-darken)
+  if(darken > 0) cols <- colorspace::darken(cols, amount=darken)
+  if(darken < 0) cols <- colorspace::lighten(cols, amount=-darken)
   return(cols)
 }
 
