@@ -100,6 +100,7 @@ getcols <- function(pal, alpha=1, col.index=T, darken=0) {
 
   if(darken > 0) cols <- colorspace::darken(col, amount=darken)
   if(darken < 0) cols <- colorspace::lighten(col, amount=-darken)
+  return(cols)
 }
 
 makepal <- function(pal, alpha=1, col.index=T, darken=0) {
