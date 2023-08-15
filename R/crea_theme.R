@@ -161,7 +161,7 @@ add_logo <- function(plt,
   require(cowplot)
   require(magick)
 
-  file_logo <- ifelse(logo_negative, "crea_logo_negative.png", "crea_logo.svg")
+  file_logo <- ifelse(logo_negative, "crea_logo_negative.png", "CREA-logo-simple.svg")
   img <- image_read(system.file("extdata", file_logo, package="rcrea"))
 
   # Set the canvas where you are going to draw the plot and the image
@@ -181,7 +181,7 @@ add_logo <- function(plt,
 
 #save png with defaults, adding crea logo
 quicksave <- function(file, plot = last_plot(), pointsize=.75, width=8, height=6, scale=1.33, bg='white',
-                      logo=T, preview=T, logo_negative=F,
+                      logo=T, preview=T,
                       device = NULL, path = NULL, units = c("in", "cm", "mm", "px"), dpi = 300, limitsize = TRUE,
                       ...) {
   if(logo) plot <- add_logo(plot, ...)
