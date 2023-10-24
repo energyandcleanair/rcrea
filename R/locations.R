@@ -32,6 +32,7 @@ locations <- function(
   collect=TRUE,
   with_geometry=TRUE,
   with_metadata=FALSE,
+  with_source=TRUE,
   keep_with_measurements_only=FALSE, #Only keep locations that actually have measurements
   con=NULL){
 
@@ -79,7 +80,7 @@ locations <- function(
       for(source_ in names(source_city)){
         r <- cities(id=id, name=source_city[[source_]], country=country,
                     source=source_, with_metadata=with_metadata, with_geometry=with_geometry,
-                    with_source=T,
+                    with_source=with_source,
                     collect=F, con=con) %>%
           dplyr::mutate(city_name=name)
 
@@ -87,7 +88,7 @@ locations <- function(
       }
     }else{
       r <- cities(id=id, name=city, country=country, source=source,
-                  with_metadata=with_metadata, with_source=T,
+                  with_metadata=with_metadata, with_source=with_source,
                   with_geometry=with_geometry, collect=F,
                   con=con) %>%
         dplyr::mutate(city_name=name)
