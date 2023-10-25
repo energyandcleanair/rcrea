@@ -158,8 +158,8 @@ add_logo <- function(plt,
                      logo_height = 0.03*logo_scale, logo_width = 0.15*logo_scale,
                      logo_y = 0, logo_x = 1,
                      logo_negative=F, ...){
-  require(cowplot)
-  require(magick)
+  library(cowplot)
+  library(magick)
 
   file_logo <- ifelse(logo_negative, "crea_logo_negative.png", "CREA-logo-simple.svg")
   img <- image_read(system.file("extdata", file_logo, package="rcrea"))
@@ -193,8 +193,8 @@ quicksave <- function(file, plot = last_plot(), pointsize=.75, width=8, height=6
 
 #plot an image in the plot window
 plot_image <- function(file) {
-  require(cowplot)
-  require(magick)
+  library(cowplot)
+  library(magick)
   img <- image_read(file)
 
   preview_img <- ggdraw() + draw_image(img)
