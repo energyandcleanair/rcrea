@@ -157,7 +157,8 @@ add_logo <- function(plt,
                      logo_scale = 1,
                      logo_height = 0.03*logo_scale, logo_width = 0.15*logo_scale,
                      logo_y = 0, logo_x = 1,
-                     logo_negative=F, ...){
+                     logo_negative=F,
+                     png = F, ...){
   library(cowplot)
   library(magick)
 
