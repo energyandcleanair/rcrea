@@ -44,7 +44,9 @@ Imports:
     jsonlite,
     uuid,
     stringi,
-    plotly
+    plotly,
+    cowplot,
+    magick
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2

@@ -123,12 +123,12 @@ scale_fill_crea_d <- function(palette = "CREA", alpha = 1, col.index=T,...) {
   discrete_scale("fill", palette, makepal(palette, alpha, col.index), ...)
 }
 
-scale_color_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, ...) {
-  continuous_scale("colour", palette, makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias), ...)
+scale_color_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, col.index = T, darken = 0, ...) {
+  continuous_scale("colour", palette, makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
 }
 
-scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, ...) {
-  continuous_scale("fill", palette, makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias), ...)
+scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, col.index = T, darken = 0, ...) {
+  continuous_scale("fill", palette, makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
 }
 
 scale_y_crea_zero <- function(mult_high=0.1){
@@ -157,10 +157,9 @@ add_logo <- function(plt,
                      logo_scale = 1,
                      logo_height = 0.03*logo_scale, logo_width = 0.15*logo_scale,
                      logo_y = 0, logo_x = 1,
-                     logo_negative=F,
-                     png = F, ...){
-  require(cowplot)
-  require(magick)
+                     logo_negative=F, ...){
+  library(cowplot)
+  library(magick)
 
   file_logo <- ifelse(logo_negative, "crea_logo_negative.png",
                       ifelse(png, 'crea_logo.png', "CREA-logo-simple.svg"))
@@ -195,8 +194,8 @@ quicksave <- function(file, plot = last_plot(), pointsize=.75, width=8, height=6
 
 #plot an image in the plot window
 plot_image <- function(file) {
-  require(cowplot)
-  require(magick)
+  library(cowplot)
+  library(magick)
   img <- image_read(file)
 
   preview_img <- ggdraw() + draw_image(img)

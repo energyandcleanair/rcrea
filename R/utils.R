@@ -284,6 +284,43 @@ utils.add_city_pop <- function(m){
 
 }
 
+
 utils.Delta <- function(){
   stringi::stri_unescape_unicode("\u0394")
+}
+
+
+#' Keep top n values, and group the remaining ones as "others"
+#'
+#' @param data
+#' @param group_col
+#' @param value_col
+#' @param n
+#' @param others
+#' @param factor
+#'
+#' @return
+#' @export
+#'
+#' @examples
+utils.keep_top_n <- function(data, group_col, value_col="value", n = 10, others = "Others", factor=T) {
+
+  # Determine the top n groups based on the sum of the value column
+  top_n <- data %>%
+    group_by_at(group_col) %>%
+    summarise(value_sum = sum(!!sym(value_col), na.rm = TRUE)) %>%
+    arrange(desc(value_sum)) %>%
+    head(n) %>%
+    pull(!!sym(group_col))
+
+  # Replace non-top n groups with "others" and make it a factor with ordered levels
+  result <- data %>%
+    mutate(!!group_col := ifelse(!!sym(group_col) %in% top_n, !!sym(group_col), others))
+
+  if(factor){
+    result <- result %>%
+      mutate(!!group_col := factor(!!sym(group_col), levels = unique(c(top_n, others))))
+  }
+
+  return(result)
 }
