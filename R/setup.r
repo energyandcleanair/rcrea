@@ -19,7 +19,7 @@ NO = "no"
 NOX = "nox"
 
 # Constants for connection
-CONN_HOST = '34.77.246.210'
+CONN_HOST = '35.189.220.4'
 CONN_DBNAME = 'production'
 CONN_USER = 'readonly'
 CONN_PASSWORD = '2hNETPw5'
