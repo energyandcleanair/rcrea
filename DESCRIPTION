@@ -46,7 +46,8 @@ Imports:
     stringi,
     plotly,
     cowplot,
-    magick
+    magick,
+    logger
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2,
