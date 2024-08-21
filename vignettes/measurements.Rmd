@@ -1,7 +1,10 @@
 ---
-title: "Querying and plotting air quality measurements"
+title: "Querying and plotting air quality measurements with rcrea package"
 #output: html_notebook
-output: rmarkdown::html_vignette
+# output: rmarkdown::html_vignette
+output:
+  html_document:
+    df_print: paged
 vignette: >
   %\VignetteIndexEntry{Querying and plotting air quality measurements}
   %\VignetteEngine{knitr::rmarkdown}
@@ -9,110 +12,59 @@ vignette: >
 ---
 
 ## Installing package
-```{r results="hide"}
-if(!require(devtools)) install.packages('devtools',repos = "http://cran.us.r-project.org")
-library(devtools)
-url <- "https://github.com/hubert-thieriot/crea_r_package"
-# devtools::install_github(url)
+```{r results="hide", eval=FALSE}
+if(!require(remotes)){install.packages('remotes'); require(remotes)}
+remotes::install_github("energyandcleanair/rcrea")
 ```
-```{r results="hide"}
+```{r results="hide", message=FALSE}
 library(rcrea)
-library(dplyr)
-library(ggplot2)
-library(zoo)
 ```
+
 
 ## Measurements
 ### Downloading measurements
-Collecting measurements. By default, data is averaged by day and by city.
-```{r}
+Collecting measurements at the city level:
+```{r message=FALSE, cache=TRUE}
 meas_cities <- rcrea::measurements(city=c('Jaipur','Mumbai', 'Delhi'),
-                                    average_by = 'day', # [Default: 'day'] also available NULL (raw measurements), 'hour', 'week', 'month', 'year'
-                                    aggregate_at_city_level = T # [Default: TRUE] whether or not to aggregate stations data at the city level
-                                    )
+                                   source="cpcb",
+                                   poll=c(rcrea::NO2, rcrea::PM25),
+                                   date_from="2020-01-01")
 meas_cities
 ```
 
-If you want all India data (can take a lot of time if not averaged per month or year):
-```{r}
-meas_india <- rcrea::measurements(country='IN', average_by = 'year')
-meas_india
-```
-
-Getting data at the location level (i.e. more granular than city).
-```{r}
-meas_stations <- rcrea::measurements(city=c('Jaipur','Mumbai'),
-                                    aggregate_at_city_level = F, # To keep it at 'location' (i.e. station) level
-                                    with_geometry = T # To also collect geometry
-                                    )
+Getting data at the station level (i.e. more granular than city).
+```{r message=FALSE, cache=TRUE}
+meas_stations <- rcrea::measurements(city=c('Beijing'),
+                                     source="mee",
+                                     aggregate_level = "station",
+                                     poll=rcrea::NO2,
+                                     date_from="2018-01-01")
 meas_stations
 ```
 
 
-Let's first see how many measurements we have, and whether there are holes in time.
-```{r}
-rcrea::plot_measurements_count(meas_cities)
-```
-Black regions correspond to periods of time without any measurement in this city. Either data is not available or scraping has missed some values.
-
-
 ### Plotting measurements
-Plotting time series of PM 2.5 per location.
 
-Using location_id...
-```{r}
-rcrea::plot_measurements(meas_cities, poll=rcrea::PM25, subplot_by='city')
-```
-... or location name (location refers to station in OpenAQ language)
-```{r}
-rcrea::plot_measurements(meas_stations, subplot_by='location', color_by = 'poll')
-```
 
-Plotting city-level values per pollutant
-```{r}
-rcrea::plot_measurements(meas_cities, subplot_by='poll')
+```{r message=FALSE, warning=FALSE, fig.width=10, out.width = "100%"}
+rcrea::plot_recents(meas_raw=meas_cities,
+                    subplot_by="poll",
+                    color_by="location_name",
+                    running_days = 30)
 ```
-Using a 1-year rolling mean
-```{r}
-rcrea::plot_measurements(meas_cities, average_by='day', running_width=365, subplot_by='poll')
+```{r message=FALSE, warning=FALSE, fig.width=10, out.width = "100%"}
+rcrea::plot_recents(meas_raw=meas_stations,
+                    subplot_by="location_id",
+                    color_by="year",
+                    running_days = 30)
 ```
 
-Time series of PM2.5 per location (yearly running average)
-```{r}
-rcrea::plot_measurements(meas_stations, poll=rcrea::PM25, running_days=365, subplot_by='location')
+Heatmap of standardized air quality level:
+```{r message=FALSE, warning=FALSE, fig.width=10, out.width = "100%"}
+rcrea::plot_measurements(meas_cities,
+                         poll=PM25,
+                         subplot_by='location_name',
+                         type='heatmap',
+                         average_by='day')
 ```
 
-Time series of PM2.5 per city (yearly running average)
-```{r}
-rcrea::plot_measurements(meas_cities, poll=rcrea::PM25, running_days=365, color_by='city')
-```
-
-Monthly average
-```{r}
-rcrea::plot_measurements(meas_cities, poll=rcrea::PM25, average_by='month', subplot_by='city')
-```
-
-Yearly average
-```{r}
-rcrea::plot_measurements(meas_cities, poll=rcrea::PM25, average_by='year', subplot_by='city')
-```
-
-Evolution over years of monthly data
-```{r}
-rcrea::plot_measurements(meas_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
-```
-
-Doing the same with all cities for PM10
-```{r}
-meas_month_all_cities <- rcrea::measurements(country='IN', average_by='month', date_from='2014-01-01', poll=PM25)
-rcrea::plot_measurements(meas_month_all_cities, poll=PM25, color_by='year', subplot_by='city', average_by='month')
-```
-Heatmap per location with monthly data
-```{r}
-rcrea::plot_measurements(meas_cities, poll=PM25, subplot_by='location', type='heatmap', average_by='month')
-```
-
-Heatmap per city weekly values
-```{r}
-rcrea::plot_measurements(meas_cities, poll=PM25, subplot_by='city', type='heatmap', average_by='month')
-```

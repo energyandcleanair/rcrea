@@ -25,7 +25,6 @@ Imports:
     dotenv,
     gbm,
     DBI,
-    rnoaa,
     standardize,
     Metrics,
     shinycssloaders,
@@ -46,11 +45,11 @@ Imports:
     stringi,
     plotly,
     cowplot,
-    magick
+    magick,
+    logger
 Remotes:
     tidyverse/lubridate,
-    energyandcleanair/leaflet.extras2,
-    github::ropensci/rnoaa
+    energyandcleanair/leaflet.extras2
 Depends:
     ggplot2
 Suggests: 
