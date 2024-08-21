@@ -25,7 +25,6 @@ Imports:
     dotenv,
     gbm,
     DBI,
-    rnoaa,
     standardize,
     Metrics,
     shinycssloaders,
@@ -50,8 +49,7 @@ Imports:
     logger
 Remotes:
     tidyverse/lubridate,
-    energyandcleanair/leaflet.extras2,
-    github::ropensci/rnoaa
+    energyandcleanair/leaflet.extras2
 Depends:
     ggplot2
 Suggests: 
