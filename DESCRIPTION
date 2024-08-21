@@ -46,10 +46,12 @@ Imports:
     plotly,
     cowplot,
     magick,
-    logger
+    logger,
+    rjson
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2
+    cran/rjson@0.2.21
 Depends:
     ggplot2
 Suggests: 
