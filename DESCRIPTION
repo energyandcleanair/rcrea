@@ -48,7 +48,8 @@ Imports:
     magick,
     logger,
     rjson,
-    tools
+    tools,
+    showtext
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2,

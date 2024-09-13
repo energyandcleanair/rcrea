@@ -4,6 +4,7 @@ quicksave <- function(file,
                       width = 10,
                       height = 8,
                       scale = 1,
+                      dpi = 300,
                       bg = 'white',
                       logo = TRUE,
                       preview = TRUE,
@@ -11,6 +12,10 @@ quicksave <- function(file,
                       logo_position = "br",
                       logo_margin = 0.01,
                       ...) {
+
+  # Update showtext (in case it is used)
+  showtext::showtext_opts(dpi = dpi)
+
   # Modify the plot to include extra space for the logo if logo = TRUE
   if (logo) {
     # Adjust the plot margin based on the logo position using a dedicated function
