@@ -116,19 +116,19 @@ makegrad <- function(pal, alpha=1, bias=1, reverse.order=F, col.index=T, darken=
 
 
 scale_color_crea_d <- function(palette = "CREA", alpha = 1, col.index=T, darken=0, ...) {
-  discrete_scale("colour", palette = makepal(palette, alpha, col.index, darken), ...)
+  discrete_scale("colour", scale_name=palette, palette = makepal(palette, alpha, col.index, darken), ...)
 }
 
 scale_fill_crea_d <- function(palette = "CREA", alpha = 1, col.index=T, darken=0, ...) {
-  discrete_scale("fill", palette = makepal(palette, alpha, col.index, darken), ...)
+  discrete_scale("fill", scale_name=palette, palette = makepal(palette, alpha, col.index, darken), ...)
 }
 
 scale_color_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, col.index = T, darken = 0, ...) {
-  continuous_scale("colour", palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
+  continuous_scale("colour", scale_name=palette, palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
 }
 
 scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, col.index = T, darken = 0, ...) {
-  continuous_scale("fill", palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
+  continuous_scale("fill", scale_name=palette, palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
 }
 
 scale_y_crea_zero <- function(mult_high=0.1){
