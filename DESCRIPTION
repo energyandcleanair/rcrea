@@ -1,7 +1,7 @@
 Package: rcrea
 Type: Package
 Title: Query And Plot Air Quality And Weather Data from CREA Database
-Version: 0.2
+Version: 0.3
 Author: Hubert Thieriot
 Maintainer: Hubert Thieriot <hubert.thieriot@gmail.com>
 Description: rcrea package offers a set of functions to query and plot air quality and weather data stored in CREA database.
@@ -47,7 +47,8 @@ Imports:
     cowplot,
     magick,
     logger,
-    rjson
+    rjson,
+    tools
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2,
