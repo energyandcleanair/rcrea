@@ -1,19 +1,23 @@
 # Function to save a plot with an optional logo and preview
-quicksave <- function(file,
+quicksave_old <- function(file,
                       plot = last_plot(),
                       width = 10,
                       height = 8,
                       scale = 1,
+                      dpi = 300,
                       bg = 'white',
                       logo = TRUE,
                       preview = TRUE,
                       logo_scale = 0.035,
                       logo_position = "br",
                       logo_margin = 0.01,
-                      add_plot_margin = T,
                       ...) {
+
+  # Update showtext (in case it is used)
+  showtext::showtext_opts(dpi = dpi)
+
   # Modify the plot to include extra space for the logo if logo = TRUE
-  if (logo & add_plot_margin) {
+  if (logo) {
     # Adjust the plot margin based on the logo position using a dedicated function
     plot <- adjust_plot_margin(plot, height, scale, logo_scale, logo_position)
   }
