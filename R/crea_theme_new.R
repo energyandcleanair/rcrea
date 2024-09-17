@@ -2,15 +2,16 @@ theme_params <- list(
   grey1 = "grey20",
   grey2 = "grey70",
   grey3 = "grey95",
-  lightblue = rcrea::pal_crea[["Light.blue"]],
-  darkblue = rcrea::pal_crea[["Dark.blue"]],
+  lightblue = pal_crea[["Light.blue"]],
+  darkblue = pal_crea[["Dark.blue"]],
   fontsize1 = 15,
   fontsize2 = 12,
   fontsize3 = 10,
   fontsize4 = 8
 )
 
-theme_crea_new <- theme_minimal(base_family = "Lato", base_size = 14) +  # Adjust size & font
+theme_crea_new <- function(theme_params=theme_params){
+  theme_minimal(base_family = "Lato", base_size = 14) +  # Adjust size & font
   theme(
 
     # Background and box around the chart
@@ -57,3 +58,4 @@ theme_crea_new <- theme_minimal(base_family = "Lato", base_size = 14) +  # Adjus
     strip.placement = "outside",
     panel.spacing.y = unit(0.5, "cm")  # Add vertical space between facets
   )
+}
