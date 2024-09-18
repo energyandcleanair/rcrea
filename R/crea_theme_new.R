@@ -14,12 +14,8 @@ theme_crea_new <- function(
     linewidth_mapped = F) {
 
 
-  # Prep environment
-  # showtext::showtext_auto()
-  # showtext::showtext_opts(dpi = 300)
-
   # Install font (takes less time from the second time onward)
-  try(sysfonts::font_add_google(base_family, regular = "400", bold = "900"))
+  try(sysfonts::font_add_google(base_family, regular = "400", bold = "700"))
 
   theme_minimal(base_family = base_family, base_size = fontsize2) + # Adjust size & font
     theme(
@@ -39,7 +35,7 @@ theme_crea_new <- function(
       # Titles
       plot.title = element_text(color = title_color, size = fontsize1, face = "bold"),
       plot.title.position = "plot",
-      plot.subtitle = element_text(color = grey1, size = fontsize2, margin = margin(b = 10)),
+      plot.subtitle = element_text(color = grey1, size = fontsize2, margin = margin(b = 15)),
 
       # Axis
       axis.title = element_text(color = grey1, size = fontsize3),

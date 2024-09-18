@@ -12,6 +12,11 @@ quicksave <- function(file,
                       logo_margin = 0.01,
                       add_plot_margin = T,
                       ...) {
+
+  # Prep environment
+  showtext::showtext_begin()
+  showtext::showtext_opts(dpi = 300)
+
   # Modify the plot to include extra space for the logo if logo = TRUE
   if (logo & add_plot_margin) {
     # Adjust the plot margin based on the logo position using a dedicated function
@@ -30,6 +35,8 @@ quicksave <- function(file,
   if (preview) {
     plot_image(file)
   }
+
+  showtext::showtext_end()
 }
 
 
