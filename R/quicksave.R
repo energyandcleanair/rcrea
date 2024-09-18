@@ -35,9 +35,9 @@ quicksave <- function(file,
                       ...) {
 
   # Modify the plot to include extra space for the logo if logo = TRUE
-  if (logo & (increase_plot_margin_for_logo > 0)) {
+  if (logo & (increase_plot_margin_around_logo > 0)) {
     # Adjust the plot margin based on the logo position using a dedicated function
-    plot <- adjust_plot_margin(plot, height, scale, logo_scale, logo_position, multiplier = increase_plot_margin_for_logo)
+    plot <- adjust_plot_margin(plot, height, scale, logo_scale, logo_position, multiplier = increase_plot_margin_around_logo)
   }
 
   # Save the plot
