@@ -14,8 +14,11 @@ theme_crea_new <- function(
     linewidth_mapped = F) {
 
 
+  # Install font and set up showtext
   # Install font (takes less time from the second time onward)
   try(sysfonts::font_add_google(base_family, regular = "400", bold = "700"))
+  showtext::showtext_auto()
+  showtext::showtext_opts(dpi = 300)
 
   theme_minimal(base_family = base_family, base_size = fontsize2) + # Adjust size & font
     theme(
