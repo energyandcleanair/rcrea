@@ -1,22 +1,43 @@
 # Function to save a plot with an optional logo and preview
+#' Title
+#'
+#' @param file The file path to save the plot to
+#' @param plot The plot to save (default is the last plot created)
+#' @param width Width of the image (in inches)
+#' @param height Height of the image (in inches)
+#' @param scale Scale factor for the plot given to ggsave
+#' @param bg Background color of the image
+#' @param logo Add a logo to the image
+#' @param preview Show a preview of the image after saving
+#' @param logo_scale Size of the logo relative to the plot height
+#' @param logo_position tr, tl, br, bl (top right etc.)
+#' @param logo_placement_margin Margin around logo, for its placement only (not moving anything in the plot)
+#' @param increase_plot_margin_around_logo Add margin in the plot around logo. Useful if logo overlaps with plot.
+#'  Expressed as the fraction of the margin that would be necessarily if there was no white space whatsoever.
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 quicksave <- function(file,
                       plot = last_plot(),
                       width = 10,
-                      height = 8,
+                      height = 7,
                       scale = 1,
                       bg = 'white',
                       logo = TRUE,
                       preview = TRUE,
                       logo_scale = 0.035,
                       logo_position = "br",
-                      logo_margin = 0.01,
-                      add_plot_margin = T,
+                      logo_placement_margin = 0.01,
+                      increase_plot_margin_around_logo = 0,
                       ...) {
 
   # Modify the plot to include extra space for the logo if logo = TRUE
-  if (logo & add_plot_margin) {
+  if (logo & (increase_plot_margin_for_logo > 0)) {
     # Adjust the plot margin based on the logo position using a dedicated function
-    plot <- adjust_plot_margin(plot, height, scale, logo_scale, logo_position)
+    plot <- adjust_plot_margin(plot, height, scale, logo_scale, logo_position, multiplier = increase_plot_margin_for_logo)
   }
 
   # Save the plot
@@ -24,7 +45,7 @@ quicksave <- function(file,
 
   # Add logo after saving
   if (logo) {
-    add_logo(file, logo_scale = logo_scale, logo_position = logo_position, logo_margin = logo_margin)
+    add_logo(file, logo_scale = logo_scale, logo_position = logo_position, logo_margin = logo_placement_margin)
   }
 
   # Optional: preview the image
@@ -34,8 +55,9 @@ quicksave <- function(file,
 }
 
 
-adjust_plot_margin <- function(plot, height, scale, logo_scale, logo_position) {
-  if (ggplot2::is.ggplot(plot)) {
+adjust_plot_margin <- function(plot, height, scale, logo_scale, logo_position, multiplier=1) {
+
+    if (ggplot2::is.ggplot(plot)) {
     # Convert inches to points (1 inch = 72.27 points)
     plot_height_in <- height * scale
     plot_height_pt <- plot_height_in * 72.27
@@ -64,7 +86,7 @@ adjust_plot_margin <- function(plot, height, scale, logo_scale, logo_position) {
     }
 
     # Set the new margins
-    plot <- plot + theme(plot.margin = unit(current_margins_numeric, "pt"))
+    plot <- plot + theme(plot.margin = unit(current_margins_numeric * multiplier, "pt"))
   } else {
     # Do nothing if plot is not a ggplot object
   }
