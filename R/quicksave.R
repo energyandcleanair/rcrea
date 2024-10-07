@@ -34,6 +34,9 @@ quicksave <- function(file,
                       increase_plot_margin_around_logo = 0,
                       ...) {
 
+  # To prevent small texts
+  showtext::showtext_opts(dpi = 300)
+
   # Modify the plot to include extra space for the logo if logo = TRUE
   if (logo & (increase_plot_margin_around_logo > 0)) {
     # Adjust the plot margin based on the logo position using a dedicated function
