@@ -159,6 +159,7 @@ add_logo <- function(file, logo_scale = 0.15, logo_position = "br",
 
   image_destroy(img_plot)
   image_destroy(img_logo)
+  image_destroy(final_img)
 }
 
 # Function to preview the image
