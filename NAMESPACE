@@ -19,7 +19,7 @@ importFrom(dplyr,"pull")
 importFrom(dplyr,"vars")
 importFrom(dplyr,"all_vars")
 
-importFrom(magick, image_read, image_info, image_scale, image_composite, image_write)
+importFrom(magick, image_read, image_info, image_scale, image_composite, image_write, image_destroy)
 importFrom(tools, file_ext)
 
 exportPattern("^[[:alpha:]]+")
