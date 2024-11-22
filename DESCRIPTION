@@ -47,13 +47,12 @@ Imports:
     cowplot,
     magick,
     logger,
-    rjson,
+    rjson (>= 0.2.21),
     tools,
-    showtext
+    showtext,
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2,
-    cran/rjson@0.2.21
 Depends:
     ggplot2
 Suggests: 
