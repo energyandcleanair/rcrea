@@ -1,26 +1,46 @@
 importFrom(magrittr,"%>%")
 importFrom(magrittr,"%<>%")
 
-importFrom(dplyr,"distinct")
-importFrom(dplyr,"collect")
-importFrom(dplyr,"filter")
-importFrom(dplyr,"filter_at")
-importFrom(dplyr,"mutate")
-importFrom(dplyr,"select")
-importFrom(dplyr,"left_join")
-importFrom(dplyr,"group_by")
-importFrom(dplyr,"group_by_at")
-importFrom(dplyr,"ungroup")
-importFrom(dplyr,"summarise")
-importFrom(dplyr,"arrange")
-importFrom(dplyr,"desc")
-importFrom(dplyr,"row_number")
-importFrom(dplyr,"pull")
-importFrom(dplyr,"vars")
-importFrom(dplyr,"all_vars")
-
-importFrom(magick, image_read, image_info, image_scale, image_composite, image_write)
-importFrom(tools, file_ext)
-
 exportPattern("^[[:alpha:]]+")
 export("%>%")
+
+# Import functions
+importFrom(dplyr,bind_rows)
+importFrom(dplyr,coalesce)
+importFrom(dplyr,filter)
+importFrom(dplyr,select)
+importFrom(dplyr,mutate)
+importFrom(dplyr,rename)
+importFrom(dplyr,collect)
+importFrom(dplyr,left_join)
+importFrom(dplyr,right_join)
+importFrom(dplyr,group_by)
+importFrom(dplyr,ungroup)
+importFrom(dplyr,summarise)
+importFrom(dplyr,filter_at)
+importFrom(dplyr,vars)
+importFrom(dplyr,all_vars)
+importFrom(dplyr,distinct)
+importFrom(dplyr,pull)
+
+importFrom(httr,parse_url)
+importFrom(httr,build_url)
+
+importFrom(lubridate,force_tz)
+importFrom(lubridate,date)
+importFrom(lubridate,today)
+
+importFrom(tidyr,replace_na)
+
+importFrom(pbapply,pblapply)
+
+importFrom(glue,glue)
+
+importFrom(readr,read_csv)
+
+importFrom(sf,st_as_sfc)
+
+importFrom(stats,setNames)
+
+# If you need entire packages
+import(DBI)

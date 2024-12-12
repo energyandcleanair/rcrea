@@ -1,4 +1,3 @@
-
 #' Query Measurements
 #'
 #' @param country ISO2 code of the country of interest [optional]
@@ -20,7 +19,7 @@
 #' @examples
 #' meas_bj <- rcrea::measurements(city=c('Beijing'), date_from='2018-01-01', average_by='month', with_metadata=T)
 #'
-measurements <- function(country=NULL,
+measurements.dbplyr <- function(country=NULL,
                          city=NULL,
                          location_id=NULL,
                          location_type=NULL,

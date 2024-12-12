@@ -1,3 +1,37 @@
+test_that("measurements query works with API", {
+
+  meas <- rcrea::measurements(date_from='2018-01-01',
+                              date_to='2018-01-02',
+                              source='saaqis',
+                              poll='pm25',
+                              process_id='city_day_mad',
+                              use_api=T)
+
+ # Verify the data structure
+  expect_s3_class(meas, "data.frame")
+
+  # Check required columns exist
+  expected_cols <- c("date", "value", "location_id", "source")
+  expect_true(all(expected_cols %in% colnames(meas)))
+
+  # Verify date range
+  expect_true(all(meas$date >= as.Date("2018-01-01")))
+  expect_true(all(meas$date <= as.Date("2018-01-02")))
+
+  # Verify pollutant
+  expect_equal(unique(meas$pollutant), "pm25")
+
+  # Verify process_id
+  expect_equal(unique(meas$process_id), "city_day_mad")
+
+  # Verify source
+  expect_equal(unique(meas$source), "saaqis")
+
+  # Verify we got some data
+  expect_gt(nrow(meas), 0)
+
+})
+
 
 test_that("source_city query works on measurements", {
 

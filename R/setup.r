@@ -1,13 +1,3 @@
-# require(RPostgres)
-# require(DBI)
-# require(purrr)
-# require(dplyr)
-# require(dbplyr)
-# require(ggplot2)
-# require(gbm)
-# require(sf)
-# require(memoise)
-
 # Constants for user: Pollutants
 CO = "co"
 PM25 = "pm25"
@@ -92,7 +82,9 @@ connection <- function(current_connection=NULL, force_reconnect=FALSE) {
                         host = CONN_HOST,
                         port = strtoi(CONN_PORT),
                         user = CONN_USER,
-                        password = CONN_PASSWORD)
+                        password = CONN_PASSWORD,
+                        timezone = "UTC"
+                        )
   }
 
   return(pkg.globals$CON)
@@ -108,29 +100,4 @@ tbl_safe <- function(con, query_initial){
     return(result)
   })
   return(result)
-}
-
-# Caching
-# fc <- memoise::cache_filesystem("cache")
-# .onLoad <- function(libname, pkgname){
-#   print("Creating cached functions aq_weather.m.collect and ghcnd.m.ghcnd_stations")
-#   aq_weather.m.collect <<- memoise::memoise(aq_weather.collect, cache=fc)
-#   ghcnd.m.ghcnd_stations <<- memoise::memoise(rnoaa::ghcnd_stations, cache=fc)
-# }
-
-## work around bug in gbm 2.1.1
-predict.gbm <- function (object, newdata, n.trees, type = "link", single.tree = FALSE, ...) {
-  if (missing(n.trees)) {
-    if (object$train.fraction < 1) {
-      n.trees <- gbm.perf(object, method = "test", plot.it = FALSE)
-    }
-    else if (!is.null(object$cv.error)) {
-      n.trees <- gbm.perf(object, method = "cv", plot.it = FALSE)
-    }
-    else {
-      n.trees <- length(object$train.error)
-    }
-    cat(paste("Using", n.trees, "trees...\n"))
-    gbm::predict.gbm(object, newdata, n.trees, type, single.tree, ...)
-  }
 }
