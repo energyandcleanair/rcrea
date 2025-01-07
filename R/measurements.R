@@ -30,8 +30,11 @@ measurements <- function(country=NULL,
                         aggregate_level='city',
                         deweathered=F,
                         population_weighted=F,
+                        split_by_frequency='year',
                         con=NULL,
-                        use_api=TRUE) {
+                        use_api=TRUE,
+                        use_api_local=F,
+                        verbose_api=F) {
 
   # Features that force using dbplyr
   must_use_dbplyr <- FALSE
@@ -103,7 +106,10 @@ measurements <- function(country=NULL,
       date_from = date_from,
       date_to = date_to,
       process_id = process_id,
-      source = source
+      source = source,
+      split_by_frequency = split_by_frequency,
+      verbose = verbose_api,
+      use_local = use_api_local
     ))
   }
 }

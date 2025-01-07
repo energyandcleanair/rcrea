@@ -7,7 +7,9 @@ measurements.api <- function(location_id = NULL,
                              source = NULL,
                              split_by_frequency = "year",
                              min_date = "2010-01-01",
-                             use_local = F) {
+                             use_local = F,
+                             verbose = F
+                             ) {
   params <- list(
     location_id = paste0(location_id, collapse = ","),
     city_name = city_name,
@@ -19,7 +21,7 @@ measurements.api <- function(location_id = NULL,
     format = "csv"
   )
   # Remove NULL values and empty values
-  params <- params[sapply(params, function(x) !is.null(x) && x != "")]
+  params <- params[sapply(params, function(x) !is.null(x) && as.character(x) != "")]
 
   base_url <- ifelse(use_local, "http://localhost:8080", "https://api.energyandcleanair.org")
   url <- httr::parse_url(glue("{base_url}/v1/measurements"))
@@ -38,7 +40,8 @@ measurements.api <- function(location_id = NULL,
           process_id = process_id,
           source = source,
           split_by_frequency = split_by_frequency,
-          use_local = use_local
+          use_local = use_local,
+          verbose = verbose
         )
       }) %>%
         bind_rows() %>%
@@ -53,7 +56,8 @@ measurements.api <- function(location_id = NULL,
           process_id = process_id,
           source = source,
           split_by_frequency = split_by_frequency,
-          use_local = use_local
+          use_local = use_local,
+          verbose = verbose
         )
       }) %>%
         bind_rows() %>%
@@ -65,7 +69,7 @@ measurements.api <- function(location_id = NULL,
 
   if (!is.null(split_by_frequency)) {
     date_from <- lubridate::date(coalesce(date_from, min_date))
-    date_to <- coalesce(lubridate::date(date_to), lubridate::today())
+    date_to <- lubridate::date(coalesce(date_to, as.character(lubridate::today())))
 
     intervals <- utils.create_date_intervals(date_from, date_to, split_by_frequency)
 
@@ -79,7 +83,8 @@ measurements.api <- function(location_id = NULL,
         process_id = process_id,
         source = source,
         split_by_frequency = NULL,
-        use_local = use_local
+        use_local = use_local,
+        verbose = verbose
       )
     }) %>%
       bind_rows() %>%
@@ -88,9 +93,13 @@ measurements.api <- function(location_id = NULL,
 
   tryCatch(
     {
+      if(verbose) message("Fetching data from ", url)
       read_csv(url, show_col_types = FALSE)
+      if(verbose) message("Data fetched successfully")
     },
     error = function(error) {
+      message("Error fetching data :", error)
+      message("Trying once more.")
       # Try once more
       return(read_csv(url, show_col_types = FALSE))
     }
