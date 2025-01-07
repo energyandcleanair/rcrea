@@ -30,6 +30,10 @@ importFrom(lubridate,force_tz)
 importFrom(lubridate,date)
 importFrom(lubridate,today)
 
+importFrom(magick,image_read)
+importFrom(magick,image_info)
+importFrom(magick,image_scale)
+
 importFrom(tidyr,replace_na)
 
 importFrom(pbapply,pblapply)

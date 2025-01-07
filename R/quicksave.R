@@ -28,14 +28,17 @@ quicksave <- function(file,
                       bg = 'white',
                       logo = TRUE,
                       preview = TRUE,
+                      preview_use_plot = FALSE,
+                      prewiew_resize = FALSE,
                       logo_scale = 0.035,
                       logo_position = "br",
                       logo_placement_margin = 0.01,
                       increase_plot_margin_around_logo = 0,
+                      dpi = 300,
                       ...) {
 
   # To prevent small texts
-  showtext::showtext_opts(dpi = 300)
+  showtext::showtext_opts(dpi = dpi)
 
   # Modify the plot to include extra space for the logo if logo = TRUE
   if (logo & (increase_plot_margin_around_logo > 0)) {
@@ -44,7 +47,7 @@ quicksave <- function(file,
   }
 
   # Save the plot
-  ggsave(file, plot = plot, width = width, height = height, scale = scale, bg = bg, ...)
+  ggsave(file, plot = plot, width = width, height = height, scale = scale, bg = bg, dpi=dpi, ...)
 
   # Add logo after saving
   if (logo) {
@@ -53,7 +56,10 @@ quicksave <- function(file,
 
   # Optional: preview the image
   if (preview) {
-    plot_image(file)
+    plot_image(file,
+               use_plot = preview_use_plot,
+               resize = prewiew_resize,
+               dpi = dpi)
   }
 }
 
@@ -98,7 +104,7 @@ adjust_plot_margin <- function(plot, height, scale, logo_scale, logo_position, m
 
 
 # Function to add a high-resolution logo to an image
-add_logo <- function(file, logo_scale = 0.15, logo_position = "br",
+add_logo <- function(file,logo_scale = 0.15, logo_position = "br",
                      logo_negative = FALSE, png = FALSE, density = 300, logo_margin = 0.01, ...) {
   # Choose the logo file
   file_logo <- ifelse(logo_negative, "crea_logo_negative.png",
@@ -119,7 +125,7 @@ add_logo <- function(file, logo_scale = 0.15, logo_position = "br",
   density_value <- paste0(density, "x", density)
 
   # Read the SVG logo with increased density for higher resolution
-  if (tolower(file_ext(logo_path)) == "svg") {
+  if (tolower(tools::file_ext(logo_path)) == "svg") {
     img_logo <- image_read(logo_path, density = density_value)
   } else {
     img_logo <- image_read(logo_path)
@@ -159,7 +165,36 @@ add_logo <- function(file, logo_scale = 0.15, logo_position = "br",
 }
 
 # Function to preview the image
-plot_image <- function(file) {
+#'
+#' @param file filepath of the image
+#' @param use_plot use the plot panel of Rstudio rather than Viewer
+#' @param resize When using viewer, reduces the size of the image to fit the viewer
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plot_image <- function(file, use_plot=F, resize=F, dpi=300) {
+
   img <- image_read(file)
-  print(img)
+
+  if (use_plot) {
+    # Display the image in the plot panel of RStudio
+    # using grid raster
+    raster_img <- as.raster(img)
+    grid::grid.raster(raster_img)
+  } else {
+
+    if(resize){
+      # By default, magick considers this is density 72
+      # Get height
+      height <- as.numeric(image_info(img)$height)
+      density_x <- image_info(img)$density
+      density <- as.numeric(stringr::str_split(density_x, "x")[[1]][1])
+      new_height <- height * density / dpi
+      img <- image_scale(img, paste0("x", new_height))
+    }
+    # Display the image in the RStudio Viewer
+    print(img)
+  }
 }
