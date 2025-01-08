@@ -94,8 +94,9 @@ measurements.api <- function(location_id = NULL,
   tryCatch(
     {
       if(verbose) message("Fetching data from ", url)
-      read_csv(url, show_col_types = FALSE)
+      result <- read_csv(url, show_col_types = FALSE)
       if(verbose) message("Data fetched successfully")
+      return(result)
     },
     error = function(error) {
       message("Error fetching data :", error)
