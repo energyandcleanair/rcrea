@@ -131,8 +131,18 @@ scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias
   continuous_scale("fill", scale_name=palette, palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
 }
 
+# Terrible name, but already use in many places
 scale_y_crea_zero <- function(mult_high=0.1){
   scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
+}
+
+scale_y_zero <- function(mult_high=0.1){
+  scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
+}
+
+scale_percent_with_sign <- function(x, accuracy = 1, scale = 100, suffix = "%", ...) {
+  formatted <- number(x * scale, accuracy = accuracy, suffix = suffix, ...)
+  ifelse(x > 0, paste0("+", formatted), formatted)
 }
 
 # Specific scales ---------------------------------------------------------
