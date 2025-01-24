@@ -140,10 +140,11 @@ scale_y_zero <- function(mult_high=0.1){
   scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
 }
 
-scale_percent_with_sign <- function(x, accuracy = 1, scale = 100, suffix = "%", ...) {
-  formatted <- number(x * scale, accuracy = accuracy, suffix = suffix, ...)
-  ifelse(x > 0, paste0("+", formatted), formatted)
+percent <- function(x, accuracy = 1, scale = 100, suffix = "%", with_sign=F, ...) {
+  formatted <- scales::number(x * scale, accuracy = accuracy, suffix = suffix, ...)
+  ifelse(x > 0 & with_sign, paste0("+", formatted), formatted)
 }
+
 
 # Specific scales ---------------------------------------------------------
 scale_fill_electricity <- scale_fill_manual(values=pal_crea.electricity)
