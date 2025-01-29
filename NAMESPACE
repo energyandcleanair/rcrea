@@ -33,6 +33,8 @@ importFrom(lubridate,today)
 importFrom(magick,image_read)
 importFrom(magick,image_info)
 importFrom(magick,image_scale)
+importFrom(magick,image_composite)
+importFrom(magick,image_write)
 
 importFrom(tidyr,replace_na)
 
