@@ -140,9 +140,13 @@ scale_y_zero <- function(mult_high=0.1){
   scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
 }
 
-percent <- function(x, accuracy = 1, scale = 100, suffix = "%", with_sign=F, ...) {
+scale_percent <- function(x, accuracy = 1, scale = 100, suffix = "%", with_sign=F, ...) {
   formatted <- scales::number(x * scale, accuracy = accuracy, suffix = suffix, ...)
   ifelse(x > 0 & with_sign, paste0("+", formatted), formatted)
+}
+
+scale_percent_format <- function(accuracy = 1, scale = 100, suffix = "%", with_sign=F, ...) {
+  function(x) scale_percent(x, accuracy = accuracy, scale = scale, suffix = suffix, with_sign = with_sign, ...)
 }
 
 
