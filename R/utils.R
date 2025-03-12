@@ -324,3 +324,21 @@ utils.keep_top_n <- function(data, group_col, value_col="value", n = 10, others 
 
   return(result)
 }
+
+
+utils.create_date_intervals <- function(date_from, date_to, frequency) {
+  min_date <- if(is.null(date_from)) lubridate::date(min_date) else lubridate::date(date_from)
+  max_date <- if(is.null(date_to)) lubridate::today() else lubridate::date(date_to)
+  
+  date_froms <- seq.Date(min_date, max_date, by=frequency)
+  date_tos <- if (length(date_froms) == 1) {
+    max_date
+  } else {
+    c(date_froms[2:length(date_froms)] - lubridate::days(1), max_date)
+  }
+  
+  return(list(
+    date_froms = date_froms,
+    date_tos = date_tos
+  ))
+}
