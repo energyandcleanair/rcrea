@@ -1,10 +1,27 @@
-importFrom(magrittr,"%>%")
-importFrom(magrittr,"%<>%")
-
 exportPattern("^[[:alpha:]]+")
 export("%>%")
 
 # Import functions
+importFrom(magrittr,"%>%")
+importFrom(magrittr,"%<>%")
+
+importFrom(dplyr,"distinct")
+importFrom(dplyr,"collect")
+importFrom(dplyr,"filter")
+importFrom(dplyr,"filter_at")
+importFrom(dplyr,"mutate")
+importFrom(dplyr,"select")
+importFrom(dplyr,"left_join")
+importFrom(dplyr,"group_by")
+importFrom(dplyr,"group_by_at")
+importFrom(dplyr,"ungroup")
+importFrom(dplyr,"summarise")
+importFrom(dplyr,"arrange")
+importFrom(dplyr,"desc")
+importFrom(dplyr,"row_number")
+importFrom(dplyr,"pull")
+importFrom(dplyr,"vars")
+importFrom(dplyr,"all_vars")
 importFrom(dplyr,bind_rows)
 importFrom(dplyr,coalesce)
 importFrom(dplyr,filter)
@@ -35,6 +52,8 @@ importFrom(magick,image_info)
 importFrom(magick,image_scale)
 importFrom(magick,image_composite)
 importFrom(magick,image_write)
+importFrom(magick,image_destroy)
+
 
 importFrom(tidyr,replace_na)
 
@@ -47,6 +66,8 @@ importFrom(readr,read_csv)
 importFrom(sf,st_as_sfc)
 
 importFrom(stats,setNames)
+
+importFrom(tools, file_ext)
 
 # If you need entire packages
 import(DBI)
