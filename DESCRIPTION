@@ -50,6 +50,7 @@ Imports:
     rjson (>= 0.2.21),
     tools,
     showtext,
+    pbapply,
 Remotes:
     tidyverse/lubridate,
     energyandcleanair/leaflet.extras2,
