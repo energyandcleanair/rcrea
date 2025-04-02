@@ -47,7 +47,7 @@ quicksave <- function(file,
   }
 
   # Save the plot
-  ggsave(file, plot = plot, width = width, height = height, scale = scale, bg = bg, dpi=dpi, ...)
+  ggplot2::ggsave(file, plot = plot, width = width, height = height, scale = scale, bg = bg, dpi=dpi, ...)
 
   # Add logo after saving
   if (logo) {
