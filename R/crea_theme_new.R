@@ -38,13 +38,13 @@ theme_crea_new <- function(
       # Titles
       plot.title = ggplot2::element_text(color = title_color, size = fontsize1, face = "bold"),
       plot.title.position = "plot",
-      plot.subtitle = ggplot2::element_text(color = grey1, size = fontsize2, margin = margin(b = 15)),
+      plot.subtitle = ggplot2::element_text(color = grey1, size = fontsize2, margin = ggplot2::margin(b = 15)),
 
       # Axis
       axis.title = ggplot2::element_text(color = grey1, size = fontsize3),
       axis.text = ggplot2::element_text(color = grey1, size = fontsize3),
-      axis.title.x = ggplot2::element_text(margin = margin(t = 10)),
-      axis.title.y = ggplot2::element_text(margin = margin(r = 10)),
+      axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 10)),
+      axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 10)),
 
       # Facet strips (if you're using facets)
       strip.background = ggplot2::element_rect(fill = strip_background, color = NA),
