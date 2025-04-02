@@ -116,28 +116,28 @@ makegrad <- function(pal, alpha=1, bias=1, reverse.order=F, col.index=T, darken=
 
 
 scale_color_crea_d <- function(palette = "CREA", alpha = 1, col.index=T, darken=0, ...) {
-  discrete_scale("colour", scale_name=palette, palette = makepal(palette, alpha, col.index, darken), ...)
+  ggplot2::discrete_scale("colour", scale_name=palette, palette = makepal(palette, alpha, col.index, darken), ...)
 }
 
 scale_fill_crea_d <- function(palette = "CREA", alpha = 1, col.index=T, darken=0, ...) {
-  discrete_scale("fill", scale_name=palette, palette = makepal(palette, alpha, col.index, darken), ...)
+  ggplot2::discrete_scale("fill", scale_name=palette, palette = makepal(palette, alpha, col.index, darken), ...)
 }
 
 scale_color_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, col.index = T, darken = 0, ...) {
-  continuous_scale("colour", scale_name=palette, palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
+  ggplot2::continuous_scale("colour", scale_name=palette, palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
 }
 
 scale_fill_crea_c <- function(palette = "CREA", alpha = 1, reverse.order=F, bias=1, col.index = T, darken = 0, ...) {
-  continuous_scale("fill", scale_name=palette, palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
+  ggplot2::continuous_scale("fill", scale_name=palette, palette = makegrad(palette, alpha=alpha, reverse.order=reverse.order, bias=bias, col.index = col.index, darken = darken), ...)
 }
 
 # Terrible name, but already use in many places
 scale_y_crea_zero <- function(mult_high=0.1){
-  scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
+  ggplot2::scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
 }
 
 scale_y_zero <- function(mult_high=0.1){
-  scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
+  ggplot2::scale_y_continuous(limits=c(0,NA), expand=expansion(mult=c(0, mult_high)))
 }
 
 scale_percent <- function(x, accuracy = 1, scale = 100, suffix = "%", with_sign=F, ...) {
@@ -146,13 +146,13 @@ scale_percent <- function(x, accuracy = 1, scale = 100, suffix = "%", with_sign=
 }
 
 scale_percent_format <- function(accuracy = 1, scale = 100, suffix = "%", with_sign=F, ...) {
-  function(x) scale_percent(x, accuracy = accuracy, scale = scale, suffix = suffix, with_sign = with_sign, ...)
+  function(x) ggplot2::scale_percent(x, accuracy = accuracy, scale = scale, suffix = suffix, with_sign = with_sign, ...)
 }
 
 
 # Specific scales ---------------------------------------------------------
-scale_fill_electricity <- scale_fill_manual(values=pal_crea.electricity)
-scale_color_electricity <- scale_color_manual(values=pal_crea.electricity)
+scale_fill_electricity <- ggplot2::scale_fill_manual(values=pal_crea.electricity)
+scale_color_electricity <- ggplot2::scale_color_manual(values=pal_crea.electricity)
 
 crea.theme <- function(colors='CREA', reverse.order=F) {
   pars = standard.theme(color = FALSE)
