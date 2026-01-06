@@ -1,5 +1,5 @@
 theme_crea_new <- function(
-    base_family = "Source Sans Pro",
+    base_family = "Source Sans 3",
     fontsize1 = 16,
     fontsize2 = 12,
     fontsize3 = 10,
