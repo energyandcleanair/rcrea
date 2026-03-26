@@ -31,7 +31,7 @@ measurements.api <- function(location_id = NULL,
   if (nchar(url) > 2048) {
     message("URL too long. Splitting location_id or city_name into multiple requests.")
     if (!is.null(location_id)) {
-      pbapply::pblapply(location_id, function(x) {
+      result <- pbapply::pblapply(location_id, function(x) {
         measurements.api(
           location_id = x,
           poll = poll,
@@ -44,10 +44,10 @@ measurements.api <- function(location_id = NULL,
           verbose = verbose
         )
       }) %>%
-        bind_rows() %>%
-        return()
+        bind_rows()
+      return(result)
     } else if (!is.null(city_name)) {
-      pbapply::pblapply(city_name, function(x) {
+      result <- pbapply::pblapply(city_name, function(x) {
         measurements.api(
           city_name = x,
           poll = poll,
@@ -60,8 +60,8 @@ measurements.api <- function(location_id = NULL,
           verbose = verbose
         )
       }) %>%
-        bind_rows() %>%
-        return()
+        bind_rows()
+      return(result)
     } else {
       stop("Either location_id or city_name must be specified.")
     }
@@ -73,7 +73,7 @@ measurements.api <- function(location_id = NULL,
 
     intervals <- utils.create_date_intervals(date_from, date_to, split_by_frequency)
 
-    pbapply::pblapply(1:length(intervals$date_froms), function(i) {
+    result <- pbapply::pblapply(1:length(intervals$date_froms), function(i) {
       measurements.api(
         location_id = location_id,
         city_name = city_name,
@@ -87,8 +87,8 @@ measurements.api <- function(location_id = NULL,
         verbose = verbose
       )
     }) %>%
-      bind_rows() %>%
-      return()
+      bind_rows()
+    return(result)
   }
 
   tryCatch(
