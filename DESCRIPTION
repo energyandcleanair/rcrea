@@ -52,8 +52,7 @@ Imports:
     showtext,
     pbapply,
 Remotes:
-    tidyverse/lubridate,
-    energyandcleanair/leaflet.extras2,
+    tidyverse/lubridate
 Depends:
     ggplot2
 Suggests: 

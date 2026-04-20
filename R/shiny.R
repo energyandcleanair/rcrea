@@ -21,7 +21,6 @@ deploy_shiny <- function() {
 
   urls <- c(
     "tidyverse/lubridate",
-    "energyandcleanair/leaflet.extras2",
     "energyandcleanair/rcrea")
 
   devtools::install_github(urls, force=F, upgrade="never")
