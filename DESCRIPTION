@@ -50,7 +50,7 @@ Imports:
     rjson (>= 0.2.21),
     tools,
     showtext,
-    pbapply,
+    pbapply
 Remotes:
     tidyverse/lubridate
 Depends:
