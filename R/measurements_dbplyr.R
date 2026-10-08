@@ -262,7 +262,7 @@ measurements.dbplyr <- function(country=NULL,
 
     if(with_geometry){
       result <- result %>% dplyr::left_join(locs %>% dplyr::select(location_id, geometry) %>% collect())
-      result <- result %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
+      result <- result %>% dplyr::mutate(geometry=utils.as_sfc(geometry))
     }
 
     # Localize time

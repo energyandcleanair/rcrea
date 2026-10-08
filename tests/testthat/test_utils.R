@@ -94,3 +94,14 @@ test_that("running average", {
 
 
 })
+test_that("utils.as_sfc routes PostGIS EWKB through sf's WKB adapter", {
+  geometry <- structure(
+    "0101000020E6100000E55FCB2BD71D5D40C1C9367007FA4340",
+    class = "pq_geometry"
+  )
+
+  result <- rcrea:::utils.as_sfc(geometry)
+
+  expect_s3_class(result, "sfc_POINT")
+  expect_equal(as.numeric(sf::st_coordinates(result)), c(116.466258, 39.953352))
+})

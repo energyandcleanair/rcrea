@@ -101,7 +101,7 @@ cities <- function(
   if(collect){
     c <- c %>% dplyr::collect()
     if(with_geometry){
-      c <- c %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
+      c <- c %>% dplyr::mutate(geometry=utils.as_sfc(geometry))
     }
   }
 
@@ -180,7 +180,7 @@ stations <- function(
   if(collect){
     s <- s %>% dplyr::collect()
     if(with_geometry){
-      s <- s %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
+      s <- s %>% dplyr::mutate(geometry=utils.as_sfc(geometry))
     }
   }
 
@@ -446,5 +446,4 @@ join_weather_data <- function(meas, measurements_averaged_by='day', aggregate_at
 
   return(result)
 }
-
 

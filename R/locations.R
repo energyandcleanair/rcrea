@@ -105,7 +105,7 @@ locations <- function(
   if(collect){
     result <- result %>% dplyr::collect()
     if(with_geometry){
-      result <- result %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
+      result <- result %>% dplyr::mutate(geometry=utils.as_sfc(geometry))
     }
   }
 

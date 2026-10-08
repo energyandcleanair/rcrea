@@ -3,6 +3,21 @@ utils.most_frequent_value <- function(x) {
   uniqx[which.max(tabulate(match(x, uniqx)))]
 }
 
+#' Convert a database geometry column to an sf geometry vector.
+#'
+#' sf 1.1-3 forwards an internal, misspelled argument from its pq_geometry
+#' method into st_sfc(), which prevents PostGIS EWKB values from being wrapped.
+#' Dispatch pq_geometry values through the public WKB method instead. This is
+#' also compatible with earlier sf releases.
+utils.as_sfc <- function(geometry) {
+  if (inherits(geometry, "pq_geometry")) {
+    class(geometry) <- "WKB"
+    return(sf::st_as_sfc(geometry, EWKB = TRUE))
+  }
+
+  sf::st_as_sfc(geometry)
+}
+
 
 utils.add_lag <- function(meas, cols, hour_lags){
 

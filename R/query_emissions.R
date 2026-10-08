@@ -50,7 +50,7 @@ facilities <- function(
   if(collect){
     c <- c %>% dplyr::collect()
     if(with_geometry){
-      c <- c %>% dplyr::mutate(geometry=sf::st_as_sfc(geometry))
+      c <- c %>% dplyr::mutate(geometry=utils.as_sfc(geometry))
     }
   }
 
